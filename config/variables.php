@@ -1,0 +1,31 @@
+<?php
+// Variables
+return [
+  "creatorName" => "SLSU",
+  "creatorUrl" => "https://slsu.edu.ph",
+  "templateName" => "DMS",
+  "templateSuffix" => "Document Management System",
+  "templateVersion" => "2.0.0",
+  "templateFree" => true,
+  "templateDescription" => "Most Powerful & Comprehensive Bootstrap 5 + Laravel HTML Admin Dashboard Template built for developers!",
+  "templateKeyword" => "dashboard, bootstrap 5 dashboard, bootstrap 5 design, bootstrap 5",
+  "licenseUrl" => "https://themeselection.com/license/",
+  "livePreview" => "https://slsu.edu.ph",
+  "productPage" => "https://slsu.edu.ph",
+  "support" => "https://slsu.edu.ph",
+  "adminTemplates" => "https://slsu.edu.ph",
+  "bootstrapDashboard" => "https://slsu.edu.ph",
+  "ogTitle" => "SLSU - Document Management System",
+  "ogImage" => "https://ts-assets.b-cdn.net/ts-assets/sneat/sneat-bootstrap-laravel-admin-template-free/marketing/sneat-bootstrap-laravel-admin-template-free-smm.png",
+  "ogType" => "product",
+  "documentation" => "https://demos.themeselection.com/sneat-bootstrap-html-admin-template/documentation",
+  "repository" => "https://github.com/themeselection/sneat-bootstrap-html-laravel-admin-template-free",
+  "gitRepo" => "https://github.com/themeselection/sneat-bootstrap-html-laravel-admin-template-free.git",
+  "gitRepoAccess" => "https://tools.themeselection.com/github/github-access",
+  "githubFreeUrl" => "https://github.com/themeselection",
+  "facebookUrl" => "https://www.facebook.com/ThemeSelections/",
+  "twitterUrl" => "https://x.com/Theme_Selection",
+  "githubUrl" => "https://github.com/themeselection",
+  "dribbbleUrl" => "https://dribbble.com/themeselection",
+  "instagramUrl" => "https://www.instagram.com/themeselection/"
+];

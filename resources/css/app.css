@@ -1,0 +1,45 @@
+/* Menu hover/active style (dashboard-like selection) */
+.menu-vertical .menu-item .menu-link {
+  border-radius: 0.5rem !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.menu-vertical .menu-item .menu-link:hover,
+.menu-vertical .menu-item .menu-link:focus {
+  background-color: rgba(44, 47, 218, 0.16) !important;
+  color: #696cff !important;
+}
+
+.menu-vertical .menu-item.active > .menu-link,
+.menu-vertical .menu-item.open > .menu-link {
+  background-color: rgba(105, 108, 255, 0.16) !important;
+  color: #696cff !important;
+  box-shadow: inset 3px 0 0 #696cff !important;
+}
+
+.menu-vertical .menu-item.active > .menu-link i,
+.menu-vertical .menu-item.open > .menu-link i,
+.menu-vertical .menu-item .menu-link:hover i {
+  color: #696cff !important;
+}
+
+/* Layout container tuning for all pages */
+.container-xxl {
+  max-width: 1440px;
+  padding-left: clamp(16px, 2.5vw, 32px);
+  padding-right: clamp(16px, 2.5vw, 32px);
+}
+
+/* Avoid double container padding on pages that already include container-xxl */
+.container-xxl .container-xxl {
+  max-width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (max-width: 575.98px) {
+  .container-xxl {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
