@@ -28,7 +28,7 @@
                     </div>
                 </div>
             </div>
-
+{{-- 
             @if(session('success'))
                 <div class="alert alert-success" role="alert">
                     <i class="bx bx-check-circle me-1"></i>{{ session('success') }}
@@ -38,7 +38,7 @@
                 <div class="alert alert-danger" role="alert">
                     <i class="bx bx-error-circle me-1"></i>{{ session('error') }}
                 </div>
-            @endif
+            @endif --}}
 
             <!-- Archived List -->
             <div class="card">
@@ -76,13 +76,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <form action="{{ route('documents.restore', encryptId($archive->document_id)) }}"
+                                            <form action="{{ route('documents.restore', $archive->archive_id) }}"
                                                   method="POST"
                                                   class="d-inline restore-form">
                                                 @csrf
                                                 <button type="submit"
                                                     class="btn btn-sm btn-outline-primary"
-                                                    id="restore-document-{{ encryptId($archive->document_id) }}"
+                                                    id="restore-document-{{ $archive->archive_id }}"
                                                     name="restore"
                                                     title="Restore"
                                                     aria-label="Restore document">
@@ -94,14 +94,14 @@
                                                title="Download">
                                                 <i class="bx bx-download"></i>
                                             </a>
-                                            <form action="{{ route('documents.permanent-delete', encryptId($archive->document_id)) }}"
-                                                  method="DELETE"
+                                            <form action="{{ route('documents.permanent-delete', $archive->archive_id) }}"
+                                                  method="POST"
                                                   class="d-inline delete-form">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit"
                                                     class="btn btn-sm btn-outline-danger"
-                                                    id="delete-document-{{ encryptId($archive->document_id) }}"
+                                                    id="delete-document-{{ $archive->archive_id }}"
                                                     name="delete"
                                                     title="Permanently Delete"
                                                     aria-label="Permanently delete archive">

@@ -19,12 +19,10 @@ class Archive extends Model
         'file_path',
         'file_name',
         'archive_at',
-        'deleted_at',
     ];
 
     protected $casts = [
         'archive_at' => 'datetime',
-        'deleted_at' => 'datetime',
     ];
 
     /**
@@ -32,7 +30,7 @@ class Archive extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'user_sid');
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
     /**

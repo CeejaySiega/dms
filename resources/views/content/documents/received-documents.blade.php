@@ -105,17 +105,15 @@
                                         <td>
                                             <div class="btn-group" role="group">
                                                 @if($document->status !== 'archived')
-                                                <form action="{{ route('documents.archive', encryptId($document->document_id)) }}"
-                                                      method="POST"
-                                                      class="d-inline archive-form">
-                                                    @csrf
-                                                    <button type="submit"
-                                                            class="btn btn-sm btn-outline-secondary"
-                                                            title="Archive">
-                                                        <i class="bx bx-archive"></i>
-                                                    </button>
+                                               <form action="{{ route('documents.archive-receiver', encryptId($document->document_id)) }}"
+                                                            method="POST"
+                                                            class="d-inline">
+                                                            @csrf
+                                                         <button type="submit" class="btn btn-sm btn-outline-secondary" title="Archive">
+                                                                <i class="bx bx-archive"></i>
+                                                        </button>
                                                 </form>
-                                                @endif
+                                                  @endif
                                                 <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
                                                    class="btn btn-sm btn-outline-success"
                                                    title="Download">

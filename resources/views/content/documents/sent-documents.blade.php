@@ -96,7 +96,7 @@
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-secondary"
                                                     data-bs-toggle="modal"
-                                                    data-bs-target="#recipientsModal-{{ encryptId($document->document_id) }}"
+                                                    data-bs-target="#recipientsModal-{{ $document->document_id }}"
                                                     title="View Recipients">
                                                 <i class="bx bx-group me-1"></i>{{ $groupName }}
                                             </button>
@@ -104,7 +104,7 @@
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-secondary"
                                                     data-bs-toggle="modal"
-                                                    data-bs-target="#recipientsModal-{{ encryptId($document->document_id) }}"
+                                                    data-bs-target="#recipientsModal-{{ $document->document_id }}"
                                                     title="View Recipients">
                                                 <i class="bx bx-group me-1"></i>Recipients
                                             </button>
@@ -230,73 +230,85 @@
                                         </div>
                                     </td>
                                 </tr>
-                                @if($route?->group_id || $recipients->count() > 1)
-                                <div class="modal fade" id="recipientsModal-{{ encryptId($document->document_id) }}" tabindex="-1" aria-labelledby="recipientsModalLabel-{{ encryptId($document->document_id) }}" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="recipientsModalLabel-{{ encryptId($document->document_id) }}">
-                                                    Recipients - {{ $document->tracking_code }}
-                                                    @if($route?->group_id && $route->group)
-                                                        <small class="text-muted ms-2">({{ $route->group->position }} - {{ getCampusName($route->group->campus) }})</small>
-                                                    @endif
-                                                </h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <ul class="list-group">
-                                                    @foreach($recipients as $recipient)
-                                                        @php
-                                                            $receiveStatus = $recipient->action ?: 'pending';
-                                                            $receiveClass = match($receiveStatus) {
-                                                                'receive' => 'bg-success',
-                                                                'approved' => 'bg-primary',
-                                                                'rejected' => 'bg-danger',
-                                                                default => 'bg-warning'
-                                                            };
-                                                        @endphp
-                                                        <li class="list-group-item d-flex align-items-center justify-content-between">
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <i class="bx bx-user-circle fs-4"></i>
-                                                                <div>
-                                                                    <div class="fw-semibold">
-                                                                        @if($recipient->user->employee)
-                                                                            {{ $recipient->user->employee->firstname }} {{ $recipient->user->employee->lastname }}
-                                                                        @else
-                                                                            {{ $recipient->user->name }}
-                                                                        @endif
-                                                                    </div>
-                                                                    <small class="text-muted">
-                                                                        <i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}
-                                                                    </small>
-                                                                </div>
-                                                                <span class="badge {{ $receiveClass }}">{{ ucfirst($receiveStatus) }}</span>
-                                                            </div>
-                                                            @if($receiveStatus === 'pending')
-                                                                <button type="button"
-                                                                        class="btn btn-sm btn-outline-danger unsend-recipient-btn"
-                                                                        data-document-id="{{ encryptId($document->document_id) }}"
-                                                                        data-recipient-id="{{ encryptId($recipient->recipient_id) }}"
-                                                                        data-recipient-name="{{ $recipient->user->employee ? $recipient->user->employee->firstname . ' ' . $recipient->user->employee->lastname : $recipient->user->name }}"
-                                                                        title="Unsend to this recipient">
-                                                                    <i class="bx bx-user-x"></i>
-                                                                </button>
-                                                            @endif
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Modals for Recipients -->
+                    @foreach($documents as $document)
+                        @php
+                            $route = \App\Models\DocumentRoute::with('group')
+                                ->where('document_id', $document->document_id)
+                                ->first();
+                            $recipients = $route ? \App\Models\Recipient::with('user.employee')
+                                ->where('route_id', $route->route_id)
+                                ->get() : collect();
+                        @endphp
+                        @if($route?->group_id || $recipients->count() > 1)
+                        <div class="modal fade" id="recipientsModal-{{ $document->document_id }}" tabindex="-1" aria-labelledby="recipientsModalLabel-{{ $document->document_id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="recipientsModalLabel-{{ $document->document_id }}">
+                                            Recipients - {{ $document->tracking_code }}
+                                            @if($route?->group_id && $route->group)
+                                                <small class="text-muted ms-2">({{ $route->group->position }} - {{ getCampusName($route->group->campus) }})</small>
+                                            @endif
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <ul class="list-group">
+                                            @foreach($recipients as $recipient)
+                                                @php
+                                                    $receiveStatus = $recipient->action ?: 'pending';
+                                                    $receiveClass = match($receiveStatus) {
+                                                        'receive' => 'bg-success',
+                                                        'approved' => 'bg-primary',
+                                                        'rejected' => 'bg-danger',
+                                                        default => 'bg-warning'
+                                                    };
+                                                @endphp
+                                                <li class="list-group-item d-flex align-items-center justify-content-between">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <i class="bx bx-user-circle fs-4"></i>
+                                                        <div>
+                                                            <div class="fw-semibold">
+                                                                @if($recipient->user->employee)
+                                                                    {{ $recipient->user->employee->firstname }} {{ $recipient->user->employee->lastname }}
+                                                                @else
+                                                                    {{ $recipient->user->name }}
+                                                                @endif
+                                                            </div>
+                                                            <small class="text-muted">
+                                                                <i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}
+                                                            </small>
+                                                        </div>
+                                                        <span class="badge {{ $receiveClass }}">{{ ucfirst($receiveStatus) }}</span>
+                                                    </div>
+                                                    @if($receiveStatus === 'pending')
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-danger unsend-recipient-btn"
+                                                                data-document-id="{{ encryptId($document->document_id) }}"
+                                                                data-recipient-id="{{ encryptId($recipient->recipient_id) }}"
+                                                                data-recipient-name="{{ $recipient->user->employee ? $recipient->user->employee->firstname . ' ' . $recipient->user->employee->lastname : $recipient->user->name }}"
+                                                                title="Unsend to this recipient">
+                                                            <i class="bx bx-user-x"></i>
+                                                        </button>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    @endforeach
 
                     <!-- Pagination -->
                     <div class="mt-4">

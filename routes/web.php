@@ -173,14 +173,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/archived', [ArchiveDocumentController::class, 'index'])->name('archived');
         Route::get('/all', [DocumentController::class, 'all'])->name('all');
         Route::get('/stats', [DocumentController::class, 'getStats'])->name('stats');
-        // Wildcard routes must be last
+        
+
+
+        //Sent/archived document management routes (must come after other document routes to avoid conflicts)
         Route::delete('/{document}/delete-document', [SentDocumentController::class, 'deleteDocument'])->name('delete-document');
         Route::delete('/{document}/recipients/{recipient}', [SentDocumentController::class, 'unsendRecipient'])->name('unsend-recipient');
         Route::get('/{document}', [DocumentController::class, 'show'])->name('show');
         Route::get('/{document}/download', [DocumentController::class, 'download'])->name('download');
         Route::post('/{document}/archive', [ArchiveDocumentController::class, 'archive'])->name('archive');
-        Route::post('/{document}/restore', [ArchiveDocumentController::class, 'restore'])->name('restore');
+        Route::post('/{document}/archive-receiver', [ArchiveDocumentController::class, 'archiveAsReceiver'])->name('archive-receiver');
+        Route::post('/archives/{archive}/restore', [ArchiveDocumentController::class, 'restore'])->name('restore');
         Route::delete('/{document}', [SentDocumentController::class, 'delete'])->name('delete');
-        Route::delete('/{document}/permanent', [ArchiveDocumentController::class, 'destroy'])->name('permanent-delete');
+        Route::delete('/archives/{archive}/permanent', [ArchiveDocumentController::class, 'destroy'])->name('permanent-delete');
     });
 });

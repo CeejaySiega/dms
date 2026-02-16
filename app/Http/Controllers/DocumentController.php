@@ -415,11 +415,14 @@ class DocumentController extends Controller
             'pending' => Document::where('user_id', Auth::id())
                 ->where('status', 'pending')
                 ->count(),
-            'sent' => Document::where('user_id', Auth::id())
-                ->where('status', 'sent')
+            'received' => Document::where('user_id', Auth::id())
+                ->where('status', 'received')
                 ->count(),
             'archived' => Document::where('user_id', Auth::id())
                 ->where('status', 'archived')
+                ->count(),
+            'restored' => Document::where('user_id', Auth::id())
+                ->where('status', 'restored')
                 ->count(),
         ];
 

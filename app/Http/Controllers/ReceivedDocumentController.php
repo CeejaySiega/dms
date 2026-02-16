@@ -92,23 +92,6 @@ class ReceivedDocumentController extends Controller
         return view('content.documents.received-documents', compact('received'));
     }
 
-    /**
-     * Disapprove a received document
-     */
-    public function disapprove(Document $document)
-    {
-        $recipient = $this->getRecipientOrFail($document);
-
-        $this->updateRouteAndDocument(
-            $document,
-            $recipient,
-            'rejected',
-            null,
-            null
-        );
-
-        return redirect()->back()->with('success', 'Document disapproved successfully.');
-    }
 
     /**
      * Remove a received document from the receiver's list
@@ -229,5 +212,7 @@ class ReceivedDocumentController extends Controller
                 'receive_at' => $receiveAt,
             ]
         );
+    
     }
+
 }

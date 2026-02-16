@@ -26,17 +26,17 @@
       "submenu": [
         {
           "url": "/documents/incoming",
-          "name": "Inbox",
+          "name": "Incoming Documents",
           "slug": "documents.incoming"
         },
         {
           "url": "/documents/received",
-          "name": "Receive",
+          "name": "Received Documents",
           "slug": "documents.received"
         },
         {
           "url": "/documents/sent",
-          "name": "Sent",
+          "name": "Sent Documents",
           "slug": "documents.sent"
         }
       ]

@@ -7,7 +7,7 @@ use App\Models\Archive;
 use App\Models\SentDocument;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-
+use App\Models\User;
 class ArchiveDocumentController extends Controller
 {
     /**
@@ -15,7 +15,13 @@ class ArchiveDocumentController extends Controller
      */
     public function index()
     {
-        $documents = Archive::where('user_id', Auth::user()->user_id)
+        $currentUserId = Auth::user()->user_id;
+        $documents = Archive::where(function($query) use ($currentUserId) {
+                $query->where('user_id', $currentUserId)
+                      ->orWhereHas('document', function($q) use ($currentUserId) {
+                          $q->where('user_id', $currentUserId);
+                      });
+            })
             ->with('document', 'document.documentType')
             ->orderBy('archive_at', 'desc')
             ->paginate(15);
@@ -39,9 +45,9 @@ class ArchiveDocumentController extends Controller
         }
 
         try {
-            // Create archive record
+            // Create archive record with current user (the person archiving)
             Archive::create([
-                'user_id' => $document->user_id,
+                'user_id' => Auth::user()->user_id,
                 'document_id' => $document->document_id,
                 'file_path' => $document->file_path,
                 'file_name' => $document->file_name,
@@ -79,15 +85,93 @@ class ArchiveDocumentController extends Controller
         }
     }
 
+    public function archiveAsReceiver(Document $document)
+    {
+        $currentUserId = Auth::user()->user_id;
+        
+        // Check if user is a recipient of this document
+        $isRecipient = \App\Models\Recipient::whereHas('route', function($query) use ($document) {
+            $query->where('document_id', $document->document_id);
+        })
+        ->where('user_id', $currentUserId)
+        ->exists();
+
+        if (!$isRecipient) {
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not a recipient of this document'
+                ], 403);
+            }
+            abort(403, 'You are not a recipient of this document');
+        }
+
+        try {
+            // Check if already archived by this user
+            $existingArchive = Archive::where('document_id', $document->document_id)
+                ->where('user_id', $currentUserId)
+                ->first();
+
+            if ($existingArchive) {
+                if (request()->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Document is already archived'
+                    ], 400);
+                }
+                return redirect()->back()->with('error', 'Document is already archived');
+            }
+
+            // Create archive record for this receiver
+            Archive::create([
+                'user_id' => $currentUserId,
+                'document_id' => $document->document_id,
+                'file_path' => $document->file_path,
+                'file_name' => $document->file_name,
+                'archive_at' => now(),
+            ]);
+
+            // Remove from received documents list for this user
+            \App\Models\ReceivedDocument::where('document_id', $document->document_id)
+                ->where('user_id', $currentUserId)
+                ->delete();
+
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Document archived successfully'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Document archived to your personal archive');
+        } catch (\Exception $e) {
+            report($e);
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to archive document: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to archive document: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Restore an archived document
      */
-    public function restore($documentId)
+    public function restore($archiveId)
     {
-        $documentId = decryptId($documentId);
+        $currentUserId = Auth::user()->user_id;
         
-        $archive = Archive::where('document_id', $documentId)
-            ->where('user_id', Auth::user()->user_id)
+        // Find archive by archive_id with authorization check
+        $archive = Archive::where('archive_id', $archiveId)
+            ->where(function($query) use ($currentUserId) {
+                $query->where('user_id', $currentUserId)
+                      ->orWhereHas('document', function($q) use ($currentUserId) {
+                          $q->where('user_id', $currentUserId);
+                      });
+            })
             ->firstOrFail();
 
         try {
@@ -95,9 +179,9 @@ class ArchiveDocumentController extends Controller
             $archive->delete();
 
             // Restore document status to 'sent'
-            $document = Document::where('document_id', $documentId)->first();
+            $document = Document::where('document_id', $archive->document_id)->first();
             if ($document) {
-                $document->update(['status' => 'sent']);
+                $document->update(['status' => 'restored', 'restored_at' => now()]);
             }
 
             if (request()->wantsJson()) {
@@ -123,15 +207,21 @@ class ArchiveDocumentController extends Controller
     /**
      * Permanently delete an archived document
      */
-    public function destroy($documentId)
+    public function destroy($archiveId)
     {
-        $documentId = decryptId($documentId);
+        $currentUserId = Auth::user()->user_id;
         
         try {
-            // Find the archive record for this document
-            $archive = Archive::where('document_id', $documentId)
-                ->where('user_id', Auth::user()->user_id)
+            // Find archive by archive_id with authorization check
+            $archive = Archive::where('archive_id', $archiveId)
+                ->where(function($query) use ($currentUserId) {
+                    $query->where('user_id', $currentUserId)
+                          ->orWhereHas('document', function($q) use ($currentUserId) {
+                              $q->where('user_id', $currentUserId);
+                          });
+                })
                 ->firstOrFail();
+
 
             // Force delete only the archive record, not the document
             $archive->forceDelete();

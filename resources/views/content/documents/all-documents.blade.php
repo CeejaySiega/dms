@@ -53,8 +53,9 @@
                                 <label class="form-label">Status</label>
                                 <select class="form-select" name="status">
                                     <option value="">All Status</option>
-                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Sent</option>
                                     <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Receive</option>
+                                    <option value="restored" {{ request('status') == 'restored' ? 'selected' : '' }}>Restored from archive</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -110,7 +111,7 @@
                                             <button type="button" 
                                                     class="btn btn-sm btn-outline-info" 
                                                     data-bs-toggle="modal" 
-                                                    data-bs-target="#recipientsModal{{ encryptId($document->document_id) }}">
+                                                    data-bs-target="#recipientsModal{{ $document->document_id }}">
                                                 <i class="bx bx-group me-1"></i> Group ({{ $recipients->count() }})
                                             </button>
                                         @elseif($recipients->count() > 0)
@@ -151,7 +152,11 @@
                                     <td>
                                         @php
                                             $statusValue = $document->status;
-                                            if ($recipients->isNotEmpty()) {
+                                            
+                                            // Check if document itself has restored status first
+                                            if ($document->status === 'restored') {
+                                                $statusValue = 'restored';
+                                            } elseif ($recipients->isNotEmpty()) {
                                                 $actions = $recipients->pluck('action')
                                                     ->filter()
                                                     ->map(fn ($action) => strtolower(trim((string) $action)))
@@ -169,10 +174,6 @@
                                                     $statusValue = 'pending';
                                                 } elseif ($hasReceive) {
                                                     $statusValue = 'receive';
-                                                } elseif ($actions->contains('approved')) {
-                                                    $statusValue = 'approved';
-                                                } elseif ($actions->contains('rejected')) {
-                                                    $statusValue = 'rejected';
                                                 } else {
                                                     $statusValue = 'pending';
                                                 }
@@ -180,10 +181,9 @@
 
                                             $statusClass = match($statusValue) {
                                                 'pending' => 'bg-warning',
-                                                'approved' => 'bg-success',
-                                                'rejected' => 'bg-danger',
                                                 'receive', 'received' => 'bg-info',
                                                 'archived' => 'bg-secondary',
+                                                'restored' => 'bg-success',
                                                 default => 'bg-secondary'
                                             };
                                         @endphp
@@ -194,6 +194,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
+                                            @if($statusValue !== 'pending')
                                             <form action="{{ route('documents.delete-document', encryptId($document->document_id)) }}"
                                                   method="POST"
                                                   class="d-inline delete-document-form">
@@ -217,6 +218,7 @@
                                                 </button>
                                             </form>
                                             @endif
+                                            @endif
                                             <a href="{{ route('documents.download', encryptId($document->document_id)) }}" 
                                                class="btn btn-sm btn-outline-success" 
                                                title="Download">
@@ -225,50 +227,66 @@
                                         </div>
                                     </td>
                                 </tr>
-                                @if($isGroupSend)
-                                <div class="modal fade" id="recipientsModal{{ encryptId($document->document_id) }}" tabindex="-1" aria-labelledby="recipientsModalLabel{{ encryptId($document->document_id) }}" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="recipientsModalLabel{{ encryptId($document->document_id) }}">
-                                                    <i class="bx bx-group me-2"></i>Recipients - {{ $document->tracking_code }}
-                                                </h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <ul class="list-group">
-                                                    @foreach($recipients as $recipient)
-                                                        <li class="list-group-item">
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <i class="bx bx-user-circle fs-4"></i>
-                                                                <div>
-                                                                    <div class="fw-semibold">
-                                                                        @if($recipient->user->employee)
-                                                                            {{ $recipient->user->employee->firstname }} {{ $recipient->user->employee->lastname }}
-                                                                        @else
-                                                                            {{ $recipient->user->name }}
-                                                                        @endif
-                                                                    </div>
-                                                                    <small class="text-muted">
-                                                                        <i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}
-                                                                    </small>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Modals for Recipients -->
+                    @foreach($documents as $document)
+                        @php
+                            $route = \App\Models\DocumentRoute::where('document_id', $document->document_id)->first();
+                            $recipients = $route ? \App\Models\Recipient::with('user.employee')
+                                ->where('route_id', $route->route_id)
+                                ->get() : collect();
+                            $isGroupSend = $recipients->count() > 1;
+                        @endphp
+                        @if($isGroupSend)
+                        <div class="modal fade" id="recipientsModal{{ $document->document_id }}" tabindex="-1" aria-labelledby="recipientsModalLabel{{ $document->document_id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="recipientsModalLabel{{ $document->document_id }}">
+                                            <i class="bx bx-group me-2"></i>Recipients - {{ $document->tracking_code }}
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <ul class="list-group">
+                                            @foreach($recipients as $recipient)
+                                                <li class="list-group-item">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <i class="bx bx-user-circle fs-4"></i>
+                                                        <div>
+                                                            <div class="fw-semibold">
+                                                                @if($recipient->user->employee)
+                                                                    {{ $recipient->user->employee->firstname }} {{ $recipient->user->employee->lastname }}
+                                                                @else
+                                                                    {{ $recipient->user->name }}
+                                                                @endif
+                                                            </div>
+                                                            <div>
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                <span class="badge bg-info">{{ ucfirst($recipient->action ?? 'pending') }}</span>
+                                                                </div>
+                                                            </div>
+                                                            <small class="text-muted">
+                                                                <i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    @endforeach
 
                     <!-- Pagination -->
                     <div class="mt-4">
