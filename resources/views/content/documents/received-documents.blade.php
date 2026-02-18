@@ -4,7 +4,21 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row">
+    <!-- Page Header with Breadcrumb -->
+    <div class="mb-4">
+        <h4 class="fw-bold mb-2"><i class="bx bx-envelope me-2"></i>Mail</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-style1">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard-analytics') }}">Home</a>
+                </li>
+                <li class="breadcrumb-item inactive">Mail</li>
+                <li class="breadcrumb-item active">Received Documents</li>
+            </ol>
+        </nav>
+    </div>
+
+    {{-- <div class="row">
         <div class="col-md-12">
             <!-- Header -->
             <div class="card mb-4">
@@ -19,17 +33,18 @@
                         <i class="bx bx-plus me-1"></i> Send New Document
                     </a>
                 </div>
-            </div>
+            </div> --}}
 
             <!-- Filter Tabs -->
-            <div class="card mb-4">
+            <div class="card mb-1">
                 <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
                     <ul class="nav nav-pills mb-0" role="tablist">
-                        <li class="nav-item" role="presentation">
+                        {{-- <li class="nav-item" role="presentation">
                             <a href="{{ route('documents.all') }}" class="nav-link">
                                 <i class="bx bx-list-ul me-1"></i> All Documents
                             </a>
-                        </li>
+                        </li> --}}
                         <li class="nav-item" role="presentation">
                             <a href="{{ route('documents.incoming') }}" class="nav-link">
                                 <i class="bx bxs-inbox me-1"></i> Inbox
@@ -49,7 +64,13 @@
                                 <i class="bx bx-send me-1"></i> Sent
                             </a>
                         </li>
+                        
                     </ul>
+
+                    <a href="{{ route('documents.send') }}" class="btn btn-primary">
+                        <i class="bx bx-plus me-1"></i> Send Document
+                    </a>
+                    </div>
                 </div>
             </div>
 

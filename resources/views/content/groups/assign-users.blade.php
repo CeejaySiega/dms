@@ -4,20 +4,33 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h4 class="mb-1"><i class="bx bx-user-plus me-2"></i>Assign Users</h4>
-            <div class="text-muted">
-                Group: <strong>{{ $group->position }}</strong>
-                @if($group->campus)
-                    <span class="ms-2 badge bg-label-{{ getCampusColor($group->campus) }}">{{ getCampusName($group->campus) }}</span>
-                @endif
+    <!-- Page Header with Breadcrumb -->
+    <div class="mb-4">
+        <h4 class="fw-bold mb-2"><i class="bx bx-user-check me-2"></i>Assign Users to Group</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-style1">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard-analytics') }}">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{{ route('groups.index') }}">Groups</a>
+                </li>
+                <li class="breadcrumb-item active">Assign Users</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <h6 class="mb-1"><span class="fw-bold">Group Name:</span>&nbsp;{{ $group->position }}</h6>
+                    </div>
+                </div>
+                <a href="{{ route('groups.index') }}" class="btn btn-secondary">
+                    <i class="bx bx-arrow-back me-1"></i> Back to Groups
+                </a>
             </div>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="{{ route('groups.index') }}" class="btn btn-secondary">
-                <i class="bx bx-arrow-back me-1"></i> Back to Groups
-            </a>
         </div>
     </div>
 
@@ -35,17 +48,19 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <input type="text" class="form-control" id="userSearch" placeholder="Search users by name or email">
-                    </div>
+                        <input type="text" class="form-control" id="userSearch" placeholder="Search by name, email, or campus">
+                    
 
                     <div class="list-group" id="userList" style="max-height: 420px; overflow-y: auto;">
                         @foreach($users as $user)
                             @php
                                 $isMember = in_array($user->user_id, $memberUserIds, true);
                                 $displayName = $user->name ?: $user->email;
-                                $searchText = strtolower(($user->name ?? '') . ' ' . ($user->email ?? ''));
+                                $employeeName = $user->employee ? strtolower($user->employee->firstname . ' ' . $user->employee->lastname) : '';
+                                $campusCode = $user->employee ? strtolower($user->employee->campus) : '';
+                                $searchText = strtolower(($user->name ?? '') . ' ' . ($user->email ?? '') . ' ' . $employeeName . ' ' . $campusCode);
                             @endphp
-                            <label class="list-group-item d-flex align-items-start gap-2 user-item" data-name="{{ $searchText }}" data-user-id="{{ encryptId($user->user_id) }}">
+                            <label class="list-group-item d-flex align-items-start gap-2 user-item" data-search="{{ $searchText }}" data-user-id="{{ encryptId($user->user_id) }}">
                                 <input class="form-check-input mt-1 user-checkbox" type="checkbox" value="{{ encryptId($user->user_id) }}" {{ $isMember ? 'disabled' : '' }}>
                                 <span>
                                     @if($user->employee)
@@ -70,6 +85,7 @@
                                 @endif
                             </label>
                         @endforeach
+                    </div>
                     </div>
 
                     <button type="button" class="btn btn-primary mt-3" id="assignBtn">
@@ -119,15 +135,49 @@
 $(document).ready(function () {
     const groupId = '{{ encryptId($group->group_id) }}';
     const csrfToken = '{{ csrf_token() }}';
+    let originalHTML = ''; // Store original list HTML
 
-    // Search functionality
-    $('#userSearch').on('input', function () {
-        const term = $(this).val().toLowerCase();
-        $('.user-item').each(function () {
-            const name = $(this).attr('data-name') || '';
-            $(this).toggle(name.includes(term));
-        });
+    // Store original HTML on page load
+    originalHTML = $('#userList').html();
+
+    // Search functionality - Real-time search
+    $('#userSearch').on('input', function() {
+        filterUsers();
     });
+
+    function filterUsers() {
+        const searchTerm = $('#userSearch').val().toLowerCase().trim();
+        
+        if (searchTerm.length === 0) {
+            // If search is empty, restore all items
+            $('#userList').html(originalHTML);
+            $('#noResultsMessage').remove();
+        } else {
+            // Filter and show only matching items
+            const itemsToKeep = [];
+            const tempDiv = $('<div>').html(originalHTML);
+            
+            tempDiv.find('.user-item').each(function () {
+                const searchData = $(this).attr('data-search') || '';
+                
+                if (searchData.includes(searchTerm)) {
+                    itemsToKeep.push($(this));
+                }
+            });
+            
+            // Remove all items
+            $('#userList').html('');
+            
+            if (itemsToKeep.length === 0) {
+                // Show no results message
+                $('#userList').html('<div id="noResultsMessage" class="text-center text-muted py-4">No users found matching your search.</div>');
+            } else {
+                itemsToKeep.forEach(function(item) {
+                    $('#userList').append(item);
+                });
+            }
+        }
+    }
 
     // Assign selected users
     $('#assignBtn').on('click', function () {

@@ -17,7 +17,6 @@ class Group extends Model
 
     protected $fillable = [
         'position',
-        'campus'
     ];
 
     public $timestamps = true;

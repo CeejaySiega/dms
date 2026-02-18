@@ -4,7 +4,21 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row">
+    <!-- Page Header with Breadcrumb -->
+    <div class="mb-4">
+        <h4 class="fw-bold mb-2"><i class="bx bx-file me-2"></i>My Documents</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-style1">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard-analytics') }}">Home</a>
+                </li>
+                <li class="breadcrumb-item active">My Documents</li>
+            </ol>
+        </nav>
+    </div>
+
+{{-- 
+    {{-- <div class="row">
         <div class="col-md-12">
             <!-- Header -->
             <div class="card mb-4">
@@ -15,11 +29,11 @@
                             <span class="badge bg-danger ms-2">{{ $inboxCount }}</span>
                         @endif
                     </h5>
-                    <a href="{{ route('documents.send') }}" class="btn btn-primary">
-                        <i class="bx bx-plus me-1"></i> Send New Document
+                    <a href="{{ route('documents.send') }}" class="btn btn-primary" title="Send New Document">
+                        <i class="bx bx-plus"></i>
                     </a>
-                </div>
-            </div>
+                </div> 
+            </div> --}}
 
             <!-- Search Bar -->
             <div class="card mb-4">
@@ -60,12 +74,15 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">&nbsp;</label>
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="bx bx-search me-1"></i> Search
+                                <div class="d-flex justify-content-end align-items-center gap-2">
+                                    <button type="submit" class="btn btn-primary" title="Search">
+                                        <i class="bx bx-search"></i>
                                     </button>
-                                    <a href="{{ route('documents.all') }}" class="btn btn-outline-secondary">
-                                        <i class="bx bx-reset me-1"></i> Reset
+                                    <a href="{{ route('documents.all') }}" class="btn btn-outline-secondary" title="Reset Search">
+                                        <i class="bx bx-reset"></i>
+                                    </a>
+                                    <a href="{{ route('documents.send') }}" class="btn btn-primary" title="Send New Document">
+                                         <i class="bx bx-plus"></i>
                                     </a>
                                 </div>
                             </div>
@@ -296,9 +313,9 @@
                     <div class="text-center py-5">
                         <i class="bx bx-folder-open" style="font-size: 64px; color: #ccc;"></i>
                         <p class="text-muted mt-3">No documents found.</p>
-                        <a href="{{ route('documents.send') }}" class="btn btn-primary mt-2">
+                        {{-- <a href="{{ route('documents.send') }}" class="btn btn-primary mt-2">
                             <i class="bx bx-plus me-1"></i> Send Your First Document
-                        </a>
+                        </a> --}}
                     </div>
                     @endif
                 </div>

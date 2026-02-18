@@ -3,6 +3,20 @@
 
 @section('title', 'Users List')
 @section('content')
+<!-- Page Header with Breadcrumb -->
+<div class="container-xxl flex-grow-1 container-p-y">
+    <div class="mb-4">
+        <h4 class="fw-bold mb-2"><i class="bx bx-user me-2"></i>Users Management</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-style1">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard-analytics') }}">Home</a>
+                </li>
+                <li class="breadcrumb-item active">Users Management</li>
+            </ol>
+        </nav>
+    </div>
+</div>
 <!-- Users List Table -->
 <div class="card">
     <div class="card-header d-flex align-items-center justify-content-between py-3">

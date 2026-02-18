@@ -4,7 +4,24 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row">
+    <!-- Page Title -->
+ 
+
+    <!-- Page Header with Breadcrumb -->
+    <div class="mb-4">
+        <h4 class="fw-bold mb-2"><i class="bx bx-envelope me-2"></i>Mail</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-style1">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard-analytics') }}">Home</a>
+                </li>
+                <li class="breadcrumb-item inactive">Mail</li>
+                <li class="breadcrumb-item active">Sent Documents</li>
+            </ol>
+        </nav>
+    </div>
+
+    {{-- <div class="row">
         <div class="col-md-12">
             <!-- Header -->
             <div class="card mb-4">
@@ -20,37 +37,48 @@
                     </a>
                 </div>
             </div>
+    --}}
 
-            <!-- Filter Tabs -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <ul class="nav nav-pills mb-0" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a href="{{ route('documents.all') }}" class="nav-link">
-                                <i class="bx bx-list-ul me-1"></i> All Documents
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a href="{{ route('documents.incoming') }}" class="nav-link">
-                                <i class="bx bxs-inbox me-1"></i> Inbox
-                                @if(($inboxCount ?? 0) > 0)
-                                    <span class="badge bg-warning text-dark ms-1">{{ $inboxCount }}</span>
-                                @endif
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a href="{{ route('documents.received') }}" class="nav-link">
-                                <i class="bx bxs-download me-1"></i> Received
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a href="{{ route('documents.sent') }}" class="nav-link active">
-                                <i class="bx bx-send me-1"></i> Sent
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+    <!-- Mail Card -->
+    {{-- <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">
+                <i class="bx bx-envelope me-2"></i> Mail
+            </h3>
+        </div>
+    </div> --}}
+
+    <!-- Filter Tabs -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <ul class="nav nav-pills mb-0" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a href="{{ route('documents.incoming') }}" class="nav-link">
+                            <i class="bx bxs-inbox me-1"></i> Inbox
+                            @if(($inboxCount ?? 0) > 0)
+                                <span class="badge bg-warning text-dark ms-1">{{ $inboxCount }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a href="{{ route('documents.received') }}" class="nav-link">
+                            <i class="bx bxs-download me-1"></i> Received
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a href="{{ route('documents.sent') }}" class="nav-link active">
+                            <i class="bx bx-send me-1"></i> Sent
+                        </a>
+                    </li>
+                </ul>
+                <a href="{{ route('documents.send') }}" class="btn btn-primary">
+                    <i class="bx bx-plus me-1"></i> Send Document
+                </a>
             </div>
+        </div>
+    </div>
+
 
             <!-- Documents List -->
             <div class="card">
@@ -318,9 +346,6 @@
                     <div class="text-center py-5">
                         <i class="bx bx-send" style="font-size: 64px; color: #ccc;"></i>
                         <p class="text-muted mt-3">No sent documents found.</p>
-                        <a href="{{ route('documents.send') }}" class="btn btn-primary mt-2">
-                            <i class="bx bx-plus me-1"></i> Send Your First Document
-                        </a>
                     </div>
                     @endif
                 </div>

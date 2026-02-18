@@ -29,9 +29,9 @@ class GroupController extends Controller
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('groups')->where(fn ($query) => $query->where('campus', $request->campus))
+                // Rule::unique('groups')->where(fn ($query) => $query->where('campus', $request->campus))
             ],
-            'campus' => 'required|string|max:100'
+            // 'campus' => 'required|string|max:100'
         ]);
 
         $group = Group::create($validated);
@@ -53,11 +53,11 @@ class GroupController extends Controller
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('groups')
-                    ->where(fn ($query) => $query->where('campus', $request->campus))
-                    ->ignore($group->group_id, 'group_id')
+                // Rule::unique('groups')
+                //     ->where(fn ($query) => $query->where('campus', $request->campus))
+                //     ->ignore($group->group_id, 'group_id')
             ],
-            'campus' => 'required|string|max:100'
+            // 'campus' => 'required|string|max:100'
         ]);
 
         $group->update($validated);

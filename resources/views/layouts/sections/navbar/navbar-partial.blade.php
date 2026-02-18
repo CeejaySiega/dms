@@ -11,30 +11,35 @@ use Illuminate\Support\Facades\Route;
         <span class="app-brand-text demo menu-text fw-bold text-heading">{{config('variables.templateName')}}</span>
     </a>
 </div>
-@endif
-
-<!-- ! Not required for layout-without-menu -->
+@else
 @if(!isset($navbarHideToggle))
-<div class="layout-menu-toggle navbar-nav align-items-xl-center me-4 me-xl-0 {{ isset($contentNavbar) ?' d-xl-none ' : '' }}">
+<div class="layout-menu-toggle navbar-nav align-items-center d-flex d-lg-none me-4">
     <a class="nav-item nav-link px-0 me-xl-6" href="javascript:void(0)">
         <i class="icon-base bx bx-menu icon-md"></i>
     </a>
 </div>
 @endif
+<!-- Navbar Brand Text -->
+<div class="navbar-brand d-flex align-items-center">
+    <span class="app-brand-text menu-text text-primary text-heading">Document Management System</span>
+</div>
+@endif
+
+<!-- ! Not required for layout-without-menu -->
+{{-- @if(!isset($navbarHideToggle))
+<div class="layout-menu-toggle navbar-nav align-items-xl-center me-4 me-xl-0 {{ isset($contentNavbar) ?' d-xl-none ' : '' }}">
+    <a class="nav-item nav-link px-0 me-xl-6" href="javascript:void(0)">
+        <i class="icon-base bx bx-menu icon-md"></i>
+    </a>
+</div>
+@endif --}}
 
 <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
-    <!-- Search -->
-    <div class="navbar-nav align-items-center">
-        <div class="nav-item d-flex align-items-center">
-            <i class="icon-base bx bx-search icon-md"></i>
-            <input type="text" class="form-control border-0 shadow-none ps-1 ps-sm-2" placeholder="Search..." aria-label="Search...">
-        </div>
-    </div>
-    <!-- /Search -->
+    <!-- Search removed -->
     <ul class="navbar-nav flex-row align-items-center ms-auto">
         <!-- Place this tag where you want the button to render. -->
         <li class="nav-item lh-1 me-4">
-            <a class="github-button" href="{{config('variables.repository')}}" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star themeselection/sneat-html-laravel-admin-template-free on GitHub">Star</a>
+            {{-- <a class="github-button" href="{{config('variables.repository')}}" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star themeselection/sneat-html-laravel-admin-template-free on GitHub">Star</a> --}}
         </li>
 
         <!-- User -->

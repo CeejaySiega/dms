@@ -4,18 +4,29 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
+    <!-- Page Header with Breadcrumb -->
+    <div class="mb-4">
+        <h4 class="fw-bold mb-2"><i class="bx bx-group me-2"></i>Group Management</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-style1">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard-analytics') }}">Home</a>
+                </li>
+                <li class="breadcrumb-item active">Group Management</li>
+            </ol>
+        </nav>
+    </div>
     <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0"><i class="bx bx-group me-2"></i>Groups Management</h4>
-                <div class="d-flex align-items-center gap-2">
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2" >
+                    <div class ="bx bx-search me-2"></div>
                     <input type="text" id="positionSearch" class="form-control" placeholder="Search Group" style="max-width: 200px;">
-                    <input type="text" id="campusSearch" class="form-control" placeholder="Search campus" style="max-width: 200px;">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
-                        <i class="bx bx-plus me-1"></i> Add New Group
-                    </button>
                 </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                    <i class="bx bx-plus me-1"></i> Add New Group
+                </button>
             </div>
         </div>
     </div>
@@ -27,7 +38,6 @@
                     <tr>
                         <th>Group ID</th>
                         <th>Group Name</th>
-                        <th>Campus</th>
                         <th class="text-center">Members</th>
                         <th>Created at</th>
                         <th class="text-center">Actions</th>
@@ -38,15 +48,6 @@
                     <tr>
                         <td><span class="fw-semibold">#{{ $group->group_id }}</span></td>
                         <td>{{ $group->position }}</td>
-                        <td>
-                        @if($group->campus)
-                            <span class="badge bg-label-{{ getCampusColor($group->campus) }}">
-                                {{ getCampusName($group->campus) }}
-                            </span>
-                        @else
-                            <span class="badge bg-label-secondary">—</span>
-                        @endif
-                    </td>
                         <td class="text-center">
                             <span class="badge bg-label-info">{{ $group->members_count ?? 0 }}</span>
                         </td>
@@ -100,11 +101,11 @@
                     @csrf
                     
                     <div class="mb-3">
-                        <label class="form-label">Position <span class="text-danger">*</span></label>
+                        <label class="form-label">Group Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" name="position" required>
                     </div>
                     
-                    <div class="mb-3">
+                    {{-- <div class="mb-3">
                         <label class="form-label">Campus <span class="text-danger">*</span></label>
                         <select class="form-select" name="campus" required>
                             <option value="">-- Select Campus --</option>
@@ -112,7 +113,7 @@
                                 <option value="{{ $abbreviation }}">{{ $campus['Campus'] }} ({{ $abbreviation }})</option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> --}}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -137,11 +138,11 @@
                     @method('PUT')
                     
                     <div class="mb-3">
-                        <label class="form-label">Position <span class="text-danger">*</span></label>
+                        <label class="form-label">Group Name<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" name="position" id="editGroupPosition" required>
                     </div>
 
-                    <div class="mb-3">
+                    {{-- <div class="mb-3">
                         <label class="form-label">Campus <span class="text-danger">*</span></label>
                         <select class="form-select" name="campus" id="editGroupCampus" required>
                             <option value="">-- Select Campus --</option>
@@ -149,7 +150,7 @@
                                 <option value="{{ $abbreviation }}">{{ $campus['Campus'] }} ({{ $abbreviation }})</option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> --}}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -191,8 +192,8 @@ $(document).ready(function() {
         e.preventDefault();
         const formData = {
             position: $('input[name="position"]').val(),
-            campus: $('select[name="campus"]').val(),
-            _token: '{{ csrf_token() }}'
+            // campus: $('select[name="campus"]').val(),
+             _token: '{{ csrf_token() }}'
         };
 
         $.ajax({
@@ -234,7 +235,7 @@ $(document).ready(function() {
         currentGroupId = $(this).data('group-id');
         
         $('#editGroupPosition').val($(this).data('position'));
-        $('#editGroupCampus').val($(this).data('campus'));
+        // $('#editGroupCampus').val($(this).data('campus'));
         
         const editModal = new bootstrap.Modal(document.getElementById('editGroupModal'));
         editModal.show();
@@ -245,7 +246,7 @@ $(document).ready(function() {
         e.preventDefault();
         const formData = {
             position: $('#editGroupPosition').val(),
-            campus: $('#editGroupCampus').val(),
+            // campus: $('#editGroupCampus').val(),
             _token: '{{ csrf_token() }}'
         };
 

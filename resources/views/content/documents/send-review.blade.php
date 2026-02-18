@@ -4,14 +4,27 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row">
+    <!-- Page Header with Breadcrumb -->
+    <div class="mb-4">
+        <h4 class="fw-bold mb-2">Document Management System</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-style1">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard-analytics') }}">Home</a>
+                </li>
+                <li class="breadcrumb-item active">Review Document</li>
+            </ol>
+        </nav>
+    </div>
+
+    {{-- <div class="row">
         <div class="col-md-12">
             <!-- Header -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">Review and Send Document</h5>
                 </div>
-            </div>
+            </div> --}}
 
             <div class="row">
                 <!-- Left Column: Document Review -->

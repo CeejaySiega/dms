@@ -6,11 +6,22 @@
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row">
         <div class="col-md-12">
-            <!-- Header -->
+            <!-- Header -->   
+               <div class="mb-4">
+                    <h4 class="fw-bold mb-2"><i class="bx bx-archive me-2"></i>Archived Documents</h4>
+                    <nav aria-label="breadcrumb">
+                         <ol class="breadcrumb breadcrumb-style1">
+                         <li class="breadcrumb-item">
+                            <a href="{{ route('dashboard-analytics') }}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item active">Archived Documents </li>
+                        </ol>
+                    </nav>
+                </div>
             <div class="card mb-4">
                 <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
                     <div>
-                        <h5 class="mb-1"><i class="bx bx-archive me-2"></i>Archive</h5>
+                        {{-- <h5 class="mb-1"><i class="bx bx-archive me-2"></i>Archive</h5> --}}
                         <p class="text-muted mb-0">Review archived files and restore them when needed.</p>
                     </div>
                     <div class="d-flex align-items-center gap-4 mt-3 mt-md-0">
@@ -22,9 +33,9 @@
                             <div class="text-muted small">Showing</div>
                             <div class="h5 mb-0">{{ $documents->count() }}</div>
                         </div>
-                        <a href="{{ route('documents.send') }}" class="btn btn-primary">
+                        {{-- <a href="{{ route('documents.send') }}" class="btn btn-primary">
                             <i class="bx bx-plus me-1"></i> Send New Document
-                        </a>
+                        </a> --}}
                     </div>
                 </div>
             </div>

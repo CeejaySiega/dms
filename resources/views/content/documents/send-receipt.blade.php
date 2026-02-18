@@ -4,6 +4,19 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
+    <!-- Page Header with Breadcrumb -->
+    <div class="mb-4">
+        <h4 class="fw-bold mb-2">Document Management System</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-style1">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard-analytics') }}">Home</a>
+                </li>
+                <li class="breadcrumb-item active">Document Receipt</li>
+            </ol>
+        </nav>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-8">
             <!-- Success Header -->
