@@ -232,10 +232,13 @@
                     </div>
                     @endif
 
-                    <!-- Action Buttons -->
+                    @php
+                        // Use Storage::url to generate the correct public URL for the file
+                        $fileUrl = urlencode(Storage::url($document->file_path));
+                    @endphp
                     <div class="d-flex justify-content-center gap-2 mt-4 pt-4 border-top">
-                        <a href="{{ route('documents.show', encryptId($document->document_id)) }}" class="btn btn-primary">
-                            <i class="bx bx-show me-1"></i> View Document
+                        <a href="https://view.officeapps.live.com/op/view.aspx?src={{ $fileUrl }}" target="_blank" class="btn btn-primary">
+                            <i class="bx bx-show me-1"></i> View in Word Online
                         </a>
                         <a href="{{ route('documents.sent') }}" class="btn btn-success">
                             <i class="bx bx-list-ul me-1"></i> View Sent Documents
@@ -254,8 +257,8 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
-</div>
 
 <style>
     @media print {
