@@ -47,11 +47,22 @@
                     <h5 class="mb-0">Available Users</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
+                    <div class="mb-3 d-flex gap-2" style="align-items: flex-end;">
                         <input type="text" class="form-control" id="userSearch" placeholder="Search by name, email, or campus">
-                    
+                        <select class="form-select" id="campusFilter" style="flex: 0 0 250px;">
+                            <option value="">-- All Campuses --</option>
+                            @php
+                                $campuses = \App\Helpers\Globalpreferrence::Campuses();
+                            @endphp
+                            @foreach($campuses as $abbreviation => $campus)
+                            <option value="{{ $campus['ID'] }}">{{ $campus['Campus'] }} ({{ $abbreviation }})</option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     <div class="list-group" id="userList" style="max-height: 420px; overflow-y: auto;">
+
+
                         @foreach($users as $user)
                             @php
                                 $isMember = in_array($user->user_id, $memberUserIds, true);
@@ -60,7 +71,7 @@
                                 $campusCode = $user->employee ? strtolower($user->employee->campus) : '';
                                 $searchText = strtolower(($user->name ?? '') . ' ' . ($user->email ?? '') . ' ' . $employeeName . ' ' . $campusCode);
                             @endphp
-                            <label class="list-group-item d-flex align-items-start gap-2 user-item" data-search="{{ $searchText }}" data-user-id="{{ encryptId($user->user_id) }}">
+                            <label class="list-group-item d-flex align-items-start gap-2 user-item" data-search="{{ $searchText }}" data-campus="{{ $user->employee ? $user->employee->campus : '' }}" data-campus-id="{{ $user->employee ? getCampusId($user->employee->campus) : '' }}" data-user-id="{{ encryptId($user->user_id) }}">
                                 <input class="form-check-input mt-1 user-checkbox" type="checkbox" value="{{ encryptId($user->user_id) }}" {{ $isMember ? 'disabled' : '' }}>
                                 <span>
                                     @if($user->employee)
@@ -85,7 +96,6 @@
                                 @endif
                             </label>
                         @endforeach
-                    </div>
                     </div>
 
                     <button type="button" class="btn btn-primary mt-3" id="assignBtn">
@@ -145,37 +155,44 @@ $(document).ready(function () {
         filterUsers();
     });
 
+    // Campus filter functionality
+    $('#campusFilter').on('change', function() {
+        filterUsers();
+    });
+
     function filterUsers() {
         const searchTerm = $('#userSearch').val().toLowerCase().trim();
+        const campusFilter = $('#campusFilter').val().trim();
         
-        if (searchTerm.length === 0) {
-            // If search is empty, restore all items
-            $('#userList').html(originalHTML);
-            $('#noResultsMessage').remove();
-        } else {
-            // Filter and show only matching items
-            const itemsToKeep = [];
-            const tempDiv = $('<div>').html(originalHTML);
+        // Filter and show matching items
+        const itemsToKeep = [];
+        const tempDiv = $('<div>').html(originalHTML);
+        
+        tempDiv.find('.user-item').each(function () {
+            const searchData = $(this).attr('data-search') || '';
+            const campusId = $(this).attr('data-campus-id') || '';
             
-            tempDiv.find('.user-item').each(function () {
-                const searchData = $(this).attr('data-search') || '';
-                
-                if (searchData.includes(searchTerm)) {
-                    itemsToKeep.push($(this));
-                }
-            });
+            // Check if item matches search term (if any)
+            const matchesSearch = searchTerm.length === 0 || searchData.includes(searchTerm);
             
-            // Remove all items
-            $('#userList').html('');
+            // Check if item matches campus filter (if any)
+            const matchesCampus = campusFilter.length === 0 || campusId === campusFilter;
             
-            if (itemsToKeep.length === 0) {
-                // Show no results message
-                $('#userList').html('<div id="noResultsMessage" class="text-center text-muted py-4">No users found matching your search.</div>');
-            } else {
-                itemsToKeep.forEach(function(item) {
-                    $('#userList').append(item);
-                });
+            if (matchesSearch && matchesCampus) {
+                itemsToKeep.push($(this));
             }
+        });
+        
+        // Remove all items
+        $('#userList').html('');
+        
+        if (itemsToKeep.length === 0) {
+            // Show no results message
+            $('#userList').html('<div id="noResultsMessage" class="text-center text-muted py-4">No users found matching your filters.</div>');
+        } else {
+            itemsToKeep.forEach(function(item) {
+                $('#userList').append(item);
+            });
         }
     }
 

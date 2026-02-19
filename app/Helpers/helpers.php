@@ -247,6 +247,47 @@ if (!function_exists('getCampusName')) {
     }
 }
 
+if (!function_exists('getCampusId')) {
+    /**
+     * Get campus ID from Globalpreferrence by code, abbreviation, or name
+     * 
+     * @param string|int|null $campusValue
+     * @return int|null
+     */
+    function getCampusId($campusValue)
+    {
+        if (!$campusValue) {
+            return null;
+        }
+
+        $campuses = \App\Helpers\Globalpreferrence::Campuses();
+        
+        // Check if value is numeric (ID from database)
+        if (is_numeric($campusValue)) {
+            foreach ($campuses as $campus) {
+                if ($campus['ID'] == $campusValue) {
+                    return $campus['ID'];
+                }
+            }
+        }
+        
+        // Check if value is a key (code) like 'SG', 'MCC', etc.
+        if (isset($campuses[$campusValue])) {
+            return $campuses[$campusValue]['ID'];
+        }
+        
+        // Check if value is a campus name directly
+        foreach ($campuses as $campus) {
+            if ($campus['Campus'] === $campusValue) {
+                return $campus['ID'];
+            }
+        }
+        
+        // Return null if not found
+        return null;
+    }
+}
+
 if (!function_exists('getCampusColor')) {
     /**
      * Get campus color from Globalpreferrence by ID or code
