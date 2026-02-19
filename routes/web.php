@@ -144,6 +144,7 @@ Route::middleware('auth')->group(function () {
         // Assign users routes (must come before {group} routes)
         Route::get('/assign/{group}', [AssignUserController::class, 'show'])->name('assign.show');
         Route::get('/assign/{group}/members', [AssignUserController::class, 'getMembers'])->name('assign.getMembers');
+        Route::get('/assign/{group}/users', [AssignUserController::class, 'getUsers'])->name('assign.getUsers');
         Route::post('/assign/{group}', [AssignUserController::class, 'assignUsers'])->name('assign.users');
         Route::delete('/assign/{group}', [AssignUserController::class, 'removeUsers'])->name('assign.removeUsers');
         Route::post('/assign/bulk-assign', [AssignUserController::class, 'bulkAssign'])->name('assign.bulk');

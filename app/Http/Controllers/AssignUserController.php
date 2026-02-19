@@ -10,6 +10,27 @@ use Illuminate\Http\Request;
 class AssignUserController extends Controller
 {
     /**
+     * Get available users for a group (for AJAX refresh)
+     */
+    public function getUsers(Group $group)
+    {
+        $users = User::with('employee')->get();
+        $members = $group->members()->with('user')->get();
+        // Load all group memberships for each user
+        foreach ($users as $user) {
+            $user->group_memberships = Group_user::where('user_id', $user->user_id)->count();
+            $user->group_list = Group_user::where('user_id', $user->user_id)
+                ->with('group')
+                ->get()
+                ->pluck('group')
+                ->all();
+        }
+        $memberUserIds = $members->pluck('user_id')->all();
+        $html = view('content.groups.partials.available-users-list', compact('users', 'memberUserIds'))->render();
+        return response()->json(['html' => $html]);
+    }
+
+    /**
      * Show the assign users page for a group
      */
     public function show(Group $group)
@@ -30,16 +51,21 @@ class AssignUserController extends Controller
         return view('content.groups.assign-users', compact('group', 'users', 'members'));
     }
 
+
+
+
+
+    
     /**
      * Get members of a group
      */
     public function getMembers(Group $group)
     {
         $members = $group->members()->with('user')->get();
-
+        $html = view('content.groups.partials.assigned-users-list', compact('members'))->render();
         return response()->json([
             'success' => true,
-            'members' => $members
+            'html' => $html
         ]);
     }
 
