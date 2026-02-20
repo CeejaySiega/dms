@@ -9,6 +9,8 @@ use App\Models\Department;
 use App\Models\Group;
 use App\Models\Group_user;
 use App\Models\SentDocument;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\DocumentNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -195,6 +197,16 @@ class DocumentController extends Controller
             ]);
         }
 
+                // Send email notification to each recipient (HTML, with details and link)
+                    foreach ($validated['user_ids'] as $userId) {
+                    $recipientUser = \App\Models\User::find($userId);
+                    if ($recipientUser && $recipientUser->email) {
+                    $link = $recipientUser->getInboxLink();
+                    Mail::to($recipientUser->email)->queue(
+                    new DocumentNotification($document, $recipientUser->name ?? 'User', $link)
+                );
+            }
+        }
         // Clear session data
         session()->forget('document_data');
 
@@ -279,7 +291,7 @@ class DocumentController extends Controller
             'priority' => $validated['priority'],
         ]);
 
-        foreach ($userIds as $userId) {
+        foreach ($validated['user_ids'] as $userId) {
             $recipient = \App\Models\Recipient::create([
                 'route_id' => $route->route_id,
                 'user_id' => $userId,
@@ -298,6 +310,17 @@ class DocumentController extends Controller
                 'status' => 'pending',
                 'sent_at' => now(),
             ]);
+        }
+
+        // Send email notification to each recipient (HTML, with details and link)
+        foreach ($validated['user_ids'] as $userId) {
+            $recipientUser = \App\Models\User::find($userId);
+            if ($recipientUser && $recipientUser->email) {
+                $link = $recipientUser->getInboxLink();
+                Mail::to($recipientUser->email)->queue(
+                    new DocumentNotification($document, $recipientUser->name ?? 'User', $link)
+                );
+            }
         }
 
         session()->forget('document_data');

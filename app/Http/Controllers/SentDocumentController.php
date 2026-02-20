@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Mail;
+use App\Mail\DocumentNotification;
 use App\Models\Document;
 use App\Models\Recipient;
 use App\Models\SentDocument;
@@ -17,9 +18,22 @@ class SentDocumentController extends Controller
     {
         $documents = Document::where('user_id', Auth::id())
             ->where('status', '!=', 'archived')
-            ->with(['documentType'])
+            ->with(['documentType', 'recipients'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
+
+        // Notify receivers for each sent document (example logic)
+        foreach ($documents as $document) {
+            foreach ($document->recipients as $recipient) {
+                $user = \App\Models\User::find($recipient->user_id);
+                if ($user && $user->email) {
+                    $link = $user->getInboxLink();
+                    Mail::to($user->email)->queue(
+                        new DocumentNotification($document, $user->name ?? 'User', $link)
+                    );
+                }
+            }
+        }
 
         return view('content.documents.sent-documents', compact('documents'));
     }
@@ -39,78 +53,18 @@ class SentDocumentController extends Controller
             abort(403, 'Only the owner can delete this document');
         }
 
-        try {
-            $routes = \App\Models\DocumentRoute::where('document_id', $document->document_id)->get();
-            $routeIds = $routes->pluck('route_id');
-
-            $actedCount = Recipient::whereIn('route_id', $routeIds)
-                ->whereIn('action', ['receive', 'approved', 'rejected'])
-                ->count();
-
-            $pendingRecipients = Recipient::whereIn('route_id', $routeIds)
-                ->where(function ($query) {
-                    $query->whereNull('action')->orWhere('action', 'pending');
-                })
-                ->get();
-
-            if ($pendingRecipients->isEmpty()) {
-                if (request()->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No pending recipients to unsend.'
-                    ], 400);
-                }
-
-                return redirect()->back()->with('error', 'No pending recipients to unsend.');
-            }
-
-            SentDocument::whereIn('route_id', $routeIds)
-                ->whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
-                ->delete();
-
-            Recipient::whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
-                ->delete();
-
-            $remainingCount = Recipient::whereIn('route_id', $routeIds)->count();
-
-            if ($remainingCount === 0 && $actedCount === 0) {
-                SentDocument::whereIn('route_id', $routeIds)->delete();
-                foreach ($routes as $route) {
-                    $route->delete();
-                }
-
-                if (Storage::disk('public')->exists($document->file_path)) {
-                    Storage::disk('public')->delete($document->file_path);
-                }
-
-                SentDocument::where('document_id', $document->document_id)->delete();
-                $document->forceDelete();
-            } else {
-                $document->update(['status' => $this->getStatusFromRecipients($document)]);
-            }
-
-            if (request()->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => $actedCount > 0
-                        ? 'Pending recipients were removed. Recipients who already acted remain.'
-                        : 'Document unsent successfully!'
-                ]);
-            }
-
-            return redirect()->back()->with('success', $actedCount > 0
-                ? 'Pending recipients were removed. Recipients who already acted remain.'
-                : 'Document deleted successfully!');
-        } catch (\Exception $e) {
-            if (request()->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to delete document: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return redirect()->back()->with('error', 'Failed to delete document: ' . $e->getMessage());
-        }
+        // ...existing code...
+        // Example: Send notification when document is deleted for pending recipients
+        // foreach ($pendingRecipients as $recipient) {
+        //     $user = \App\Models\User::find($recipient->user_id);
+        //     if ($user && $user->email) {
+        //         $link = $user->getInboxLink();
+        //         Mail::to($user->email)->queue(
+        //             new DocumentNotification($document, $user->name ?? 'User', $link)
+        //         );
+        //     }
+        // }
+        // ...existing code...
     }
 
     /**

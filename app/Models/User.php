@@ -13,6 +13,14 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Get the inbox link for this user.
+     */
+    public function getInboxLink()
+    {
+        return url('/documents/incoming');
+    }
+
+    /**
      * The primary key for the model.
      *
      * @var string

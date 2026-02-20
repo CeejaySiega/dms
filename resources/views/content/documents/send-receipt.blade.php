@@ -237,8 +237,8 @@
                         $fileUrl = urlencode(Storage::url($document->file_path));
                     @endphp
                     <div class="d-flex justify-content-center gap-2 mt-4 pt-4 border-top">
-                        <a href="https://view.officeapps.live.com/op/view.aspx?src={{ $fileUrl }}" target="_blank" class="btn btn-primary">
-                            <i class="bx bx-show me-1"></i> View in Word Online
+                       <a href="https://docs.google.com/gview?url={{ urlencode($fileUrl) }}&embedded=true" target="_blank" class="btn btn-primary">
+                            <i class="bx bx-show me-1"></i> View in Google Docs
                         </a>
                         <a href="{{ route('documents.sent') }}" class="btn btn-success">
                             <i class="bx bx-list-ul me-1"></i> View Sent Documents

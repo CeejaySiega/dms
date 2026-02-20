@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,8 +25,16 @@ class AppServiceProvider extends ServiceProvider
         
         // Register custom route model bindings with encrypted ID support
         $this->registerEncryptedRouteBindings();
-    }
+        //  if (app()->environment('local')) {
+        // URL::forceScheme('https');
     
+    }
+//     public function boot()
+// {
+//     if (app()->environment('local')) {
+//         URL::forceScheme('https');
+//     }
+// }
     /**
      * Register route model bindings that support encrypted IDs
      */
@@ -72,4 +81,5 @@ class AppServiceProvider extends ServiceProvider
             require_once $helperPath;
         }
     }
+    
 }

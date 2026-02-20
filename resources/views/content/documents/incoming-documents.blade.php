@@ -166,6 +166,12 @@
                                                             @disabled($isFinal)>
                                                         <i class="bx bx-receipt"></i>
                                                     </button>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-secondary"
+                                                            title="View Details"
+                                                            onclick="window.location='{{ route('documents.show', encryptId($document->document_id)) }}'">
+                                                        <i class="bx bx-show me-1"></i>
+                                                    </button>
                                                 </form>
                                             </div>
                                         </td>
