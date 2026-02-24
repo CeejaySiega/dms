@@ -136,7 +136,7 @@
       "slug": "groups.index"
     },
     {
-      "url": "/users/activity",
+      "url": "/user/activity-logs",
       "name": "User Activity Log",
       "icon": "menu-icon icon-base bx bx-history",
       "slug": "users.activity"

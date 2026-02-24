@@ -67,11 +67,16 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleC
 
 // Protected Routes (Require Authentication)
 Route::middleware('auth')->group(function () {
+        // User Activity Logs
+        Route::get('/user/activity-logs', [\App\Http\Controllers\UserActivityLogController::class, 'index'])->name('user.activity-logs');
     // Main Dashboard
     Route::get('/dashboard', [Analytics::class, 'index'])->name('dashboard-analytics');
     
     // Logout
     Route::post('/logout', [LoginBasic::class, 'logout'])->name('logout');
+
+    // Admin Activity Logs
+    Route::get('/admin/activity-logs', [\App\Http\Controllers\AdminActivityLogController::class, 'index'])->name('admin.activity-logs');
 
     // layout
     Route::get('/layouts/without-menu', [WithoutMenu::class, 'index'])->name('layouts-without-menu');

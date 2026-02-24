@@ -39,6 +39,15 @@ class SentDocumentController extends Controller
             }
         }
 
+        // Log activity for viewing sent documents
+        \App\Models\ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'view_sent_documents',
+            'description' => 'Viewed sent documents list',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+
         return view('content.documents.sent-documents', compact('documents'));
     }
 
