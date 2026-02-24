@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Storage;
 
 class SentDocumentController extends Controller
 {
+
+
+    
+
     /**
      * Display all sent documents by current user
      */

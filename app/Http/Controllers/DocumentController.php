@@ -291,38 +291,42 @@ class DocumentController extends Controller
             'priority' => $validated['priority'],
         ]);
 
-        foreach ($validated['user_ids'] as $userId) {
-            $recipient = \App\Models\Recipient::create([
-                'route_id' => $route->route_id,
-                'user_id' => $userId,
-                'role' => 'recipient',
-                'action' => 'pending',
-                'sent_at' => now(),
-            ]);
+       foreach ($userIds as $userId) {
 
-            SentDocument::create([
-                'user_id' => Auth::id(),
-                'document_id' => $document->document_id,
-                'route_id' => $route->route_id,
-                'recipient_id' => $recipient->recipient_id,
-                'file_path' => $document->file_path,
-                'purpose' => $document->purpose,
-                'status' => 'pending',
-                'sent_at' => now(),
-            ]);
-        }
+    $recipient = \App\Models\Recipient::create([
+        'route_id' => $route->route_id,
+        'user_id' => $userId,
+        'role' => 'recipient',
+        'action' => 'pending',
+        'sent_at' => now(),
+    ]);
 
-        // Send email notification to each recipient (HTML, with details and link)
-        foreach ($validated['user_ids'] as $userId) {
-            $recipientUser = \App\Models\User::find($userId);
-            if ($recipientUser && $recipientUser->email) {
-                $link = $recipientUser->getInboxLink();
-                Mail::to($recipientUser->email)->queue(
-                    new DocumentNotification($document, $recipientUser->name ?? 'User', $link)
-                );
-            }
-        }
+    SentDocument::create([
+        'user_id' => Auth::id(),
+        'document_id' => $document->document_id,
+        'route_id' => $route->route_id,
+        'recipient_id' => $recipient->recipient_id,
+        'file_path' => $document->file_path,
+        'purpose' => $document->purpose,
+        'status' => 'pending',
+        'sent_at' => now(),
+    ]);
 
+    // ✅ SEND EMAIL HERE
+    $recipientUser = \App\Models\User::find($userId);
+
+    if ($recipientUser && $recipientUser->email) {
+        $link = $recipientUser->getInboxLink();
+
+        Mail::to($recipientUser->email)->queue(
+            new DocumentNotification(
+                $document,
+                $recipientUser->name ?? 'User',
+                $link
+            )
+        );
+    }
+}
         session()->forget('document_data');
 
         return response()->json([
