@@ -20,11 +20,18 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">My Activity Logs</h5>
+                    <form action="{{ route('user.activity-logs.delete') }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-sm btn-danger">Delete All Logs</button>
+                    </form>
+
             </div>
             <div class="table-responsive text-nowrap">
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
+                            <th>User</th>
                             <th>Action</th>
                             <th>Description</th>
                             <th>IP Address</th>
@@ -35,6 +42,19 @@
                     <tbody class="table-border-bottom-0">
                         @forelse($logs as $log)
                             <tr>
+                                <td>
+                                    @php
+                                        $employee = null;
+                                        if ($log->user && $log->user->employee) {
+                                            $employee = $log->user->employee;
+                                        } elseif ($log->user_id) {
+                                            $employee = \App\Models\Employee::where('user_id', $log->user_id)->first();
+                                        }
+                                    @endphp
+                                    <span class="fw-semibold">
+                                        {{ $employee ? ($employee->firstname . ' ' . $employee->lastname) : 'N/A' }}
+                                    </span>
+                                </td>
                                 <td><span class="badge bg-label-primary me-1">{{ $log->action }}</span></td>
                                 <td>{{ $log->description }}</td>
                                 <td>{{ $log->ip_address }}</td>

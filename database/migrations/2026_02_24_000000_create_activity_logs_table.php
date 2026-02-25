@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('action');
-            $table->text('description')->nullable();
+            $table->text('description');
             $table->string('ip_address')->nullable();
             $table->string('user_agent')->nullable();
             $table->timestamps();
@@ -22,5 +22,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('activity_logs');
+
     }
+    
+
 };

@@ -15,4 +15,9 @@ class UserActivityLogController extends Controller
             ->paginate(30);
         return view('content.user.activity-logs', compact('logs'));
     }
+    public function deleteAll()
+    {
+        ActivityLog::where('user_id', Auth::id())->delete();
+        return redirect()->route('user.activity-logs')->with('success', 'All activity logs have been deleted.');
+    }
 }

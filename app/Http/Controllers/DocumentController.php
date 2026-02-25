@@ -23,6 +23,7 @@ class DocumentController extends Controller
     public function create()
     {
         $documentTypes = DocumentType::all();
+        // logActivity(auth()->id(), 'add', 'Opened send document form');
         return view('content.documents.send-document', compact('documentTypes'));
     }
 
@@ -88,7 +89,7 @@ class DocumentController extends Controller
             ->where('user_id', '!=', Auth::id())
             ->get();
         $departments = Department::all();
-
+        // logActivity(auth()->id(), 'send', 'Opened individual send form');
         return view('content.documents.send-individual', compact('users', 'departments'));
     }
 
@@ -103,7 +104,7 @@ class DocumentController extends Controller
         }
 
         $groups = Group::withCount('members')->get();
-
+        // logActivity(auth()->id(), 'send', 'Opened group send form');
         return view('content.documents.send-group', compact('groups'));
     }
 
@@ -165,6 +166,7 @@ class DocumentController extends Controller
             'purpose' => $purpose,
             'status' => 'pending',
         ]);
+        logActivity(auth()->id(), 'add', 'Created and sent document');
 
         // Create document route
         $route = \App\Models\DocumentRoute::create([
@@ -282,6 +284,7 @@ class DocumentController extends Controller
             'purpose' => $purpose,
             'status' => 'pending',
         ]);
+        logActivity(auth()->id(), 'add', 'Created and sent document to group');
 
         $route = \App\Models\DocumentRoute::create([
             'user_id' => Auth::id(),

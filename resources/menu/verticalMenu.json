@@ -17,35 +17,15 @@
     },
     {
       "name": "Mail",
+      "url": "/documents/incoming",
       "icon": "menu-icon icon-base bx bx-envelope",
-      "slug": [
-        "documents.incoming",
-        "documents.received",
-        "documents.sent"
-      ],
-      "submenu": [
-        {
-          "url": "/documents/incoming",
-          "name": "Incoming Documents",
-          "slug": "documents.incoming"
-        },
-        {
-          "url": "/documents/received",
-          "name": "Received Documents",
-          "slug": "documents.received"
-        },
-        {
-          "url": "/documents/sent",
-          "name": "Sent Documents",
-          "slug": "documents.sent"
-        }
-      ]
+      "slug": "documents.incoming"
     },
     {
       "url": "/documents/archived",
       "name": "Archived Documents",
       "icon": "menu-icon icon-base bx bx-archive",
-      "slug": "documents-archived"
+      "slug": "documents.archived"
     },
     {
       "url": "/documents/all",
@@ -54,74 +34,7 @@
       "slug": "documents.all"
     },
     {
-      "menuHeader": "WORKFLOW",
-      "visible": false
-    },
-    {
-      "url": "/routing/pending",
-      "name": "Pending Routes",
-      "icon": "menu-icon icon-base bx bx-time",
-      "slug": "routing-pending",
-      "visible": false
-    },
-    {
-      "url": "/routing/active",
-      "name": "Active Routes",
-      "icon": "menu-icon icon-base bx bx-transfer",
-      "slug": "routing-active",
-      "visible": false
-    },
-    {
-      "url": "/routing/completed",
-      "name": "Completed Routes",
-      "icon": "menu-icon icon-base bx bx-check-circle",
-      "slug": "routing-completed",
-      "visible": false
-    },
-    {
-      "url": "/routing/tracking",
-      "name": "Route Tracking",
-      "icon": "menu-icon icon-base bx bx-search",
-      "slug": "routing-tracking",
-      "visible": false
-    },
-    {
-      "url": "/routing/history",
-      "name": "Routing History",
-      "icon": "menu-icon icon-base bx bx-history",
-      "slug": "routing-history",
-      "visible": false
-    },
-    {
-      "url": "/workflow/templates",
-      "name": "Workflow Templates",
-      "icon": "menu-icon icon-base bx bx-git-branch",
-      "slug": "workflow-templates",
-      "visible": false
-    },
-    {
-      "url": "/workflow/approval-chains",
-      "name": "Approval Chains",
-      "icon": "menu-icon icon-base bx bx-check-shield",
-      "slug": "workflow-approval-chains",
-      "visible": false
-    },
-    {
-      "url": "/workflow/rules",
-      "name": "Routing Rules",
-      "icon": "menu-icon icon-base bx bx-ruler",
-      "slug": "workflow-rules",
-      "visible": false
-    },
-    {
-      "url": "/workflow/priorities",
-      "name": "Priority Settings",
-      "icon": "menu-icon icon-base bx bx-flag",
-      "slug": "workflow-priorities",
-      "visible": false
-    },
-    {
-      "menuHeader": "USERS"
+      "menuHeader": "USERS-GROUPS"
     },
     {
       "url": "/users",
@@ -136,198 +49,13 @@
       "slug": "groups.index"
     },
     {
+      "menuHeader": "LOGS"
+    },
+    {
       "url": "/user/activity-logs",
       "name": "User Activity Log",
       "icon": "menu-icon icon-base bx bx-history",
-      "slug": "users.activity"
-    },
-    {
-      "menuHeader": "DEPARTMENTS",
-      "visible": false
-    },
-    {
-      "url": "/departments/list",
-      "name": "Departments",
-      "icon": "menu-icon icon-base bx bx-buildings",
-      "slug": "departments-list",
-      "visible": false
-    },
-    {
-      "url": "/departments/hierarchy",
-      "name": "Department Hierarchy",
-      "icon": "menu-icon icon-base bx bx-sitemap",
-      "slug": "departments-hierarchy",
-      "visible": false
-    },
-    {
-      "url": "/departments/assignments",
-      "name": "Document Assignments",
-      "icon": "menu-icon icon-base bx bx-task",
-      "slug": "departments-assignments",
-      "visible": false
-    },
-    {
-      "menuHeader": "REPORTS",
-      "visible": false
-    },
-    {
-      "url": "/reports/document-summary",
-      "name": "Document Summary",
-      "icon": "menu-icon icon-base bx bx-bar-chart-alt-2",
-      "slug": "reports-document-summary",
-      "visible": false
-    },
-    {
-      "url": "/reports/routing-performance",
-      "name": "Routing Performance",
-      "icon": "menu-icon icon-base bx bx-tachometer",
-      "slug": "reports-routing-performance",
-      "visible": false
-    },
-    {
-      "url": "/reports/department-stats",
-      "name": "Department Statistics",
-      "icon": "menu-icon icon-base bx bx-pie-chart-alt-2",
-      "slug": "reports-department-stats",
-      "visible": false
-    },
-    {
-      "url": "/reports/user-productivity",
-      "name": "User Productivity",
-      "icon": "menu-icon icon-base bx bx-user-check",
-      "slug": "reports-user-productivity",
-      "visible": false
-    },
-    {
-      "url": "/reports/turnaround-time",
-      "name": "Turnaround Time",
-      "icon": "menu-icon icon-base bx bx-timer",
-      "slug": "reports-turnaround-time",
-      "visible": false
-    },
-    {
-      "url": "/reports/export",
-      "name": "Export Reports",
-      "icon": "menu-icon icon-base bx bx-download",
-      "slug": "reports-export",
-      "visible": false
-    },
-    {
-      "menuHeader": "NOTIFICATIONS",
-      "visible": false
-    },
-    {
-      "url": "/notifications/inbox",
-      "name": "Notification Inbox",
-      "icon": "menu-icon icon-base bx bx-bell",
-      "slug": "notifications-inbox",
-      "visible": false
-    },
-    {
-      "url": "/notifications/templates",
-      "name": "Notification Templates",
-      "icon": "menu-icon icon-base bx bx-bell-plus",
-      "slug": "notifications-templates",
-      "visible": false
-    },
-    {
-      "url": "/notifications/settings",
-      "name": "Notification Settings",
-      "icon": "menu-icon icon-base bx bx-bell",
-      "slug": "notifications-settings",
-      "visible": false
-    },
-    {
-      "menuHeader": "SETTINGS",
-      "visible": false
-    },
-    {
-      "url": "/settings/general",
-      "name": "General Settings",
-      "icon": "menu-icon icon-base bx bx-cog",
-      "slug": "settings-general",
-      "visible": false
-    },
-    {
-      "url": "/settings/document-types",
-      "name": "Document Types",
-      "icon": "menu-icon icon-base bx bx-file",
-      "slug": "settings-document-types",
-      "visible": false
-    },
-    {
-      "url": "/settings/categories",
-      "name": "Document Categories",
-      "icon": "menu-icon icon-base bx bx-category",
-      "slug": "settings-categories",
-      "visible": false
-    },
-    {
-      "url": "/settings/priorities",
-      "name": "Priority Levels",
-      "icon": "menu-icon icon-base bx bx-flag",
-      "slug": "settings-priorities",
-      "visible": false
-    },
-    {
-      "url": "/settings/statuses",
-      "name": "Status Management",
-      "icon": "menu-icon icon-base bx bx-check-circle",
-      "slug": "settings-statuses",
-      "visible": false
-    },
-    {
-      "url": "/settings/email",
-      "name": "Email Configuration",
-      "icon": "menu-icon icon-base bx bx-envelope",
-      "slug": "settings-email",
-      "visible": false
-    },
-    {
-      "url": "/settings/security",
-      "name": "Security Settings",
-      "icon": "menu-icon icon-base bx bx-shield",
-      "slug": "settings-security",
-      "visible": false
-    },
-    {
-      "url": "/settings/backup",
-      "name": "Backup & Restore",
-      "icon": "menu-icon icon-base bx bx-cloud-upload",
-      "slug": "settings-backup",
-      "visible": false
-    },
-    {
-      "menuHeader": "AUDIT & LOGS",
-      "visible": false
-    },
-    {
-      "url": "/audit/system-logs",
-      "name": "System Logs",
-      "icon": "menu-icon icon-base bx bx-history",
-      "slug": "audit-system-logs",
-      "visible": false
-    },
-    {
-      "url": "/audit/document-logs",
-      "name": "Document Audit Trail",
-      "icon": "menu-icon icon-base bx bx-file",
-      "slug": "audit-document-logs",
-      "visible": false
-    },
-    {
-      "url": "/audit/user-actions",
-      "name": "User Action Logs",
-      "icon": "menu-icon icon-base bx bx-user-check",
-      "slug": "audit-user-actions",
-      "visible": false
-    },
-    {
-      "url": "/audit/login-history",
-      "name": "Login History",
-      "icon": "menu-icon icon-base bx bx-log-in",
-      "slug": "audit-login-history",
-      "visible": false
+      "slug": "user.activity-logs"
     }
   ]
 }

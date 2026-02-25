@@ -1,3 +1,4 @@
+
 <?php
 
 /**
@@ -393,4 +394,24 @@ if (!function_exists('routeWithEncryptedId')) {
         $encryptedId = encryptId($id);
         return route($routeName, array_merge([$encryptedId], $parameters));
     }
+    if (!function_exists('logActivity')) {
+    /**
+     * Log user activity
+     *
+     * @param int $userId
+     * @param string $action
+     * @param string $description
+     * @return void
+     */
+    function logActivity($userId, $action, $description)
+    {
+        \App\Models\ActivityLog::create([
+            'user_id' => $userId,
+            'action' => $action,
+            'description' => $description,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->header('User-Agent'),
+        ]);
+    }
+}   
 }

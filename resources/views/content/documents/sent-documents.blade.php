@@ -4,10 +4,6 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    <!-- Page Title -->
- 
-
-    <!-- Page Header with Breadcrumb -->
     <div class="mb-4">
         <h4 class="fw-bold mb-2"><i class="bx bx-envelope me-2"></i>Mail</h4>
         <nav aria-label="breadcrumb">
@@ -21,346 +17,397 @@
         </nav>
     </div>
 
-    {{-- <div class="row">
-        <div class="col-md-12">
-            <!-- Header -->
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bx bx-send me-2"></i>Sent Documents
-                        @if(($inboxCount ?? 0) > 0)
-                            <span class="badge bg-danger ms-2">{{ $inboxCount }}</span>
-                        @endif
-                    </h5>
-                    <a href="{{ route('documents.send') }}" class="btn btn-primary">
-                        <i class="bx bx-plus me-1"></i> Send New Document
+    <div class="card overflow-hidden" style="min-height: 75vh;">
+        <div class="row g-0 h-100">
+
+            {{-- LEFT SIDEBAR --}}
+            <div class="col-12 col-md-3 col-lg-2 border-end" style="background: #fff;">
+                <div class="p-3">
+                    <a href="{{ route('documents.send') }}" class="btn btn-primary w-100 mb-3 fw-semibold">
+                        <i class="bx bx-plus me-1"></i> Send Document
                     </a>
-                </div>
-            </div>
-    --}}
 
-    <!-- Mail Card -->
-    {{-- <div class="card mb-4">
-        <div class="card-header">
-            <h3 class="mb-0">
-                <i class="bx bx-envelope me-2"></i> Mail
-            </h3>
-        </div>
-    </div> --}}
-
-    <!-- Filter Tabs -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-                <ul class="nav nav-pills mb-0" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <a href="{{ route('documents.incoming') }}" class="nav-link">
-                            <i class="bx bxs-inbox me-1"></i> Inbox
-                            @if(($inboxCount ?? 0) > 0)
-                                <span class="badge bg-warning text-dark ms-1">{{ $inboxCount }}</span>
-                            @endif
-                        </a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a href="{{ route('documents.received') }}" class="nav-link">
-                            <i class="bx bxs-download me-1"></i> Received
-                        </a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a href="{{ route('documents.sent') }}" class="nav-link active">
-                            <i class="bx bx-send me-1"></i> Sent
-                        </a>
-                    </li>
-                </ul>
-                <a href="{{ route('documents.send') }}" class="btn btn-primary">
-                    <i class="bx bx-plus me-1"></i> Send Document
-                </a>
-            </div>
-        </div>
-    </div>
-
-
-            <!-- Documents List -->
-            <div class="card">
-                <div class="card-body">
-                    @if($documents->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle text-center">
-                            <thead>
-                                <tr>
-                                    <th>Tracking Code</th>
-                                    <th>Sent To</th>
-                                    <th>Document Type</th>
-                                    <th>Purpose</th>
-                                    <th>File Name</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Sent Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($documents as $document)
-                                @php
-                                    $route = \App\Models\DocumentRoute::with('group')
-                                        ->where('document_id', $document->document_id)
-                                        ->first();
-                                    $recipients = $route ? \App\Models\Recipient::with('user.employee')
-                                        ->where('route_id', $route->route_id)
-                                        ->get() : collect();
-                                    $hasPendingRecipients = $recipients->contains(function ($recipient) {
-                                        return is_null($recipient->action) || $recipient->action === 'pending';
-                                    });
-                                    $groupName = $route?->group 
-                                        ? ($route->group->position . ' - ' . getCampusName($route->group->campus))
-                                        : null;
-                                @endphp
-                                <tr>
-                                    <td>
-                                        <span class="badge bg-primary">{{ $document->tracking_code ?? 'N/A' }}</span>
-                                    </td>
-                                    <td>
-                                        @if($groupName)
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-secondary"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#recipientsModal-{{ $document->document_id }}"
-                                                    title="View Recipients">
-                                                <i class="bx bx-group me-1"></i>{{ $groupName }}
-                                            </button>
-                                        @elseif($recipients->count() > 1)
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-secondary"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#recipientsModal-{{ $document->document_id }}"
-                                                    title="View Recipients">
-                                                <i class="bx bx-group me-1"></i>Recipients
-                                            </button>
-                                        @elseif($recipients->count() === 1)
-                                            @php
-                                                $recipient = $recipients->first();
-                                                $receiveStatus = $recipient->action ?: 'pending';
-                                                $receiveClass = match($receiveStatus) {
-                                                    'receive' => 'bg-success',
-                                                    'approved' => 'bg-primary',
-                                                    'rejected' => 'bg-danger',
-                                                    default => 'bg-warning'
-                                                };
-                                            @endphp
-                                            <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
-                                                <i class="bx bx-user-circle"></i>
-                                                <span>
-                                                    @if($recipient->user->employee)
-                                                        {{ $recipient->user->employee->firstname }} {{ $recipient->user->employee->lastname }}
-                                                    @else
-                                                        {{ $recipient->user->name }}
-                                                    @endif
-                                                </span>
-                                                @if($receiveStatus === 'pending')
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-outline-danger unsend-recipient-btn"
-                                                            data-document-id="{{ encryptId($document->document_id) }}"
-                                                            data-recipient-id="{{ encryptId($recipient->recipient_id) }}"
-                                                            data-recipient-name="{{ $recipient->user->employee ? $recipient->user->employee->firstname . ' ' . $recipient->user->employee->lastname : $recipient->user->name }}"
-                                                            title="Unsend to this recipient">
-                                                        <i class="bx bx-user-x"></i>
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        @else
-                                            <span class="text-muted"><i>No recipients</i></span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $document->documentType?->type_name ?? 'N/A' }}</td>
-                                    <td>
-                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ $document->purpose }}">
-                                            {{ $document->purpose }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <i class="bx bx-file me-1"></i>{{ $document->file_name ?? 'N/A' }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $priorityValue = $route?->priority ?? 'normal';
-                                            $priorityClass = match($priorityValue) {
-                                                'urgent' => 'bg-danger',
-                                                'high' => 'bg-warning',
-                                                'low' => 'bg-secondary',
-                                                default => 'bg-primary'
-                                            };
-                                        @endphp
-                                        <span class="badge {{ $priorityClass }}">{{ ucfirst($priorityValue) }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $statusValue = $document->status;
-                                            if ($recipients->isNotEmpty()) {
-                                                $actions = $recipients->pluck('action')
-                                                    ->filter()
-                                                    ->map(fn ($action) => strtolower(trim((string) $action)))
-                                                    ->unique();
-
-                                                $hasPending = $recipients->contains(function ($recipient) {
-                                                    return is_null($recipient->action) || $recipient->action === 'pending';
-                                                });
-
-                                                $hasReceive = $actions->contains('receive')
-                                                    || $actions->contains('received')
-                                                    || $recipients->whereNotNull('receive_at')->isNotEmpty();
-
-                                                if ($hasPending) {
-                                                    $statusValue = 'pending';
-                                                } elseif ($hasReceive) {
-                                                    $statusValue = 'receive';
-                                                } elseif ($actions->contains('approved')) {
-                                                    $statusValue = 'approved';
-                                                } elseif ($actions->contains('rejected')) {
-                                                    $statusValue = 'rejected';
-                                                } else {
-                                                    $statusValue = 'pending';
-                                                }
-                                            }
-
-                                            $statusClass = match($statusValue) {
-                                                'pending' => 'bg-warning',
-                                                'approved' => 'bg-success',
-                                                'rejected' => 'bg-danger',
-                                                'receive', 'received' => 'bg-info',
-                                                'archived' => 'bg-secondary',
-                                                default => 'bg-secondary'
-                                            };
-                                        @endphp
-                                        <span class="badge {{ $statusClass }}">{{ ucfirst($statusValue) }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $sentAt = $document?->created_at;
-                                        @endphp
-                                        <small>{{ $sentAt ? $sentAt->format('M d, Y h:i A') : 'N/A' }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            @if($hasPendingRecipients)
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-danger unsend-btn" 
-                                                    data-document-id="{{ encryptId($document->document_id) }}"
-                                                    data-tracking-code="{{ $document->tracking_code }}"
-                                                    title="Unsend Pending Recipients">
-                                                <i class="bx bx-x-circle"></i>
-                                            </button>
-                                            @endif
-                                            <a href="{{ route('documents.download', encryptId($document->document_id)) }}" 
-                                               class="btn btn-sm btn-outline-success" 
-                                               title="Download">
-                                                <i class="bx bx-download"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Modals for Recipients -->
-                    @foreach($documents as $document)
-                        @php
-                            $route = \App\Models\DocumentRoute::with('group')
-                                ->where('document_id', $document->document_id)
-                                ->first();
-                            $recipients = $route ? \App\Models\Recipient::with('user.employee')
-                                ->where('route_id', $route->route_id)
-                                ->get() : collect();
-                        @endphp
-                        @if($route?->group_id || $recipients->count() > 1)
-                        <div class="modal fade" id="recipientsModal-{{ $document->document_id }}" tabindex="-1" aria-labelledby="recipientsModalLabel-{{ $document->document_id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="recipientsModalLabel-{{ $document->document_id }}">
-                                            Recipients - {{ $document->tracking_code }}
-                                            @if($route?->group_id && $route->group)
-                                                <small class="text-muted ms-2">({{ $route->group->position }} - {{ getCampusName($route->group->campus) }})</small>
-                                            @endif
-                                        </h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <ul class="list-group">
-                                            @foreach($recipients as $recipient)
-                                                @php
-                                                    $receiveStatus = $recipient->action ?: 'pending';
-                                                    $receiveClass = match($receiveStatus) {
-                                                        'receive' => 'bg-success',
-                                                        'approved' => 'bg-primary',
-                                                        'rejected' => 'bg-danger',
-                                                        default => 'bg-warning'
-                                                    };
-                                                @endphp
-                                                <li class="list-group-item d-flex align-items-center justify-content-between">
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <i class="bx bx-user-circle fs-4"></i>
-                                                        <div>
-                                                            <div class="fw-semibold">
-                                                                @if($recipient->user->employee)
-                                                                    {{ $recipient->user->employee->firstname }} {{ $recipient->user->employee->lastname }}
-                                                                @else
-                                                                    {{ $recipient->user->name }}
-                                                                @endif
-                                                            </div>
-                                                            <small class="text-muted">
-                                                                <i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}
-                                                            </small>
-                                                        </div>
-                                                        <span class="badge {{ $receiveClass }}">{{ ucfirst($receiveStatus) }}</span>
-                                                    </div>
-                                                    @if($receiveStatus === 'pending')
-                                                        <button type="button"
-                                                                class="btn btn-sm btn-outline-danger unsend-recipient-btn"
-                                                                data-document-id="{{ encryptId($document->document_id) }}"
-                                                                data-recipient-id="{{ encryptId($recipient->recipient_id) }}"
-                                                                data-recipient-name="{{ $recipient->user->employee ? $recipient->user->employee->firstname . ' ' . $recipient->user->employee->lastname : $recipient->user->name }}"
-                                                                title="Unsend to this recipient">
-                                                            <i class="bx bx-user-x"></i>
-                                                        </button>
-                                                    @endif
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
-                            </div>
+                    {{-- Search bar --}}
+                    <form class="mb-3">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text border-end-0 bg-transparent"><i class="bx bx-search text-muted"></i></span>
+                            <input class="form-control border-start-0 ps-0" type="search" placeholder="Search documents">
                         </div>
-                        @endif
-                    @endforeach
+                    </form>
 
-                    <!-- Pagination -->
-                    <div class="mt-4">
-                        {{ $documents->links() }}
-                    </div>
-                    @else
-                    <div class="text-center py-5">
-                        <i class="bx bx-send" style="font-size: 64px; color: #ccc;"></i>
-                        <p class="text-muted mt-3">No sent documents found.</p>
-                    </div>
-                    @endif
+                    <ul class="nav flex-column mail-nav gap-1">
+                        <li class="nav-item">
+                            <a href="{{ route('documents.incoming') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
+                                <i class="bx bxs-inbox fs-5"></i>
+                                <span class="flex-grow-1">Inbox</span>
+                                @if(($inboxCount ?? 0) > 0)
+                                    <span class="badge rounded-pill bg-primary">{{ $inboxCount }}</span>
+                                @endif
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('documents.sent') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded active">
+                                <i class="bx bx-send fs-5"></i>
+                                <span>Sent</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('documents.received') }}" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
+                                <i class="bx bxs-download fs-5"></i>
+                                <span>Received</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <hr class="my-3">
+                    <p class="text-uppercase text-muted fw-semibold" style="font-size: 0.7rem; letter-spacing: .08rem;">LABELS</p>
+                    <ul class="nav flex-column gap-1">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
+                                <span class="label-dot bg-primary"></span> Normal
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
+                                <span class="label-dot bg-warning"></span> High
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
+                                <span class="label-dot bg-danger"></span> Urgent
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
+                                <span class="label-dot bg-secondary"></span> Low
+                            </a>
+                        </li>
+                    </ul>
                 </div>
+            </div>
+
+            {{-- MAIN CONTENT --}}
+            <div class="col-12 col-md-9 col-lg-10 d-flex flex-column">
+
+                {{-- Toolbar --}}
+                <div class="d-flex align-items-center justify-content-end px-4 py-2 border-bottom" style="min-height: 52px;">
+                    <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.85rem;">
+                        {{ $documents->firstItem() ?? 0 }}–{{ $documents->lastItem() ?? 0 }} of {{ $documents->total() ?? 0 }}
+                        <button class="btn btn-icon btn-sm btn-outline-secondary border-0" {{ $documents->onFirstPage() ? 'disabled' : '' }}>
+                            <i class="bx bx-chevron-left"></i>
+                        </button>
+                        <button class="btn btn-icon btn-sm btn-outline-secondary border-0" {{ !$documents->hasMorePages() ? 'disabled' : '' }}>
+                            <i class="bx bx-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Column Headers --}}
+                <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom">
+                    <div class="col-header" style="width: 170px;">Sent To</div>
+                    <div class="col-header flex-grow-1">Document Type — Purpose</div>
+                    <div class="col-header d-none d-xl-block" style="min-width: 130px;">Tracking Code</div>
+                    <div class="col-header d-none d-xl-block" style="min-width: 130px;">File Name</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 70px;">Priority</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 70px;">Status</div>
+                    <div class="col-header text-end" style="min-width: 70px;">Date</div>
+                    <div style="min-width: 80px;"></div>
+                </div>
+
+                {{-- Mail list --}}
+                <div class="mail-list flex-grow-1">
+                    @forelse($documents as $document)
+                    @php
+                        $route = \App\Models\DocumentRoute::with('group')
+                            ->where('document_id', $document->document_id)
+                            ->first();
+                        $recipients = $route ? \App\Models\Recipient::with('user.employee')
+                            ->where('route_id', $route->route_id)
+                            ->get() : collect();
+
+                        $hasPendingRecipients = $recipients->contains(function ($recipient) {
+                            return is_null($recipient->action) || $recipient->action === 'pending';
+                        });
+
+                        $groupName = $route?->group
+                            ? ($route->group->position . ' - ' . getCampusName($route->group->campus))
+                            : null;
+
+                        $priorityValue = $route?->priority ?? 'normal';
+                        $priorityClass = match($priorityValue) {
+                            'urgent' => 'bg-danger',
+                            'high'   => 'bg-warning',
+                            'low'    => 'bg-secondary',
+                            default  => 'bg-primary'
+                        };
+
+                        // Compute status
+                        $statusValue = $document->status;
+                        if ($recipients->isNotEmpty()) {
+                            $actions = $recipients->pluck('action')
+                                ->filter()
+                                ->map(fn ($a) => strtolower(trim((string) $a)))
+                                ->unique();
+                            $hasPending = $recipients->contains(fn ($r) => is_null($r->action) || $r->action === 'pending');
+                            $hasReceive = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
+                            if ($hasPending)               $statusValue = 'pending';
+                            elseif ($hasReceive)           $statusValue = 'receive';
+                            elseif ($actions->contains('approved')) $statusValue = 'approved';
+                            elseif ($actions->contains('rejected')) $statusValue = 'rejected';
+                            else                           $statusValue = 'pending';
+                        }
+                        $statusClass = match($statusValue) {
+                            'pending'            => 'bg-warning',
+                            'approved'           => 'bg-success',
+                            'rejected'           => 'bg-danger',
+                            'receive','received' => 'bg-info',
+                            default              => 'bg-secondary'
+                        };
+
+                        $sentAt = $document?->created_at;
+
+                        // Recipient display
+                        $singleRecipient = $recipients->count() === 1 ? $recipients->first() : null;
+                        $recipientLabel = 'No recipients';
+                        if ($groupName) {
+                            $recipientLabel = $groupName;
+                        } elseif ($recipients->count() > 1) {
+                            $recipientLabel = $recipients->count() . ' Recipients';
+                        } elseif ($singleRecipient) {
+                            $emp = $singleRecipient->user->employee;
+                            $recipientLabel = $emp
+                                ? ($emp->firstname . ' ' . $emp->lastname)
+                                : $singleRecipient->user->name;
+                        }
+
+                        $hasModal = $route?->group_id || $recipients->count() > 1;
+                    @endphp
+
+                    <div class="mail-item d-flex align-items-center gap-3 px-4 py-3 border-bottom"
+                         style="cursor: default; transition: background .15s;">
+
+                        {{-- Sent To --}}
+                        <div class="flex-shrink-0" style="width: 170px; overflow: hidden;">
+                            @if($hasModal)
+                                <button type="button"
+                                        class="btn btn-link p-0 text-start fw-semibold text-body"
+                                        style="font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; display: block;"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#recipientsModal-{{ $document->document_id }}"
+                                        title="View Recipients">
+                                    <i class="bx bx-group me-1 text-muted"></i>{{ $recipientLabel }}
+                                </button>
+                            @else
+                                <span class="text-body" style="font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">
+                                    {{ $recipientLabel }}
+                                </span>
+                            @endif
+                        </div>
+
+                        {{-- Subject / preview --}}
+                        <div class="flex-grow-1 text-truncate" style="font-size: 0.875rem;">
+                            <span class="fw-semibold text-body">
+                                {{ $document->documentType?->type_name ?? 'Document' }} —
+                            </span>
+                            <span class="text-muted">{{ $document->purpose }}</span>
+                        </div>
+
+                        {{-- Tracking Code --}}
+                        <div class="d-none d-xl-block" style="min-width: 130px;">
+                            <span class="badge bg-label-primary" style="font-size: 0.7rem;">
+                                {{ $document->tracking_code ?? 'N/A' }}
+                            </span>
+                        </div>
+
+                        {{-- File Name --}}
+                        <div class="d-none d-xl-block text-muted text-truncate" style="min-width: 130px; max-width: 130px; font-size: 0.8rem;">
+                            <i class="bx bx-file me-1"></i>{{ $document->file_name ?? 'N/A' }}
+                        </div>
+
+                        {{-- Priority --}}
+                        <div class="d-none d-lg-block" style="min-width: 70px;">
+                            <span class="badge {{ $priorityClass }}" style="font-size: 0.7rem;">
+                                {{ ucfirst($priorityValue) }}
+                            </span>
+                        </div>
+
+                        {{-- Status --}}
+                        <div class="d-none d-lg-block" style="min-width: 70px;">
+                            <span class="badge {{ $statusClass }}" style="font-size: 0.7rem;">
+                                {{ ucfirst($statusValue) }}
+                            </span>
+                        </div>
+
+                        {{-- Date --}}
+                        <div class="text-muted text-end flex-shrink-0" style="font-size: 0.8rem; min-width: 70px;">
+                            {{ $sentAt ? $sentAt->format('d M') : 'N/A' }}
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="mail-actions d-flex gap-1 flex-shrink-0" style="min-width: 80px;" onclick="event.stopPropagation()">
+                            @if($hasPendingRecipients)
+                                <button type="button"
+                                        class="btn btn-icon btn-sm btn-outline-danger unsend-btn"
+                                        data-document-id="{{ encryptId($document->document_id) }}"
+                                        data-tracking-code="{{ $document->tracking_code }}"
+                                        title="Unsend Pending Recipients">
+                                    <i class="bx bx-x-circle"></i>
+                                </button>
+                            @endif
+                            <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
+                               class="btn btn-icon btn-sm btn-outline-success"
+                               title="Download">
+                                <i class="bx bx-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                    @empty
+                        <div class="text-center py-5 my-5">
+                            <i class="bx bx-send" style="font-size: 64px; color: #ccc;"></i>
+                            <p class="text-muted mt-3 mb-0">No sent documents found.</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                {{-- Pagination --}}
+                @if($documents->hasPages())
+                <div class="px-4 py-3 border-top d-flex justify-content-end">
+                    {{ $documents->links() }}
+                </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
-@endsection
+
+{{-- Recipient Modals --}}
+@foreach($documents as $document)
+    @php
+        $route = \App\Models\DocumentRoute::with('group')
+            ->where('document_id', $document->document_id)
+            ->first();
+        $recipients = $route ? \App\Models\Recipient::with('user.employee')
+            ->where('route_id', $route->route_id)
+            ->get() : collect();
+    @endphp
+    @if($route?->group_id || $recipients->count() > 1)
+    <div class="modal fade" id="recipientsModal-{{ $document->document_id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Recipients &mdash; <span class="badge bg-label-primary">{{ $document->tracking_code }}</span>
+                        @if($route?->group_id && $route->group)
+                            <small class="text-muted ms-2 fs-6">({{ $route->group->position }} - {{ getCampusName($route->group->campus) }})</small>
+                        @endif
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <ul class="list-group list-group-flush">
+                        @foreach($recipients as $recipient)
+                            @php
+                                $receiveStatus = $recipient->action ?: 'pending';
+                                $receiveClass = match($receiveStatus) {
+                                    'receive'  => 'bg-info',
+                                    'approved' => 'bg-success',
+                                    'rejected' => 'bg-danger',
+                                    default    => 'bg-warning'
+                                };
+                                $emp = $recipient->user->employee;
+                                $name = $emp ? ($emp->firstname . ' ' . $emp->lastname) : $recipient->user->name;
+                            @endphp
+                            <li class="list-group-item d-flex align-items-center justify-content-between px-4 py-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <i class="bx bx-user-circle fs-4 text-muted"></i>
+                                    <div>
+                                        <div class="fw-semibold" style="font-size: 0.875rem;">{{ $name }}</div>
+                                        <small class="text-muted"><i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge {{ $receiveClass }}" style="font-size: 0.7rem;">{{ ucfirst($receiveStatus) }}</span>
+                                    @if($receiveStatus === 'pending')
+                                        <button type="button"
+                                                class="btn btn-icon btn-sm btn-outline-danger unsend-recipient-btn"
+                                                data-document-id="{{ encryptId($document->document_id) }}"
+                                                data-recipient-id="{{ encryptId($recipient->recipient_id) }}"
+                                                data-recipient-name="{{ $name }}"
+                                                title="Unsend to this recipient">
+                                            <i class="bx bx-user-x"></i>
+                                        </button>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
+
+<style>
+/* Sidebar nav active & hover */
+.mail-nav .nav-link.active {
+    background: rgba(105, 108, 255, 0.16);
+    color: #696cff !important;
+    font-weight: 600;
+}
+.mail-nav .nav-link:hover:not(.active) {
+    background: rgba(67, 89, 113, 0.06);
+}
+
+/* Label dots */
+.label-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Column header style */
+.col-header {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+    color: #a1acb8;
+}
+
+.mail-header {
+    background: #f8f8f8;
+}
+
+/* Mail item hover */
+.mail-item:hover {
+    background: rgba(67, 89, 113, 0.04);
+}
+
+/* Actions hidden by default, show on hover */
+.mail-actions {
+    opacity: 0;
+    transition: opacity .15s;
+}
+.mail-item:hover .mail-actions {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .mail-actions { opacity: 1; }
+}
+</style>
 
 @section('page-script')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-$(document).ready(function() {
-    // Setup AJAX headers
+$(document).ready(function () {
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -368,127 +415,67 @@ $(document).ready(function() {
         }
     });
 
-    // Unsend document confirmation
-    $('.unsend-btn').on('click', function() {
+    // Unsend entire document (pending recipients)
+    $('.unsend-btn').on('click', function () {
         const documentId = $(this).data('document-id');
         const trackingCode = $(this).data('tracking-code');
 
         Swal.fire({
             title: 'Unsend Document?',
-            html: `Remove all <strong>pending</strong> recipients from this document?<br><br><strong>Tracking Code:</strong> ${trackingCode}<br><br>Recipients who already received/approved/rejected will remain.`,
+            html: `Remove all <strong>pending</strong> recipients from document <strong>${trackingCode}</strong>?<br><small class="text-muted">Recipients who already received/approved/rejected will remain.</small>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="bx bx-trash"></i> Yes, remove pending',
+            confirmButtonText: 'Yes, remove pending',
             cancelButtonText: 'Cancel'
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'Deleting...',
-                    text: 'Please wait while we remove pending recipients.',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
+                Swal.fire({ title: 'Removing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 $.ajax({
                     url: '/documents/' + documentId,
                     type: 'DELETE',
                     dataType: 'json',
-                    success: function(response) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Unsent!',
-                            text: response.message || 'The document has been successfully unsent.',
-                            confirmButtonColor: '#3085d6'
-                        }).then(() => {
-                            location.reload();
-                        });
+                    success: function (response) {
+                        Swal.fire({ icon: 'success', title: 'Unsent!', text: response.message || 'Pending recipients removed.', confirmButtonColor: '#696cff' })
+                            .then(() => location.reload());
                     },
-                    error: function(xhr) {
-                        console.error('Error:', xhr);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error!',
-                            text: xhr.responseJSON?.message || 'Failed to unsend document. Please try again.',
-                            confirmButtonColor: '#d33'
-                        });
+                    error: function (xhr) {
+                        Swal.fire({ icon: 'error', title: 'Error!', text: xhr.responseJSON?.message || 'Failed to unsend document.', confirmButtonColor: '#d33' });
                     }
                 });
             }
         });
     });
 
-    // Archive document confirmation
-    $('.archive-form').on('submit', function(e) {
-        e.preventDefault();
-        const form = this;
-
-        Swal.fire({
-            title: 'Archive Document?',
-            text: 'Are you sure you want to archive this document?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, archive it',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
-    });
-
-    // Unsend per-recipient confirmation
-    $('.unsend-recipient-btn').on('click', function() {
+    // Unsend per-recipient
+    $('.unsend-recipient-btn').on('click', function () {
         const documentId = $(this).data('document-id');
         const recipientId = $(this).data('recipient-id');
         const recipientName = $(this).data('recipient-name');
 
         Swal.fire({
-            title: 'Unsend to Recipient?'
-            ,html: `Remove <strong>${recipientName}</strong> from this document?`
-            ,icon: 'warning'
-            ,showCancelButton: true
-            ,confirmButtonColor: '#d33'
-            ,cancelButtonColor: '#6c757d'
-            ,confirmButtonText: 'Yes, unsend'
-            ,cancelButtonText: 'Cancel'
+            title: 'Unsend to Recipient?',
+            html: `Remove <strong>${recipientName}</strong> from this document?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, unsend',
+            cancelButtonText: 'Cancel'
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'Removing...'
-                    ,text: 'Please wait while we remove this recipient.'
-                    ,allowOutsideClick: false
-                    ,didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
+                Swal.fire({ title: 'Removing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 $.ajax({
-                    url: `/documents/${documentId}/recipients/${recipientId}`
-                    ,type: 'DELETE'
-                    ,dataType: 'json'
-                    ,success: function(response) {
-                        Swal.fire({
-                            icon: 'success'
-                            ,title: 'Removed!'
-                            ,text: response.message || 'Recipient removed successfully.'
-                            ,confirmButtonColor: '#3085d6'
-                        }).then(() => {
-                            location.reload();
-                        });
-                    }
-                    ,error: function(xhr) {
-                        Swal.fire({
-                            icon: 'error'
-                            ,title: 'Error!'
-                            ,text: xhr.responseJSON?.message || 'Failed to remove recipient.'
-                            ,confirmButtonColor: '#d33'
-                        });
+                    url: `/documents/${documentId}/recipients/${recipientId}`,
+                    type: 'DELETE',
+                    dataType: 'json',
+                    success: function (response) {
+                        Swal.fire({ icon: 'success', title: 'Removed!', text: response.message || 'Recipient removed successfully.', confirmButtonColor: '#696cff' })
+                            .then(() => location.reload());
+                    },
+                    error: function (xhr) {
+                        Swal.fire({ icon: 'error', title: 'Error!', text: xhr.responseJSON?.message || 'Failed to remove recipient.', confirmButtonColor: '#d33' });
                     }
                 });
             }
@@ -496,4 +483,5 @@ $(document).ready(function() {
     });
 });
 </script>
+@endsection
 @endsection

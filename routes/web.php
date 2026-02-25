@@ -51,6 +51,7 @@ use App\Http\Controllers\ReceivedDocumentController;
 use App\Http\Controllers\SentDocumentController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\AssignUserController;
+use App\Http\Controllers\UserActivityLogController;
 
 // Guest Routes (Login Page)
 Route::middleware('guest')->group(function () {
@@ -68,8 +69,9 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleC
 // Protected Routes (Require Authentication)
 Route::middleware('auth')->group(function () {
         // User Activity Logs
-        Route::get('/user/activity-logs', [\App\Http\Controllers\UserActivityLogController::class, 'index'])->name('user.activity-logs');
-    // Main Dashboard
+        Route::get('/user/activity-logs', [UserActivityLogController::class, 'index'])->name('user.activity-logs');
+        Route::delete('/user/activity-logs/delete', [UserActivityLogController::class, 'deleteAll'])->name('user.activity-logs.delete');
+
     Route::get('/dashboard', [Analytics::class, 'index'])->name('dashboard-analytics');
     
     // Logout
