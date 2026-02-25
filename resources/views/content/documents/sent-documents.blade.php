@@ -3,7 +3,7 @@
 @section('title', 'Sent Documents')
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
+<div class="container-fluid flex-grow-1 container-p-y">
     <div class="mb-4">
         <h4 class="fw-bold mb-2"><i class="bx bx-envelope me-2"></i>Mail</h4>
         <nav aria-label="breadcrumb">
@@ -58,31 +58,6 @@
                             </a>
                         </li>
                     </ul>
-
-                    <hr class="my-3">
-                    <p class="text-uppercase text-muted fw-semibold" style="font-size: 0.7rem; letter-spacing: .08rem;">LABELS</p>
-                    <ul class="nav flex-column gap-1">
-                        <li class="nav-item">
-                            <a href="#" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
-                                <span class="label-dot bg-primary"></span> Normal
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
-                                <span class="label-dot bg-warning"></span> High
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
-                                <span class="label-dot bg-danger"></span> Urgent
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
-                                <span class="label-dot bg-secondary"></span> Low
-                            </a>
-                        </li>
-                    </ul>
                 </div>
             </div>
 
@@ -92,7 +67,7 @@
                 {{-- Toolbar --}}
                 <div class="d-flex align-items-center justify-content-end px-4 py-2 border-bottom" style="min-height: 52px;">
                     <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.85rem;">
-                        {{ $documents->firstItem() ?? 0 }}–{{ $documents->lastItem() ?? 0 }} of {{ $documents->total() ?? 0 }}
+                        {{ $documents->firstItem() ?? 0 }}&ndash;{{ $documents->lastItem() ?? 0 }} of {{ $documents->total() ?? 0 }}
                         <button class="btn btn-icon btn-sm btn-outline-secondary border-0" {{ $documents->onFirstPage() ? 'disabled' : '' }}>
                             <i class="bx bx-chevron-left"></i>
                         </button>
@@ -104,14 +79,13 @@
 
                 {{-- Column Headers --}}
                 <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom">
-                    <div class="col-header" style="width: 170px;">Sent To</div>
-                    <div class="col-header flex-grow-1">Document Type — Purpose</div>
-                    <div class="col-header d-none d-xl-block" style="min-width: 130px;">Tracking Code</div>
-                    <div class="col-header d-none d-xl-block" style="min-width: 130px;">File Name</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 70px;">Priority</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 70px;">Status</div>
-                    <div class="col-header text-end" style="min-width: 70px;">Date</div>
-                    <div style="min-width: 80px;"></div>
+                    <div class="col-header" style="width: 200px;">Sent To</div>
+                    <div class="col-header flex-grow-1">Document Type &mdash; Purpose</div>
+                    <div class="col-header d-none d-xl-block" style="min-width: 150px;">Tracking Code</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Date</div>
+                    <div class="col-header text-end d-none d-lg-block   " style="min-width: 90px;">Action</div>
                 </div>
 
                 {{-- Mail list --}}
@@ -129,9 +103,7 @@
                             return is_null($recipient->action) || $recipient->action === 'pending';
                         });
 
-                        $groupName = $route?->group
-                            ? ($route->group->position . ' - ' . getCampusName($route->group->campus))
-                            : null;
+                        $groupName = $route?->group ? ($route->group->position) : null;
 
                         $priorityValue = $route?->priority ?? 'normal';
                         $priorityClass = match($priorityValue) {
@@ -141,7 +113,6 @@
                             default  => 'bg-primary'
                         };
 
-                        // Compute status
                         $statusValue = $document->status;
                         if ($recipients->isNotEmpty()) {
                             $actions = $recipients->pluck('action')
@@ -150,11 +121,11 @@
                                 ->unique();
                             $hasPending = $recipients->contains(fn ($r) => is_null($r->action) || $r->action === 'pending');
                             $hasReceive = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
-                            if ($hasPending)               $statusValue = 'pending';
-                            elseif ($hasReceive)           $statusValue = 'receive';
+                            if ($hasPending)                        $statusValue = 'pending';
+                            elseif ($hasReceive)                    $statusValue = 'receive';
                             elseif ($actions->contains('approved')) $statusValue = 'approved';
                             elseif ($actions->contains('rejected')) $statusValue = 'rejected';
-                            else                           $statusValue = 'pending';
+                            else                                    $statusValue = 'pending';
                         }
                         $statusClass = match($statusValue) {
                             'pending'            => 'bg-warning',
@@ -166,7 +137,6 @@
 
                         $sentAt = $document?->created_at;
 
-                        // Recipient display
                         $singleRecipient = $recipients->count() === 1 ? $recipients->first() : null;
                         $recipientLabel = 'No recipients';
                         if ($groupName) {
@@ -184,18 +154,19 @@
                     @endphp
 
                     <div class="mail-item d-flex align-items-center gap-3 px-4 py-3 border-bottom"
-                         style="cursor: default; transition: background .15s;">
+                         style="transition: background .15s;">
 
                         {{-- Sent To --}}
-                        <div class="flex-shrink-0" style="width: 170px; overflow: hidden;">
+                        <div class="flex-shrink-0" style="width: 200px; overflow: hidden;">
                             @if($hasModal)
                                 <button type="button"
-                                        class="btn btn-link p-0 text-start fw-semibold text-body"
-                                        style="font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; display: block;"
+                                        class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 w-75"
+                                        style="font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
                                         data-bs-toggle="modal"
                                         data-bs-target="#recipientsModal-{{ $document->document_id }}"
                                         title="View Recipients">
-                                    <i class="bx bx-group me-1 text-muted"></i>{{ $recipientLabel }}
+                                    <i class="bx bx-group flex-shrink-0"></i>
+                                    <span class="text-truncate">{{ $recipientLabel }}</span>
                                 </button>
                             @else
                                 <span class="text-body" style="font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">
@@ -207,58 +178,62 @@
                         {{-- Subject / preview --}}
                         <div class="flex-grow-1 text-truncate" style="font-size: 0.875rem;">
                             <span class="fw-semibold text-body">
-                                {{ $document->documentType?->type_name ?? 'Document' }} —
+                                {{ $document->documentType?->type_name ?? 'Document' }} &mdash;
                             </span>
                             <span class="text-muted">{{ $document->purpose }}</span>
                         </div>
 
                         {{-- Tracking Code --}}
-                        <div class="d-none d-xl-block" style="min-width: 130px;">
+                        <div class="d-none d-xl-block" style="min-width: 150px;">
                             <span class="badge bg-label-primary" style="font-size: 0.7rem;">
                                 {{ $document->tracking_code ?? 'N/A' }}
                             </span>
                         </div>
 
-                        {{-- File Name --}}
-                        <div class="d-none d-xl-block text-muted text-truncate" style="min-width: 130px; max-width: 130px; font-size: 0.8rem;">
-                            <i class="bx bx-file me-1"></i>{{ $document->file_name ?? 'N/A' }}
-                        </div>
-
                         {{-- Priority --}}
-                        <div class="d-none d-lg-block" style="min-width: 70px;">
+                        <div class="d-none d-lg-block" style="min-width: 80px;">
                             <span class="badge {{ $priorityClass }}" style="font-size: 0.7rem;">
                                 {{ ucfirst($priorityValue) }}
                             </span>
                         </div>
 
                         {{-- Status --}}
-                        <div class="d-none d-lg-block" style="min-width: 70px;">
+                        <div class="d-none d-lg-block" style="min-width: 80px;">
                             <span class="badge {{ $statusClass }}" style="font-size: 0.7rem;">
                                 {{ ucfirst($statusValue) }}
                             </span>
                         </div>
 
                         {{-- Date --}}
-                        <div class="text-muted text-end flex-shrink-0" style="font-size: 0.8rem; min-width: 70px;">
-                            {{ $sentAt ? $sentAt->format('d M') : 'N/A' }}
+                        <div class="text-muted text-end flex-shrink-0" style="font-size: 0.8rem; min-width: 80px;">
+                            {{ $sentAt ? $sentAt->format('M d, Y') : 'N/A' }}
                         </div>
 
-                        {{-- Actions --}}
-                        <div class="mail-actions d-flex gap-1 flex-shrink-0" style="min-width: 80px;" onclick="event.stopPropagation()">
-                            @if($hasPendingRecipients)
-                                <button type="button"
-                                        class="btn btn-icon btn-sm btn-outline-danger unsend-btn"
-                                        data-document-id="{{ encryptId($document->document_id) }}"
-                                        data-tracking-code="{{ $document->tracking_code }}"
-                                        title="Unsend Pending Recipients">
-                                    <i class="bx bx-x-circle"></i>
-                                </button>
-                            @endif
-                            <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
-                               class="btn btn-icon btn-sm btn-outline-success"
-                               title="Download">
-                                <i class="bx bx-download"></i>
-                            </a>
+                        {{-- Actions (3-dot dropdown, always visible) --}}
+                        <div class="dropdown flex-shrink-0 text-end " style="min-width: 90px;" onclick="event.stopPropagation()">
+                            <button class="btn btn-icon btn-sm btn-outline-secondary" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bx bx-dots-vertical-rounded"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                @if($hasPendingRecipients)
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item text-danger unsend-btn"
+                                            data-document-id="{{ encryptId($document->document_id) }}"
+                                            data-tracking-code="{{ $document->tracking_code }}">
+                                        <i class="bx bx-x-circle me-1"></i> Unsend Pending
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                @endif
+                                <li>
+                                    <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
+                                       class="dropdown-item">
+                                        <i class="bx bx-download me-1"></i> Download
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                     @empty
@@ -352,7 +327,6 @@
 @endforeach
 
 <style>
-/* Sidebar nav active & hover */
 .mail-nav .nav-link.active {
     background: rgba(105, 108, 255, 0.16);
     color: #696cff !important;
@@ -361,17 +335,6 @@
 .mail-nav .nav-link:hover:not(.active) {
     background: rgba(67, 89, 113, 0.06);
 }
-
-/* Label dots */
-.label-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-/* Column header style */
 .col-header {
     font-size: 0.7rem;
     font-weight: 600;
@@ -379,28 +342,13 @@
     letter-spacing: 0.05rem;
     color: #a1acb8;
 }
-
 .mail-header {
     background: #f8f8f8;
 }
-
-/* Mail item hover */
 .mail-item:hover {
     background: rgba(67, 89, 113, 0.04);
 }
 
-/* Actions hidden by default, show on hover */
-.mail-actions {
-    opacity: 0;
-    transition: opacity .15s;
-}
-.mail-item:hover .mail-actions {
-    opacity: 1;
-}
-
-@media (max-width: 768px) {
-    .mail-actions { opacity: 1; }
-}
 </style>
 
 @section('page-script')
@@ -415,11 +363,9 @@ $(document).ready(function () {
         }
     });
 
-    // Unsend entire document (pending recipients)
     $('.unsend-btn').on('click', function () {
         const documentId = $(this).data('document-id');
         const trackingCode = $(this).data('tracking-code');
-
         Swal.fire({
             title: 'Unsend Document?',
             html: `Remove all <strong>pending</strong> recipients from document <strong>${trackingCode}</strong>?<br><small class="text-muted">Recipients who already received/approved/rejected will remain.</small>`,
@@ -448,12 +394,10 @@ $(document).ready(function () {
         });
     });
 
-    // Unsend per-recipient
     $('.unsend-recipient-btn').on('click', function () {
         const documentId = $(this).data('document-id');
         const recipientId = $(this).data('recipient-id');
         const recipientName = $(this).data('recipient-name');
-
         Swal.fire({
             title: 'Unsend to Recipient?',
             html: `Remove <strong>${recipientName}</strong> from this document?`,

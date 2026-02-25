@@ -3,7 +3,7 @@
 @section('title', 'Mail - Inbox')
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
+<div class="container-fluid flex-grow-1 container-p-y">
     <div class="mb-4">
         <h4 class="fw-bold mb-2"><i class="bx bx-envelope me-2"></i>Mail</h4>
         <nav aria-label="breadcrumb">
@@ -93,13 +93,13 @@
 
                 {{-- Column Headers --}}
                 <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom">
-                    <div class="col-header" style="width: 170px;">Sender</div>
+                    <div class="col-header" style="width: 200px;">Sender</div>
                     <div class="col-header flex-grow-1">Document Type — Purpose</div>
-                    <div class="col-header d-none d-xl-block" style="min-width: 120px;">Tracking Code</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 70px;">Priority</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 70px;">Status</div>
-                    <div class="col-header text-end" style="min-width: 70px;">Date</div>
-                    <div class="col-header text-end"style="min-width: 70px;">Action</div>
+                    <div class="col-header d-none d-xl-block" style="min-width: 140px;">Tracking Code</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Date</div>
+                    <div class="col-header text-end" style="min-width: 80px;">Action</div>
                 </div>
 
                 {{-- Mail list --}}
@@ -143,7 +143,7 @@
                              onclick="window.location='{{ route('documents.show', encryptId($document->document_id)) }}'">
 
                             {{-- Sender name --}}
-                            <div class="flex-shrink-0" style="width: 170px; overflow: hidden;">
+                            <div class="flex-shrink-0" style="width: 200px; overflow: hidden;">
                                 <span class="{{ $isUnread ? 'fw-semibold text-body' : 'text-body' }}"
                                       style="font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">
                                     {{ $senderName }}
@@ -159,47 +159,52 @@
                             </div>
 
                             {{-- Tracking code --}}
-                            <div class="d-none d-xl-block" style="min-width: 120px;">
+                            <div class="d-none d-xl-block" style="min-width: 140px;">
                                 <span class="badge bg-label-primary" style="font-size: 0.7rem;">
                                     {{ $document->tracking_code }}
                                 </span>
                             </div>
 
                             {{-- Priority badge --}}
-                            <div class="d-none d-lg-block" style="min-width: 70px;">
+                            <div class="d-none d-lg-block" style="min-width: 80px;">
                                 <span class="badge {{ $priorityClass }}" style="font-size: 0.7rem;">
                                     {{ ucfirst($priorityValue) }}
                                 </span>
                             </div>
 
                             {{-- Status badge --}}
-                            <div class="d-none d-lg-block" style="min-width: 70px;">
+                            <div class="d-none d-lg-block" style="min-width: 80px;">
                                 <span class="badge {{ $statusClass }}" style="font-size: 0.7rem;">
                                     {{ ucfirst($statusValue) }}
                                 </span>
                             </div>
 
                             {{-- Date --}}
-                            <div class="text-muted text-end flex-shrink-0" style="font-size: 0.8rem; min-width: 70px;">
-                                {{ optional($recipient->sent_at)->format('d M y') ?? '' }}
+                            <div class="text-muted flex-shrink-0" style="font-size: 0.8rem; min-width: 80px;">
+                                {{ optional($recipient->sent_at)->format('M d, Y') ?? '' }}
                             </div>
 
-                            {{-- Actions (shown on hover) --}}
-                            <div class="mail-actions d-flex gap-1 flex-shrink-0" style="min-width: 72px;" ">
+                            {{-- Actions (shown on hover) --}}<div class="dropdown flex-shrink-0 text-end " style="min-width: 90px;" onclick="event.stopPropagation()">
+                            <button class="btn btn-icon btn-sm btn-outline-secondary" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bx bx-dots-vertical-rounded"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
                                 <form action="{{ route('documents.receive', encryptId($document->document_id)) }}" method="POST" class="receive-form">
                                     @csrf
-                                        <button type="submit"
-                                                class="btn btn-icon btn-sm btn-outline-primary"
-                                                title="Receive"
-                                                @disabled($isFinal)>
-                                            <i class="bx bx-receipt"></i>
-                                        </button>
+                                    <button type="submit"
+                                            class="dropdown-item d-flex align-items-center gap-2"
+
+                                            @disabled($isFinal)>
+                                        <i class="bx bx-envelope-open"></i> Receive Document
+                                    </button>
                                 </form>
-                                    <a href="{{ route('documents.show', encryptId($document->document_id)) }}"
-                                       class="btn btn-icon btn-sm btn-outline-secondary"
-                                       title="View Details">
-                                        <i class="bx bx-show"></i>
-                                    </a>
+                                <a href="{{ route('documents.show', encryptId($document->document_id)) }}"
+                                   class="dropdown-item d-flex align-items-center gap-2"
+                                    title="">
+                                    <i class="bx bx-show"></i> View Document
+                                </a>
+                            </ul>
                             </div>
                         </div>
                         @endif
@@ -231,15 +236,6 @@
 }
 .mail-nav .nav-link:hover:not(.active) {
     background: rgba(67, 89, 113, 0.06);
-}
-
-/* Label dots */
-.label-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
 }
 
 /* Column header style */
