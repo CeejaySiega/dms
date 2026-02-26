@@ -341,7 +341,7 @@ $(document).ready(function() {
         var campusValue = $('#campusFilter').val().toLowerCase();
         var departmentValue = $('#departmentFilter').val().toLowerCase();
 
-        var visibleRows = 0;
+        var visibleRows = 0;    
 
         $('tbody tr').each(function() {
             if ($(this).find('td[colspan="7"]').length) {
