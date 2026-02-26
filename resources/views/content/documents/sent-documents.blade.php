@@ -85,7 +85,7 @@
                     <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
                     <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
                     <div class="col-header d-none d-lg-block" style="min-width: 80px;">Date</div>
-                    <div class="col-header text-end d-none d-lg-block   " style="min-width: 90px;">Action</div>
+                    <div class="col-header text-end d-none d-lg-block" style="min-width: 90px;">Action</div>
                 </div>
 
                 {{-- Mail list --}}
@@ -100,6 +100,10 @@
                             ->get() : collect();
 
                         $hasPendingRecipients = $recipients->contains(function ($recipient) {
+                            return is_null($recipient->action) || $recipient->action === 'pending';
+                        });
+
+                        $pendingRecipients = $recipients->filter(function ($recipient) {
                             return is_null($recipient->action) || $recipient->action === 'pending';
                         });
 
@@ -209,24 +213,41 @@
                             {{ $sentAt ? $sentAt->format('M d, Y') : 'N/A' }}
                         </div>
 
-                        {{-- Actions (3-dot dropdown, always visible) --}}
-                        <div class="dropdown flex-shrink-0 text-end " style="min-width: 90px;" onclick="event.stopPropagation()">
+                        {{-- Action Dropdown --}}
+                        <div class="dropdown flex-shrink-0 text-end" style="min-width: 90px;">
                             <button class="btn btn-icon btn-sm btn-outline-secondary" type="button"
-                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    data-bs-toggle="dropdown"
+                                    data-bs-strategy="fixed"
+                                    data-bs-auto-close="outside"
+                                    aria-expanded="false">
                                 <i class="bx bx-dots-vertical-rounded"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
+
                                 @if($hasPendingRecipients)
-                                <li>
-                                    <button type="button"
-                                            class="dropdown-item text-danger unsend-btn"
-                                            data-document-id="{{ encryptId($document->document_id) }}"
-                                            data-tracking-code="{{ $document->tracking_code }}">
-                                        <i class="bx bx-x-circle me-1"></i> Unsend Pending
-                                    </button>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
+                                    {{-- One unsend button per pending recipient --}}
+                                    @foreach($pendingRecipients as $pendingRecipient)
+                                        @php
+                                            $pendingEmp = $pendingRecipient->user->employee;
+                                            $pendingName = $pendingEmp
+                                                ? ($pendingEmp->firstname . ' ' . $pendingEmp->lastname)
+                                                : $pendingRecipient->user->name;
+                                            $unsendUrl = route('documents.unsend-recipient', [
+                                                encryptId($document->document_id),
+                                                encryptId($pendingRecipient->recipient_id)
+                                            ]);
+                                        @endphp
+                                        <li>
+                                            <button type="button"
+                                                    class="dropdown-item text-danger"
+                                                    onclick="confirmUnsend('{{ $unsendUrl }}', '{{ addslashes($pendingName) }}')">
+                                                <i class="bx bx-x-circle me-1"></i> Unsend to {{ $pendingName }}
+                                            </button>
+                                        </li>
+                                    @endforeach
+                                    <li><hr class="dropdown-divider"></li>
                                 @endif
+
                                 <li>
                                     <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
                                        class="dropdown-item">
@@ -285,8 +306,6 @@
                                 $receiveStatus = $recipient->action ?: 'pending';
                                 $receiveClass = match($receiveStatus) {
                                     'receive'  => 'bg-info',
-                                    'approved' => 'bg-success',
-                                    'rejected' => 'bg-danger',
                                     default    => 'bg-warning'
                                 };
                                 $emp = $recipient->user->employee;
@@ -304,10 +323,8 @@
                                     <span class="badge {{ $receiveClass }}" style="font-size: 0.7rem;">{{ ucfirst($receiveStatus) }}</span>
                                     @if($receiveStatus === 'pending')
                                         <button type="button"
-                                                class="btn btn-icon btn-sm btn-outline-danger unsend-recipient-btn"
-                                                data-document-id="{{ encryptId($document->document_id) }}"
-                                                data-recipient-id="{{ encryptId($recipient->recipient_id) }}"
-                                                data-recipient-name="{{ $name }}"
+                                                class="btn btn-icon btn-sm btn-outline-danger"
+                                                onclick="confirmUnsend('{{ route('documents.unsend-recipient', [encryptId($document->document_id), encryptId($recipient->recipient_id)]) }}', '{{ addslashes($name) }}')"
                                                 title="Unsend to this recipient">
                                             <i class="bx bx-user-x"></i>
                                         </button>
@@ -348,84 +365,52 @@
 .mail-item:hover {
     background: rgba(67, 89, 113, 0.04);
 }
-
 </style>
 
 @section('page-script')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-$(document).ready(function () {
-    $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
-        }
-    });
+/**
+ * Called directly via onclick="confirmUnsend(...)" on each unsend button.
+ * Avoids jQuery event delegation entirely — no conflicts with layout scripts.
+ */
+function confirmUnsend(url, recipientName) {
+    Swal.fire({
+        title: 'Unsend to Recipient?',
+        html: 'Remove <strong>' + recipientName + '</strong> from this document?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, unsend',
+        cancelButtonText: 'Cancel'
+    }).then(function (result) {
+        if (!result.isConfirmed) return;
 
-    $('.unsend-btn').on('click', function () {
-        const documentId = $(this).data('document-id');
-        const trackingCode = $(this).data('tracking-code');
-        Swal.fire({
-            title: 'Unsend Document?',
-            html: `Remove all <strong>pending</strong> recipients from document <strong>${trackingCode}</strong>?<br><small class="text-muted">Recipients who already received/approved/rejected will remain.</small>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, remove pending',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({ title: 'Removing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                $.ajax({
-                    url: '/documents/' + documentId,
-                    type: 'DELETE',
-                    dataType: 'json',
-                    success: function (response) {
-                        Swal.fire({ icon: 'success', title: 'Unsent!', text: response.message || 'Pending recipients removed.', confirmButtonColor: '#696cff' })
-                            .then(() => location.reload());
-                    },
-                    error: function (xhr) {
-                        Swal.fire({ icon: 'error', title: 'Error!', text: xhr.responseJSON?.message || 'Failed to unsend document.', confirmButtonColor: '#d33' });
-                    }
-                });
+        Swal.fire({ title: 'Removing...', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+
+        fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
             }
+        })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Removed!', text: data.message || 'Recipient removed successfully.', confirmButtonColor: '#696cff' })
+                    .then(function () { location.reload(); });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error!', text: data.message || 'Failed to remove recipient.', confirmButtonColor: '#d33' });
+            }
+        })
+        .catch(function () {
+            Swal.fire({ icon: 'error', title: 'Error!', text: 'An unexpected error occurred.', confirmButtonColor: '#d33' });
         });
     });
-
-    $('.unsend-recipient-btn').on('click', function () {
-        const documentId = $(this).data('document-id');
-        const recipientId = $(this).data('recipient-id');
-        const recipientName = $(this).data('recipient-name');
-        Swal.fire({
-            title: 'Unsend to Recipient?',
-            html: `Remove <strong>${recipientName}</strong> from this document?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, unsend',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({ title: 'Removing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                $.ajax({
-                    url: `/documents/${documentId}/recipients/${recipientId}`,
-                    type: 'DELETE',
-                    dataType: 'json',
-                    success: function (response) {
-                        Swal.fire({ icon: 'success', title: 'Removed!', text: response.message || 'Recipient removed successfully.', confirmButtonColor: '#696cff' })
-                            .then(() => location.reload());
-                    },
-                    error: function (xhr) {
-                        Swal.fire({ icon: 'error', title: 'Error!', text: xhr.responseJSON?.message || 'Failed to remove recipient.', confirmButtonColor: '#d33' });
-                    }
-                });
-            }
-        });
-    });
-});
+}
 </script>
 @endsection
 @endsection

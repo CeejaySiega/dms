@@ -1,9 +1,11 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DocumentNotification;
 use App\Models\Document;
+use App\Models\DocumentRoute;
 use App\Models\Recipient;
 use App\Models\SentDocument;
 use Illuminate\Support\Facades\Auth;
@@ -11,13 +13,6 @@ use Illuminate\Support\Facades\Storage;
 
 class SentDocumentController extends Controller
 {
-
-
-    
-
-    /**
-     * Display all sent documents by current user
-     */
     public function sent()
     {
         $documents = Document::where('user_id', Auth::id())
@@ -26,33 +21,11 @@ class SentDocumentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        // Notify receivers for each sent document (example logic)
-        foreach ($documents as $document) {
-            foreach ($document->recipients as $recipient) {
-                $user = \App\Models\User::find($recipient->user_id);
-                if ($user && $user->email) {
-                    $link = $user->getInboxLink();
-                    Mail::to($user->email)->queue(
-                        new DocumentNotification($document, $user->name ?? 'User', $link)
-                    );
-                }
-            }
-        }
-
-        // Log activity for viewing sent documents
-        // \App\Models\ActivityLog::create([
-        //     'user_id' => Auth::id(),
-        //     'action' => 'view_sent_documents',
-        //     'description' => 'Viewed sent documents list',
-        //      'ip_address' => request()->ip(),
-        //     'user_agent' => request()->userAgent(),
-        // ]);
-
         return view('content.documents.sent-documents', compact('documents'));
     }
 
     /**
-     * Delete (unsend) a document for pending recipients only
+     * Delete (unsend) a document for pending recipients only.
      */
     public function delete(Document $document)
     {
@@ -65,23 +38,10 @@ class SentDocumentController extends Controller
             }
             abort(403, 'Only the owner can delete this document');
         }
-
-        // ...existing code...
-        // Example: Send notification when document is deleted for pending recipients
-        // foreach ($pendingRecipients as $recipient) {
-        //     $user = \App\Models\User::find($recipient->user_id);
-        //     if ($user && $user->email) {
-        //         $link = $user->getInboxLink();
-        //         Mail::to($user->email)->queue(
-        //             new DocumentNotification($document, $user->name ?? 'User', $link)
-        //         );
-        //     }
-        // }
-        // ...existing code...
     }
 
     /**
-     * Permanently delete a document (sender only)
+     * Permanently delete a document (sender only).
      */
     public function deleteDocument(Document $document)
     {
@@ -93,7 +53,7 @@ class SentDocumentController extends Controller
         }
 
         try {
-            $routes = \App\Models\DocumentRoute::where('document_id', $document->document_id)->get();
+            $routes   = DocumentRoute::where('document_id', $document->document_id)->get();
             $routeIds = $routes->pluck('route_id');
 
             $hasReceived = Recipient::whereIn('route_id', $routeIds)
@@ -106,8 +66,8 @@ class SentDocumentController extends Controller
 
             if ($hasReceived) {
                 $pendingRecipients = Recipient::whereIn('route_id', $routeIds)
-                    ->where(function ($query) {
-                        $query->whereNull('action')->orWhere('action', 'pending');
+                    ->where(function ($q) {
+                        $q->whereNull('action')->orWhere('action', 'pending');
                     })
                     ->get();
 
@@ -115,8 +75,7 @@ class SentDocumentController extends Controller
                     ->whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
                     ->delete();
 
-                Recipient::whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
-                    ->delete();
+                Recipient::whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))->delete();
 
                 $document->update(['status' => 'archived']);
 
@@ -161,59 +120,72 @@ class SentDocumentController extends Controller
     }
 
     /**
-     * Unsend a document to a specific recipient
+     * Unsend a document to a specific recipient.
+     *
+     * Route: DELETE /documents/{document}/recipients/{recipient}
+     *
+     * Both {document} and {recipient} are encrypted IDs resolved by route model binding
+     * via the decryptId() helper registered in RouteServiceProvider.
      */
     public function unsendRecipient(Document $document, Recipient $recipient)
     {
-        $isOwner = Auth::id() === $document->user_id;
-        $isSelf = Auth::id() === $recipient->user_id;
+        // Verify the recipient actually belongs to this document (via DocumentRoute)
+        $routeIds = DocumentRoute::where('document_id', $document->document_id)
+            ->pluck('route_id');
 
-        if (!$isOwner && !$isSelf) {
+        $recipientModel = Recipient::where('recipient_id', $recipient->recipient_id)
+            ->whereIn('route_id', $routeIds)
+            ->first();
+
+        if (!$recipientModel) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only the owner can remove a recipient'
-            ], 403);
-        }
-
-        $isRecipient = $document->recipients()
-            ->where('recipients.recipient_id', $recipient->recipient_id)
-            ->exists();
-
-        if (!$isRecipient) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Recipient not found for this document'
+                'message' => 'Recipient not found for this document.'
             ], 404);
         }
 
-        if (in_array($recipient->action, ['approved', 'rejected'], true)) {
+        // Only the document owner can remove a recipient
+        if (Auth::id() !== $document->user_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'You cannot remove a recipient who already approved or rejected this document'
+                'message' => 'Only the owner can remove a recipient.'
+            ], 403);
+        }
+
+        // Cannot remove a recipient who already acted on the document
+        if (in_array($recipientModel->action, ['approved', 'rejected', 'receive', 'received'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot remove a recipient who already acted on this document.'
             ], 400);
         }
 
-        $sent = SentDocument::where('route_id', $recipient->route_id)
-            ->where('recipient_id', $recipient->recipient_id)
+        // Cannot remove if the recipient already has a received-document record
+        $sent = SentDocument::where('route_id', $recipientModel->route_id)
+            ->where('recipient_id', $recipientModel->recipient_id)
             ->first();
 
         if ($sent && \App\Models\ReceivedDocument::where('sent_id', $sent->sent_id)->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'You cannot remove a recipient who already received this document'
+                'message' => 'You cannot remove a recipient who already received this document.'
             ], 400);
         }
 
         try {
-            SentDocument::where('route_id', $recipient->route_id)
-                ->where('recipient_id', $recipient->recipient_id)
+            // Remove SentDocument record for this recipient
+            SentDocument::where('route_id', $recipientModel->route_id)
+                ->where('recipient_id', $recipientModel->recipient_id)
                 ->delete();
 
-            $recipient->delete();
+            $recipientModel->delete();
 
-            $remaining = $document->recipients()->count();
+            // Count remaining recipients across all routes for this document
+            $remaining = Recipient::whereIn('route_id', $routeIds)->count();
+
             if ($remaining === 0) {
-                $routes = \App\Models\DocumentRoute::where('document_id', $document->document_id)->get();
+                // No more recipients — clean up routes and the document itself
+                $routes = DocumentRoute::where('document_id', $document->document_id)->get();
                 foreach ($routes as $route) {
                     SentDocument::where('route_id', $route->route_id)->delete();
                     $route->delete();
@@ -225,15 +197,19 @@ class SentDocumentController extends Controller
 
                 SentDocument::where('document_id', $document->document_id)->delete();
                 $document->forceDelete();
-            } else {
-                $document->update(['status' => $this->getStatusFromRecipients($document)]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Unsend Success.'
+                ]);
             }
+
+            // Still has other recipients — recalculate status
+            $document->update(['status' => $this->getStatusFromRecipients($document)]);
 
             return response()->json([
                 'success' => true,
-                'message' => $remaining === 0
-                    ? 'Recipient removed and document unsent.'
-                    : 'Recipient removed successfully.'
+                'message' => 'Recipient removed successfully.'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -244,31 +220,118 @@ class SentDocumentController extends Controller
     }
 
     /**
-     * Derive document status from recipient actions.
+     * Unsend a document for the currently authenticated recipient (self-removal).
+     *
+     * Route: DELETE /documents/{document}/unsend-individual
+     */
+    public function unsendIndividual(Document $document)
+    {
+        $routeIds = DocumentRoute::where('document_id', $document->document_id)
+            ->pluck('route_id');
+
+        $recipientModel = Recipient::where('user_id', Auth::id())
+            ->whereIn('route_id', $routeIds)
+            ->first();
+
+        if (!$recipientModel) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Recipient not found for this document.'
+            ], 404);
+        }
+
+        $isOwner = Auth::id() === $document->user_id;
+        $isSelf  = Auth::id() === $recipientModel->user_id;
+
+        if (!$isOwner && !$isSelf) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the owner or recipient can unsend this document.'
+            ], 403);
+        }
+
+        if (in_array($recipientModel->action, ['approved', 'rejected'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot unsend after approval or rejection.'
+            ], 400);
+        }
+
+        $sent = SentDocument::where('route_id', $recipientModel->route_id)
+            ->where('recipient_id', $recipientModel->recipient_id)
+            ->first();
+
+        if ($sent && \App\Models\ReceivedDocument::where('sent_id', $sent->sent_id)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot unsend after the document is received.'
+            ], 400);
+        }
+
+        try {
+            SentDocument::where('route_id', $recipientModel->route_id)
+                ->where('recipient_id', $recipientModel->recipient_id)
+                ->delete();
+
+            $recipientModel->delete();
+
+            $remaining = Recipient::whereIn('route_id', $routeIds)->count();
+
+            if ($remaining === 0) {
+                $routes = DocumentRoute::where('document_id', $document->document_id)->get();
+                foreach ($routes as $route) {
+                    SentDocument::where('route_id', $route->route_id)->delete();
+                    $route->delete();
+                }
+
+                if (Storage::disk('public')->exists($document->file_path)) {
+                    Storage::disk('public')->delete($document->file_path);
+                }
+
+                SentDocument::where('document_id', $document->document_id)->delete();
+                $document->forceDelete();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Document unsent and deleted.'
+                ]);
+            }
+
+            $document->update(['status' => $this->getStatusFromRecipients($document)]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document unsent for this recipient.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to unsend: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Derive document status from remaining recipient actions.
      */
     private function getStatusFromRecipients(Document $document): string
     {
-        $actions = $document->recipients()
-            ->pluck('recipients.action')
+        $routeIds = DocumentRoute::where('document_id', $document->document_id)
+            ->pluck('route_id');
+
+        $actions = Recipient::whereIn('route_id', $routeIds)
+            ->pluck('action')
             ->filter()
-            ->map(fn ($action) => strtolower(trim((string) $action)))
+            ->map(fn ($a) => strtolower(trim((string) $a)))
             ->unique();
 
         $hasReceive = $actions->contains('receive')
             || $actions->contains('received')
-            || $document->recipients()->whereNotNull('recipients.receive_at')->exists();
+            || Recipient::whereIn('route_id', $routeIds)->whereNotNull('receive_at')->exists();
 
-        if ($hasReceive) {
-            return 'receive';
-        }
-
-        if ($actions->contains('approved')) {
-            return 'approved';
-        }
-
-        if ($actions->contains('rejected')) {
-            return 'rejected';
-        }
+        if ($hasReceive)                    return 'receive';
+        if ($actions->contains('approved')) return 'approved';
+        if ($actions->contains('rejected')) return 'rejected';
 
         return 'pending';
     }

@@ -163,6 +163,9 @@ Route::middleware('auth')->group(function () {
 
     // document management
     Route::prefix('documents')->name('documents.')->group(function () {
+            // Unsend for individual send
+        Route::delete('/{document}/unsend-individual', [SentDocumentController::class, 'unsendIndividual'])->name('unsend-individual');
+        // Route::delete('/{document}/unsend-all', [SentDocumentController::class, 'unsendAll'])->name('unsend-all');
         Route::get('/send', [DocumentController::class, 'create'])->name('send');
         Route::post('/review', [DocumentController::class, 'review'])->name('review');
         Route::get('/review', [DocumentController::class, 'showReview'])->name('show-review');
