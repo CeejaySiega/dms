@@ -21,10 +21,14 @@ class ReceivedDocument extends Model
         'file_path',
         'status',
         'receive_at',
+        'archive_at',
+        'unsend_at',
     ];
 
     protected $casts = [
         'receive_at' => 'datetime',
+        'archive_at' => 'datetime',
+        'unsend_at' => 'datetime',
     ];
 
     public $timestamps = false;

@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Recipient extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'recipients';
     protected $primaryKey = 'recipient_id';
@@ -20,11 +21,13 @@ class Recipient extends Model
         'action',
         'receive_at',
         'sent_at',
+        'deleted_at',
     ];
 
     protected $casts = [
         'sent_at' => 'datetime',
         'receive_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     public function route()

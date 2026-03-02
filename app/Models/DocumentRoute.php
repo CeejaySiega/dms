@@ -21,11 +21,13 @@ class DocumentRoute extends Model
         'receive_at',
         'action',
         'priority',
+        'unsend_at',
     ];
 
     protected $casts = [
         'approve_at' => 'datetime',
         'receive_at' => 'datetime',
+        'unsend_at' => 'datetime',
     ];
 
     public function user()

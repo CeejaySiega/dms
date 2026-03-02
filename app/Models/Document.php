@@ -30,12 +30,15 @@ class Document extends Model
         'priority',
         'status',
         'restored_at',
+        'unsend_at',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
         'restored_at' => 'datetime',
+        'unsend_at' => 'datetime',
     ];
 
     /**

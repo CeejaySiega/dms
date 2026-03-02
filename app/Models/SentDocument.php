@@ -21,10 +21,12 @@ class SentDocument extends Model
         'purpose',
         'status',
         'sent_at',
+        'unsend_at',
     ];
 
     protected $casts = [
         'sent_at' => 'datetime',
+        'unsend_at' => 'datetime',
     ];
 
     public $timestamps = false;

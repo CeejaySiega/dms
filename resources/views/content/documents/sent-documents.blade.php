@@ -85,14 +85,13 @@
                     </div>
                 </div>
 
-                {{-- Column Headers — Action column removed --}}
-                <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom">
-                    <div class="col-header" style="width: 200px;">Sent To</div>
-                    <div class="col-header flex-grow-1">Document Type &mdash; Purpose</div>
-                    <div class="col-header d-none d-xl-block" style="min-width: 150px;">Tracking Code</div>
+            <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom">
+                    <div class="col-header" style="width: 200px;">Recipient</div>
+                    <div class="col-header flex-grow-1">Document Type — Purpose</div>
+                    <div class="col-header d-none d-xl-block" style="min-width: 140px;">Tracking Code</div>
                     <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
                     <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Date</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Sent Date</div>
                 </div>
 
                 {{-- Mail list --}}
@@ -163,7 +162,7 @@
                     @endphp
 
                     {{-- Clickable Row — Action column removed --}}
-                    <div class="mail-item d-flex align-items-center gap-3 px-4 py-3 border-bottom sent-document-row"
+                    <div class="mail-item d-flex align-items-center gap-3 px-4 py-2 border-bottom sent-document-row"
                         style="transition: background .15s; cursor: pointer;"
                         data-bs-toggle="modal"
                         data-bs-target="#sentDocumentModal-{{ $document->document_id }}">
@@ -205,7 +204,7 @@
                         </div>
 
                         {{-- Date --}}
-                        <div class="text-muted text-end flex-shrink-0" style="font-size: 0.8rem; min-width: 80px;">
+                        <div class="text-muted d-none d-lg-flex flex-shrink-0" style="font-size: 0.8rem; min-width: 80px; justify-content: center;">
                             {{ $sentAt ? $sentAt->format('M d, Y') : 'N/A' }}
                         </div>
 
@@ -466,14 +465,14 @@
     background: rgba(67, 89, 113, 0.06);
 }
 .col-header {
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    color: #a1acb8;
+    letter-spacing: 0.1rem;
+    color: #6c757d;
 }
 .mail-header {
-    background: #f8f8f8;
+    background: #f5f6f8;
 }
 .mail-item:hover {
     background: rgba(67, 89, 113, 0.04);

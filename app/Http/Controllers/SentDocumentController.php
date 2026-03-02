@@ -16,8 +16,14 @@ class SentDocumentController extends Controller
     public function sent()
     {
         $documents = Document::where('user_id', Auth::id())
-            ->where('status', '!=', 'archived')
-            ->with(['documentType', 'recipients'])
+            ->where('status', '!=', 'archive')
+            ->whereNull('unsend_at')
+            ->whereHas('recipients', function ($query) {
+                $query->whereNull('unsend_at');
+            })
+            ->with(['documentType', 'recipients' => function ($query) {
+                $query->whereNull('unsend_at');
+            }])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -56,7 +62,8 @@ class SentDocumentController extends Controller
             $routes   = DocumentRoute::where('document_id', $document->document_id)->get();
             $routeIds = $routes->pluck('route_id');
 
-            $hasReceived = Recipient::whereIn('route_id', $routeIds)
+            $hasReceived = Recipient::withTrashed()
+                ->whereIn('route_id', $routeIds)
                 ->whereIn('action', ['receive', 'approved', 'rejected'])
                 ->exists();
 
@@ -65,19 +72,29 @@ class SentDocumentController extends Controller
             }
 
             if ($hasReceived) {
-                $pendingRecipients = Recipient::whereIn('route_id', $routeIds)
+                $pendingRecipients = Recipient::withTrashed()
+                    ->whereIn('route_id', $routeIds)
                     ->where(function ($q) {
                         $q->whereNull('action')->orWhere('action', 'pending');
                     })
                     ->get();
 
+                // Update and delete SentDocuments for pending recipients
+                SentDocument::whereIn('route_id', $routeIds)
+                    ->whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
+                    ->update([
+                        'unsend_at' => now()
+                    ]);
+                
                 SentDocument::whereIn('route_id', $routeIds)
                     ->whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
                     ->delete();
 
-                Recipient::whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))->delete();
+                // Soft delete recipients using delete() method
+                Recipient::whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
+                    ->delete();
 
-                $document->update(['status' => 'archived']);
+                $document->update(['status' => 'archive']);
 
                 return response()->json([
                     'success' => true,
@@ -87,7 +104,7 @@ class SentDocumentController extends Controller
 
             foreach ($routes as $route) {
                 if (\App\Models\ReceivedDocument::where('route_id', $route->route_id)->exists()) {
-                    $document->update(['status' => 'archived']);
+                    $document->update(['status' => 'archive']);
 
                     return response()->json([
                         'success' => true,
@@ -95,8 +112,20 @@ class SentDocumentController extends Controller
                     ]);
                 }
 
+                // Delete sent documents first to avoid foreign key constraint
+                SentDocument::where('route_id', $route->route_id)
+                    ->update([
+                        'unsend_at' => now()
+                    ]);
+                
                 SentDocument::where('route_id', $route->route_id)->delete();
-                Recipient::where('route_id', $route->route_id)->delete();
+                
+                // Soft delete recipients using delete() method
+                Recipient::withTrashed()
+                    ->where('route_id', $route->route_id)
+                    ->delete();
+                
+                // Delete route (must delete before document due to foreign keys)
                 $route->delete();
             }
 
@@ -104,8 +133,11 @@ class SentDocumentController extends Controller
                 Storage::disk('public')->delete($document->file_path);
             }
 
-            SentDocument::where('document_id', $document->document_id)->delete();
-            $document->forceDelete();
+            // Soft delete document
+            $document->update([
+                'unsend_at' => now()
+            ]);
+            $document->delete();
 
             return response()->json([
                 'success' => true,
@@ -133,7 +165,8 @@ class SentDocumentController extends Controller
         $routeIds = DocumentRoute::where('document_id', $document->document_id)
             ->pluck('route_id');
 
-        $recipientModel = Recipient::where('recipient_id', $recipient->recipient_id)
+        $recipientModel = Recipient::withTrashed()
+            ->where('recipient_id', $recipient->recipient_id)
             ->whereIn('route_id', $routeIds)
             ->first();
 
@@ -173,20 +206,29 @@ class SentDocumentController extends Controller
         }
 
         try {
-            // Remove SentDocument record for this recipient
+            // Delete the SentDocument record for this recipient
+            SentDocument::where('route_id', $recipientModel->route_id)
+                ->where('recipient_id', $recipientModel->recipient_id)
+                ->update([
+                    'unsend_at' => now()
+                ]);
+            
             SentDocument::where('route_id', $recipientModel->route_id)
                 ->where('recipient_id', $recipientModel->recipient_id)
                 ->delete();
 
+            // Soft delete recipient using the trait's delete method
             $recipientModel->delete();
 
-            // Count remaining recipients across all routes for this document
-            $remaining = Recipient::whereIn('route_id', $routeIds)->count();
+            // Count remaining non-deleted recipients across all routes for this document
+            $remaining = Recipient::whereIn('route_id', $routeIds)
+                ->count();
 
             if ($remaining === 0) {
-                // No more recipients — clean up routes and the document itself
+                // No more recipients — delete all sent documents and routes, then the document itself
                 $routes = DocumentRoute::where('document_id', $document->document_id)->get();
                 foreach ($routes as $route) {
+                    // Delete sent documents first to avoid foreign key issues
                     SentDocument::where('route_id', $route->route_id)->delete();
                     $route->delete();
                 }
@@ -195,8 +237,11 @@ class SentDocumentController extends Controller
                     Storage::disk('public')->delete($document->file_path);
                 }
 
-                SentDocument::where('document_id', $document->document_id)->delete();
-                $document->forceDelete();
+                // Soft delete document
+                $document->update([
+                    'unsend_at' => now()
+                ]);
+                $document->delete();
 
                 return response()->json([
                     'success' => true,
@@ -229,7 +274,8 @@ class SentDocumentController extends Controller
         $routeIds = DocumentRoute::where('document_id', $document->document_id)
             ->pluck('route_id');
 
-        $recipientModel = Recipient::where('user_id', Auth::id())
+        $recipientModel = Recipient::withTrashed()
+            ->where('user_id', Auth::id())
             ->whereIn('route_id', $routeIds)
             ->first();
 
@@ -269,17 +315,43 @@ class SentDocumentController extends Controller
         }
 
         try {
+            // First, delete the SentDocument record to avoid foreign key constraint issues
+            SentDocument::where('route_id', $recipientModel->route_id)
+                ->where('recipient_id', $recipientModel->recipient_id)
+                ->update([
+                    'unsend_at' => now()
+                ]);
+            
             SentDocument::where('route_id', $recipientModel->route_id)
                 ->where('recipient_id', $recipientModel->recipient_id)
                 ->delete();
 
+            // Soft delete this specific recipient
             $recipientModel->delete();
 
-            $remaining = Recipient::whereIn('route_id', $routeIds)->count();
+            // Check if this route still has any active recipients
+            $remainingInRoute = Recipient::where('route_id', $recipientModel->route_id)
+                ->count();
 
-            if ($remaining === 0) {
+            // If this route has no more recipients, delete the route
+            if ($remainingInRoute === 0) {
+                $route = DocumentRoute::find($recipientModel->route_id);
+                if ($route) {
+                    // Delete any remaining sent documents for this route
+                    SentDocument::where('route_id', $route->route_id)->delete();
+                    $route->delete();
+                }
+            }
+
+            // Check if document still has any active recipients across ALL routes
+            $allRemainingRecipients = Recipient::whereIn('route_id', $routeIds)
+                ->count();
+
+            if ($allRemainingRecipients === 0) {
+                // No more recipients anywhere - delete all remaining routes and the document
                 $routes = DocumentRoute::where('document_id', $document->document_id)->get();
                 foreach ($routes as $route) {
+                    // Delete sent documents for this route first
                     SentDocument::where('route_id', $route->route_id)->delete();
                     $route->delete();
                 }
@@ -288,8 +360,11 @@ class SentDocumentController extends Controller
                     Storage::disk('public')->delete($document->file_path);
                 }
 
-                SentDocument::where('document_id', $document->document_id)->delete();
-                $document->forceDelete();
+                // Soft delete document with unsend_at
+                $document->update([
+                    'unsend_at' => now()
+                ]);
+                $document->delete();
 
                 return response()->json([
                     'success' => true,
@@ -297,6 +372,7 @@ class SentDocumentController extends Controller
                 ]);
             }
 
+            // Update document status based on remaining recipients
             $document->update(['status' => $this->getStatusFromRecipients($document)]);
 
             return response()->json([
@@ -320,6 +396,7 @@ class SentDocumentController extends Controller
             ->pluck('route_id');
 
         $actions = Recipient::whereIn('route_id', $routeIds)
+            ->whereNull('deleted_at')
             ->pluck('action')
             ->filter()
             ->map(fn ($a) => strtolower(trim((string) $a)))
@@ -327,7 +404,10 @@ class SentDocumentController extends Controller
 
         $hasReceive = $actions->contains('receive')
             || $actions->contains('received')
-            || Recipient::whereIn('route_id', $routeIds)->whereNotNull('receive_at')->exists();
+            || Recipient::whereIn('route_id', $routeIds)
+                ->whereNull('deleted_at')
+                ->whereNotNull('receive_at')
+                ->exists();
 
         if ($hasReceive)                    return 'receive';
         if ($actions->contains('approved')) return 'approved';

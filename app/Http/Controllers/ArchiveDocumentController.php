@@ -61,7 +61,7 @@ class ArchiveDocumentController extends Controller
 
             // Only mark document as archived for the sender's own view
             if (Auth::user()->user_id === $document->user_id) {
-                $document->update(['status' => 'archived']);
+                $document->update(['status' => 'archive']);
             }
 
             if (request()->wantsJson()) {
@@ -107,12 +107,13 @@ class ArchiveDocumentController extends Controller
         }
 
         try {
-            // Check if already archived by this user
-            $existingArchive = Archive::where('document_id', $document->document_id)
+            // Check if already archived by checking ReceivedDocument archive_at timestamp
+            $checkArchived = \App\Models\ReceivedDocument::where('document_id', $document->document_id)
                 ->where('user_id', $currentUserId)
+                ->whereNotNull('archive_at')
                 ->first();
 
-            if ($existingArchive) {
+            if ($checkArchived) {
                 if (request()->wantsJson()) {
                     return response()->json([
                         'success' => false,
@@ -131,7 +132,15 @@ class ArchiveDocumentController extends Controller
                 'archive_at' => now(),
             ]);
 
-            // Remove from received documents list for this user
+            // Soft delete ReceivedDocument for this user
+            \App\Models\ReceivedDocument::where('document_id', $document->document_id)
+                ->where('user_id', $currentUserId)
+                ->update([
+                    'archive_at' => now(),
+                    'status' => 'archive'
+                ]);
+            
+            // Soft delete the received document
             \App\Models\ReceivedDocument::where('document_id', $document->document_id)
                 ->where('user_id', $currentUserId)
                 ->delete();

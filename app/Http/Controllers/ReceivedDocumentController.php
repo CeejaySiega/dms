@@ -21,6 +21,7 @@ class ReceivedDocumentController extends Controller
                 'route.document.user.employee'
             ])
             ->where('user_id', Auth::id())
+            ->whereNull('deleted_at')
             ->where(function ($query) {
                 $query->whereNull('action')->orWhere('action', 'pending');
             })
@@ -29,6 +30,7 @@ class ReceivedDocumentController extends Controller
             ->paginate(15);
 
         $inboxCount = Recipient::where('user_id', Auth::id())
+            ->whereNull('deleted_at')
             ->where(function ($query) {
                 $query->whereNull('action')->orWhere('action', 'pending');
             })
@@ -86,6 +88,7 @@ class ReceivedDocumentController extends Controller
                 'document.user.employee'
             ])
             ->where('user_id', Auth::id())
+            ->whereNull('archive_at')
             ->orderBy('receive_at', 'desc')
             ->paginate(15);
 
@@ -94,14 +97,28 @@ class ReceivedDocumentController extends Controller
 
 
     /**
-     * Remove a received document from the receiver's list
+     * Archive/Soft delete a received document from the receiver's list
      */
     public function deleteReceived(ReceivedDocument $receivedDocument)
     {
-        return response()->json([
-            'success' => false,
-            'message' => 'Received documents cannot be deleted.'
-        ], 403);
+        try {
+            // Soft delete with archive_at timestamp
+            $receivedDocument->update([
+                'archive_at' => now(),
+                'status' => 'archive'
+            ]);
+            $receivedDocument->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document archive successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive document: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -193,6 +210,7 @@ class ReceivedDocumentController extends Controller
                 'purpose' => $document->purpose,
                 'status' => 'receive',
                 'sent_at' => $recipient->sent_at ?? now(),
+                
             ]);
         }
 

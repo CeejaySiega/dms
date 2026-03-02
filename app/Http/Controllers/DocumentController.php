@@ -313,6 +313,7 @@ class DocumentController extends Controller
         'purpose' => $document->purpose,
         'status' => 'pending',
         'sent_at' => now(),
+
     ]);
 
     // ✅ SEND EMAIL HERE
@@ -380,6 +381,10 @@ class DocumentController extends Controller
     public function all(Request $request)
     {
         $query = Document::where('user_id', Auth::id())
+            ->whereNull('unsend_at')
+            ->whereHas('recipients', function ($q) {
+                $q->whereNull('unsend_at');
+            })
             ->with('documentType');
 
         // Search by tracking code or file name
@@ -403,7 +408,7 @@ class DocumentController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         } else {
-            $query->where('status', '!=', 'archived');
+            $query->where('status', '!=', 'archive');
         }
 
         $documents = $query->orderBy('created_at', 'desc')->paginate(15);

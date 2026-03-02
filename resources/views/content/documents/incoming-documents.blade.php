@@ -71,7 +71,6 @@
                             </a>
                         </li>
                     </ul>
-
                 </div>
             </div>
 
@@ -79,7 +78,15 @@
             <div class="col-12 col-md-9 col-lg-10 d-flex flex-column">
 
                 {{-- Toolbar --}}
-                <div class="d-flex align-items-center justify-content-end px-4 py-2 border-bottom" style="min-height: 52px;">
+                <div class="d-flex align-items-center justify-content-between px-4 py-2 border-bottom" style="min-height: 52px;">
+
+                    {{-- ✅ Hint note on the left --}}
+                    <div class="d-flex align-items-center gap-1 px-3 py-1 rounded" style="font-size: 0.78rem; background: #eafbe7; color: #6fd44c; font-weight: 600;">
+                        <i class="bx bx-info-circle" style="font-size: 0.95rem; color: #6fd44c;"></i>
+                        <span style="color: #6fd44c;">Click a row to view document details and actions.</span>
+                    </div>  
+
+                    {{-- Pagination controls on the right --}}
                     <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.85rem;">
                         {{ $inbox->firstItem() ?? 0 }}–{{ $inbox->lastItem() ?? 0 }} of {{ $inbox->total() ?? 0 }}
                         <button class="btn btn-icon btn-sm btn-outline-secondary border-0" {{ $inbox->onFirstPage() ? 'disabled' : '' }}>
@@ -98,8 +105,7 @@
                     <div class="col-header d-none d-xl-block" style="min-width: 140px;">Tracking Code</div>
                     <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
                     <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Date</div>
-                    <div class="col-header text-end" style="min-width: 80px;">Action</div>
+                    <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Date</div>
                 </div>
 
                 {{-- Mail list --}}
@@ -110,7 +116,7 @@
                         @endphp
                         @if($document)
                         @php
-                            $sender = optional($document->user)->employee;
+                            $sender     = optional($document->user)->employee;
                             $senderName = $sender
                                 ? ($sender->firstname . ' ' . $sender->lastname)
                                 : (optional($document->user)->name ?? 'N/A');
@@ -136,11 +142,15 @@
                             $isUnread = $statusValue === 'pending';
                             $action   = $recipient->action;
                             $isFinal  = in_array($action, ['receive', 'approved', 'rejected']);
+
+                            $modalId = 'inboxDocModal-' . $recipient->recipient_id;
                         @endphp
 
-                        <div class="mail-item d-flex align-items-center gap-3 px-4 py-3 border-bottom {{ $isUnread ? 'mail-unread' : '' }}"
+                        {{-- Clickable Row --}}
+                        <div class="mail-item d-flex align-items-center gap-3 px-4 py-2 border-bottom {{ $isUnread ? 'mail-unread' : '' }}"
                              style="cursor: pointer; transition: background .15s;"
-                             onclick="window.location='{{ route('documents.show', encryptId($document->document_id)) }}'">
+                             data-bs-toggle="modal"
+                             data-bs-target="#{{ $modalId }}">
 
                             {{-- Sender name --}}
                             <div class="flex-shrink-0" style="width: 200px; overflow: hidden;">
@@ -180,32 +190,39 @@
                             </div>
 
                             {{-- Date --}}
-                            <div class="text-muted flex-shrink-0" style="font-size: 0.8rem; min-width: 80px;">
+                            <div class="text-muted d-none d-lg-flex flex-shrink-0" style="font-size: 0.8rem; min-width: 80px; justify-content: center;">
                                 {{ optional($recipient->sent_at)->format('M d, Y') ?? '' }}
                             </div>
 
-                            {{-- Actions (shown on hover) --}}<div class="dropdown flex-shrink-0 text-end " style="min-width: 90px;" onclick="event.stopPropagation()">
-                            <button class="btn btn-icon btn-sm btn-outline-secondary" type="button"
-                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bx bx-dots-vertical-rounded"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <form action="{{ route('documents.receive', encryptId($document->document_id)) }}" method="POST" class="receive-form">
-                                    @csrf
-                                    <button type="submit"
-                                            class="dropdown-item d-flex align-items-center gap-2"
+                            {{-- Action Dropdown — stopPropagation so it doesn't open the modal
+                            <div class="dropdown flex-shrink-0 text-end" style="min-width: 80px;" onclick="event.stopPropagation()">
+                                <button class="btn btn-icon btn-sm btn-outline-secondary" type="button"
+                                        data-bs-toggle="dropdown"
+                                        data-bs-strategy="fixed"
+                                        aria-expanded="false">
+                                    <i class="bx bx-dots-vertical-rounded"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <form action="{{ route('documents.receive', encryptId($document->document_id)) }}"
+                                              method="POST" class="receive-form">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="dropdown-item d-flex align-items-center gap-2"
+                                                    @disabled($isFinal)>
+                                                <i class="bx bx-envelope-open"></i> Receive Document
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('documents.show', encryptId($document->document_id)) }}"
+                                           class="dropdown-item d-flex align-items-center gap-2">
+                                            <i class="bx bx-show"></i> View Document
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div> --}}
 
-                                            @disabled($isFinal)>
-                                        <i class="bx bx-envelope-open"></i> Receive Document
-                                    </button>
-                                </form>
-                                <a href="{{ route('documents.show', encryptId($document->document_id)) }}"
-                                   class="dropdown-item d-flex align-items-center gap-2"
-                                    title="">
-                                    <i class="bx bx-show"></i> View Document
-                                </a>
-                            </ul>
-                            </div>
                         </div>
                         @endif
                     @empty
@@ -227,8 +244,176 @@
     </div>
 </div>
 
+{{-- ============================================================
+     INBOX MODALS — Document Details per Row
+     ============================================================ --}}
+@foreach($inbox as $recipient)
+    @php
+        $document = optional($recipient->route)->document;
+        if (!$document) continue;
+
+        $sender     = optional($document->user)->employee;
+        $senderName = $sender
+            ? ($sender->firstname . ' ' . $sender->lastname)
+            : (optional($document->user)->name ?? 'N/A');
+        $senderEmail = optional($document->user)->email ?? 'N/A';
+
+        $priorityVal   = optional($recipient->route)->priority ?? 'normal';
+        $priorityBadge = match($priorityVal) {
+            'urgent' => 'bg-danger',
+            'high'   => 'bg-warning',
+            'low'    => 'bg-secondary',
+            default  => 'bg-primary',
+        };
+
+        $statusVal = $recipient->action ?: 'pending';
+        $statusVal = $statusVal === 'received' ? 'receive' : $statusVal;
+        $statusBadge = match($statusVal) {
+            'pending'  => 'bg-warning',
+            'approved' => 'bg-success',
+            'receive'  => 'bg-info',
+            'rejected' => 'bg-danger',
+            default    => 'bg-secondary',
+        };
+
+        $isFinal = in_array($recipient->action, ['receive', 'approved', 'rejected']);
+        $modalId = 'inboxDocModal-' . $recipient->recipient_id;
+    @endphp
+
+    <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+
+                {{-- Header --}}
+                <div class="modal-header border-bottom-0 pb-1">
+                    <h5 class="modal-title d-flex align-items-center gap-2">
+                        <i class="bx bx-file text-muted"></i>
+                        <span class="fw-semibold">Incoming Document</span>
+                        <span style="color: #e74c3c; font-weight: 600; font-size: 0.9rem;">
+                            {{ $document->tracking_code ?? 'N/A' }}
+                        </span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body pt-2">
+
+                    {{-- ── Document Details ── --}}
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bx bx-info-circle text-muted" style="font-size: 0.8rem;"></i>
+                            <span class="text-uppercase fw-bold text-muted" style="font-size: 0.7rem; letter-spacing: 0.08em;">
+                                Document Details
+                            </span>
+                        </div>
+
+                        <div class="row g-3">
+                            {{-- Document Type + Tracking Code --}}
+                            <div class="col-6">
+                                <div class="text-muted mb-1" style="font-size: 0.78rem;">Document Type</div>
+                                <div class="fw-semibold" style="font-size: 0.9rem;">
+                                    {{ $document->documentType?->type_name ?? 'Document' }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted mb-1" style="font-size: 0.78rem;">Tracking Code</div>
+                                <div class="fw-semibold" style="color: #e74c3c; font-size: 0.9rem;">
+                                    {{ $document->tracking_code ?? 'N/A' }}
+                                </div>
+                            </div>
+
+                            {{-- Purpose --}}
+                            <div class="col-12">
+                                <div class="text-muted mb-1" style="font-size: 0.78rem;">Purpose</div>
+                                <div style="font-size: 0.9rem;">{{ $document->purpose }}</div>
+                            </div>
+
+                            {{-- Priority + Status + Date --}}
+                            <div class="col-4">
+                                <div class="text-muted mb-1" style="font-size: 0.78rem;">Priority</div>
+                                <span class="badge {{ $priorityBadge }}" style="font-size: 0.75rem;">
+                                    {{ ucfirst($priorityVal) }}
+                                </span>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-muted mb-1" style="font-size: 0.78rem;">Status</div>
+                                <span class="badge {{ $statusBadge }}" style="font-size: 0.75rem;">
+                                    {{ ucfirst($statusVal) }}
+                                </span>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-muted mb-1" style="font-size: 0.78rem;">Sent At</div>
+                                <div style="font-size: 0.85rem;">
+                                    {{ optional($recipient->sent_at)->format('M d, Y H:i') ?? 'N/A' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    {{-- ── Sender Details ── --}}
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bx bx-user text-muted" style="font-size: 0.8rem;"></i>
+                            <span class="text-uppercase fw-bold text-muted" style="font-size: 0.7rem; letter-spacing: 0.08em;">
+                                Sender
+                            </span>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 py-2 px-1">
+                            <div class="avatar avatar-sm flex-shrink-0">
+                                <span class="avatar-initial rounded-circle bg-label-primary fw-bold"
+                                      style="width: 36px; height: 36px; font-size: 0.85rem;">
+                                    {{ strtoupper(substr($senderName, 0, 1)) }}
+                                </span>
+                            </div>
+                            <div>
+                                <div class="fw-semibold" style="font-size: 0.875rem;">
+                                    {{ strtoupper($senderName) }}
+                                </div>
+                                <small class="text-muted">{{ $senderEmail }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>{{-- /modal-body --}}
+
+                {{-- Footer --}}
+                <div class="modal-footer border-top-0 justify-content-between pt-1">
+
+                    {{-- Left: View full document --}}
+                    <a href="{{ route('documents.show', encryptId($document->document_id)) }}"
+                       class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+                        <i class="bx bx-show me-1"></i> View Document
+                    </a>
+
+                    {{-- Right: Receive + Close --}}
+                    <div class="d-flex gap-2">
+                        @if(!$isFinal)
+                            <form action="{{ route('documents.receive', encryptId($document->document_id)) }}"
+                                  method="POST" class="receive-form">
+                                @csrf
+                                <button type="submit"
+                                        class="btn btn-primary btn-sm d-flex align-items-center gap-1">
+                                    <i class="bx bx-envelope-open me-1"></i> Receive
+                                </button>
+                            </form>
+                        @endif
+                        <button type="button"
+                                class="btn btn-secondary btn-sm"
+                                data-bs-dismiss="modal">
+                            Close
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+@endforeach
+
 <style>
-/* Sidebar nav active & hover */
 .mail-nav .nav-link.active {
     background: rgba(105, 108, 255, 0.16);
     color: #696cff !important;
@@ -237,22 +422,16 @@
 .mail-nav .nav-link:hover:not(.active) {
     background: rgba(67, 89, 113, 0.06);
 }
-
-/* Column header style */
 .col-header {
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05rem;
-    color: #a1acb8;
+    letter-spacing: 0.1rem;
+    color: #6c757d;
 }
-
-/* Column header background */
 .mail-header {
-    background: #f8f8f8;
+    background: #f5f6f8;
 }
-
-/* Mail item hover */
 .mail-item:hover {
     background: rgba(67, 89, 113, 0.04);
 }
@@ -260,41 +439,48 @@
     background: rgba(105, 108, 255, 0.04);
 }
 
-/* Actions hidden by default, show on hover */
-.mail-actions {
-    opacity: 0;
-    transition: opacity .15s;
-}
-.mail-item:hover .mail-actions {
-    opacity: 1;
-}
-
-@media (max-width: 768px) {
-    .mail-actions { opacity: 1; }
+/* Fix: SweetAlert2 always above Bootstrap modal */
+.swal2-container {
+    z-index: 99999 !important;
 }
 </style>
 
 @section('page-script')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-$(document).ready(function () {
-    $('.receive-form').on('submit', function (e) {
-        e.preventDefault();
-        const form = this;
-        Swal.fire({
-            title: 'Receive Document?',
-            text: 'Mark this document as received?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#696cff',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, receive it',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) form.submit();
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Stop dropdown clicks from opening the row modal
+    document.querySelectorAll('.mail-item .dropdown').forEach(function (dropdown) {
+        dropdown.addEventListener('click', function (e) {
+            e.stopPropagation();
         });
     });
+
+    // Intercept all receive forms (both dropdown + modal) with SweetAlert confirm
+    document.querySelectorAll('.receive-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const submittedForm = this;
+            Swal.fire({
+                title: 'Receive Document?',
+                text: 'Mark this document as received?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#696cff',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, receive it',
+                cancelButtonText: 'Cancel',
+                customClass: { container: 'swal-over-modal' },
+                didOpen: function () {
+                    document.querySelector('.swal-over-modal').style.zIndex = 99999;
+                }
+            }).then(function (result) {
+                if (result.isConfirmed) submittedForm.submit();
+            });
+        });
+    });
+
 });
 </script>
 @endsection
