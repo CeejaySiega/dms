@@ -172,15 +172,73 @@ class UserController extends Controller
             ], 403);
         }
 
-        if ($user->employee) {
-            $user->employee->delete();
+        try {
+            // Disable foreign key checks temporarily
+            \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            // 1. Delete received documents for this user
+            \App\Models\ReceivedDocument::where('user_id', $user->user_id)->delete();
+
+            // 2. Delete all SentDocuments where this user is a recipient (via recipient records)
+            $recipientIds = \App\Models\Recipient::where('user_id', $user->user_id)
+                ->pluck('recipient_id')
+                ->toArray();
+            
+            if (!empty($recipientIds)) {
+                \App\Models\SentDocument::whereIn('recipient_id', $recipientIds)->delete();
+            }
+
+            // 3. Delete recipient records where this user is a recipient
+            \App\Models\Recipient::where('user_id', $user->user_id)->delete();
+
+            // 4. Delete all documents sent by this user (with all related data)
+            $documents = \App\Models\Document::where('user_id', $user->user_id)->get();
+            foreach ($documents as $document) {
+                $routes = \App\Models\DocumentRoute::where('document_id', $document->document_id)->get();
+                foreach ($routes as $route) {
+                    // Delete ReceivedDocuments first (they reference SentDocuments via sent_id)
+                    \App\Models\ReceivedDocument::where('route_id', $route->route_id)->delete();
+                    
+                    // Delete SentDocuments (now safe after ReceivedDocuments are gone)
+                    \App\Models\SentDocument::where('route_id', $route->route_id)->delete();
+                    
+                    // Delete Recipients
+                    \App\Models\Recipient::where('route_id', $route->route_id)->delete();
+                    
+                    // Delete DocumentRoute
+                    $route->delete();
+                }
+                
+                // Delete Document
+                $document->delete();
+            }
+
+            // 5. Delete group memberships for this user
+            \App\Models\Group_user::where('user_id', $user->user_id)->delete();
+
+            // 6. Delete employee record
+            if ($user->employee) {
+                $user->employee->delete();
+            }
+
+            // 7. Delete user account
+            $user->delete();
+
+            // Re-enable foreign key checks
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User and all associated data deleted successfully.'
+            ]);
+        } catch (\Exception $e) {
+            // Re-enable foreign key checks in case of error
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting user: ' . $e->getMessage()
+            ], 500);
         }
-
-        $user->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User deleted successfully.'
-        ]);
     }
 }

@@ -1,7 +1,7 @@
 
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Users List')
+@section('title', 'Users List') 
 @section('content')
 <!-- Page Header with Breadcrumb -->
 <div class="container-xxl flex-grow-1 container-p-y">

@@ -23,9 +23,9 @@
     <!-- Canonical SEO -->
     <link rel="canonical" href="{{ config('variables.productPage') ? config('variables.productPage') : '' }}" />
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/0/0d/Southern_Leyte_State_University.png?v=20260204" />
-    <link rel="shortcut icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/0/0d/Southern_Leyte_State_University.png?v=20260204" />
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/0/0d/Southern_Leyte_State_University.png?v=20260204" />
+    <link rel="icon" type="image/x-icon" href="{{ asset('/assets/img/favicon/Logo.png') }}" />
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('/assets/img/favicon/Logo.png') }}" />
+    <link rel="apple-touch-icon" href="{{ asset('/assets/img/favicon/Logo.png') }}" />
 
     <!-- Include Styles -->
     @include('layouts/sections/styles')
