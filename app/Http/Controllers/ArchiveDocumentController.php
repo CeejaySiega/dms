@@ -32,18 +32,17 @@ class ArchiveDocumentController extends Controller
     /**
      * Display restored documents
      */
+    /**
+     * Display restored documents
+     */
     public function restored()
     {
         $currentUserId = Auth::user()->user_id;
         $search = trim((string) request('search'));
 
-        $restoredDocuments = Document::where(function($query) use ($currentUserId) {
-                $query->where('documents.user_id', $currentUserId)
-                      ->orWhereHas('recipients', function($q) use ($currentUserId) {
-                          $q->where('recipients.user_id', $currentUserId);
-                      });
-            })
-            ->where('status', 'restored')
+        // Get documents that were archived and then restored by this user
+        $restoredDocuments = Document::where('user_id', $currentUserId)
+            ->whereNotNull('restored_at')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('tracking_code', 'like', "%{$search}%")
@@ -88,10 +87,8 @@ class ArchiveDocumentController extends Controller
                 ->where('user_id', Auth::user()->user_id)
                 ->delete();
 
-            // Only mark document as archived for the sender's own view
-            if (Auth::user()->user_id === $document->user_id) {
-                $document->update(['status' => 'archive']);
-            }
+            // DO NOT soft-delete the document - it's still needed by recipients!
+            // Only archive it in the Archive table for the sender
 
             if (request()->wantsJson()) {
                 return response()->json([
@@ -165,8 +162,7 @@ class ArchiveDocumentController extends Controller
             \App\Models\ReceivedDocument::where('document_id', $document->document_id)
                 ->where('user_id', $currentUserId)
                 ->update([
-                    'archive_at' => now(),
-                    'status' => 'archive'
+                    'archive_at' => now()
                 ]);
             
             // Soft delete the received document
@@ -204,22 +200,17 @@ class ArchiveDocumentController extends Controller
         
         // Find archive by archive_id with authorization check
         $archive = Archive::where('archive_id', $archiveId)
-            ->where(function($query) use ($currentUserId) {
-                $query->where('user_id', $currentUserId)
-                      ->orWhereHas('document', function($q) use ($currentUserId) {
-                          $q->where('user_id', $currentUserId);
-                      });
-            })
+            ->where('user_id', $currentUserId)
             ->firstOrFail();
 
         try {
             // Delete archive record
             $archive->delete();
 
-            // Restore document status to 'sent'
+            // Mark document as restored
             $document = Document::where('document_id', $archive->document_id)->first();
             if ($document) {
-                $document->update(['status' => 'restored', 'restored_at' => now()]);
+                $document->update(['restored_at' => now()]);
             }
 
             if (request()->wantsJson()) {

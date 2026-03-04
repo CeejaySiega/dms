@@ -26,8 +26,16 @@
 /* Layout container tuning for all pages */
 .container-xxl {
   max-width: 90%;
-  padding-left: clamp(16px, 2.5vw, 32px);
-  padding-right: clamp(16px, 2.5vw, 32px);
+  padding-left: 2.5%;
+  padding-right: 2.5%;
+}
+
+/* Fallback for older browsers using clamp */
+@supports (padding-left: clamp(1px, 1vw, 1px)) {
+  .container-xxl {
+    padding-left: clamp(16px, 2.5vw, 32px);
+    padding-right: clamp(16px, 2.5vw, 32px);
+  }
 }
 
 /* Avoid double container padding on pages that already include container-xxl */

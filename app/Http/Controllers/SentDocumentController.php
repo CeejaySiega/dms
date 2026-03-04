@@ -15,8 +15,13 @@ class SentDocumentController extends Controller
 {
     public function sent()
     {
+        // Get documents sent by current user that are NOT archived
         $documents = Document::where('user_id', Auth::id())
-            ->where('status', '!=', 'archive')
+            ->whereNotIn('document_id', function($query) {
+                $query->select('document_id')
+                      ->from('archives')
+                      ->where('user_id', Auth::id());
+            })
             ->whereNull('unsend_at')
             ->whereHas('recipients', function ($query) {
                 $query->whereNull('unsend_at');
@@ -94,7 +99,7 @@ class SentDocumentController extends Controller
                 Recipient::whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
                     ->delete();
 
-                $document->update(['status' => 'archive']);
+                $document->delete();
 
                 return response()->json([
                     'success' => true,
@@ -104,7 +109,7 @@ class SentDocumentController extends Controller
 
             foreach ($routes as $route) {
                 if (\App\Models\ReceivedDocument::where('route_id', $route->route_id)->exists()) {
-                    $document->update(['status' => 'archive']);
+                    $document->delete();
 
                     return response()->json([
                         'success' => true,

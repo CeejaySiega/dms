@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\Group;
 use App\Models\Group_user;
 use App\Models\SentDocument;
+use App\Models\Archive;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DocumentNotification;
 use Illuminate\Http\Request;
@@ -203,7 +204,7 @@ class DocumentController extends Controller
                     $recipientUser = \App\Models\User::find($userId);
                     if ($recipientUser && $recipientUser->email) {
                     $link = $recipientUser->getInboxLink();
-                    Mail::to($recipientUser->email)->queue(
+                    Mail::to($recipientUser->email)->send(
                     new DocumentNotification($document, $recipientUser->name ?? 'User', $link)
                 );
             }
@@ -321,7 +322,7 @@ class DocumentController extends Controller
     if ($recipientUser && $recipientUser->email) {
         $link = $recipientUser->getInboxLink();
 
-        Mail::to($recipientUser->email)->queue(
+        Mail::to($recipientUser->email)->send(
             new DocumentNotification(
                 $document,
                 $recipientUser->name ?? 'User',
@@ -386,6 +387,13 @@ class DocumentController extends Controller
             })
             ->with('documentType');
 
+        // Exclude archived documents (via Archive table)
+        $query->whereNotIn('document_id', function($subquery) {
+            $subquery->select('document_id')
+                     ->from('archives')
+                     ->where('user_id', Auth::id());
+        });
+
         // Search by tracking code or file name
         if ($request->filled('search')) {
             $search = $request->search;
@@ -406,8 +414,6 @@ class DocumentController extends Controller
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
-        } else {
-            $query->where('status', '!=', 'archive');
         }
 
         $documents = $query->orderBy('created_at', 'desc')->paginate(15);
@@ -452,11 +458,9 @@ class DocumentController extends Controller
             'received' => Document::where('user_id', Auth::id())
                 ->where('status', 'received')
                 ->count(),
-            'archived' => Document::where('user_id', Auth::id())
-                ->where('status', 'archived')
-                ->count(),
+            'archived' => Archive::where('user_id', Auth::id())->count(),
             'restored' => Document::where('user_id', Auth::id())
-                ->where('status', 'restored')
+                ->whereNotNull('restored_at')
                 ->count(),
         ];
 

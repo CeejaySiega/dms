@@ -3,19 +3,7 @@
 @section('title', 'Document Sent - Receipt')
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
-    <!-- Page Header with Breadcrumb -->
-    <div class="mb-4">
-        <h4 class="fw-bold mb-2">Document Management System</h4>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb breadcrumb-style1">
-                <li class="breadcrumb-item">
-                    <a href="{{ route('dashboard-analytics') }}">Home</a>
-                </li>
-                <li class="breadcrumb-item active">Document Receipt</li>
-            </ol>
-        </nav>
-    </div>
+
 
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -249,11 +237,7 @@
                     </div>
 
                     <!-- Print Option -->
-                    <div class="text-center mt-3">
-                        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
-                            <i class="bx bx-printer me-1"></i> Print Receipt
-                        </button>
-                    </div>
+                
                 </div>
             </div>
         </div>

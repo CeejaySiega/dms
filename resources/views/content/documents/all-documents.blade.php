@@ -3,8 +3,166 @@
 @section('title', 'All Documents')
 
 @section('content')
+
+<style>
+    /* ── Top controls ── */
+    .dt-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .dt-left-controls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .dt-length-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .dt-length-select {
+        display: inline-block;
+        padding: 0.25rem 1.75rem 0.25rem 0.6rem;
+        font-size: 0.875rem;
+        border: 1px solid #d9dee3;
+        border-radius: 0.375rem;
+        background-color: #fff;
+        appearance: auto;
+        cursor: pointer;
+        color: #4a5568;
+    }
+    .dt-length-select:focus {
+        outline: none;
+        border-color: #696cff;
+        box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.15);
+    }
+    .dt-filter-select {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border: 1px solid #d9dee3;
+        border-radius: 0.375rem;
+        background-color: #fff;
+        cursor: pointer;
+        color: #4a5568;
+        min-width: 140px;
+    }
+    .dt-filter-select:focus {
+        outline: none;
+        border-color: #696cff;
+        box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.15);
+    }
+    .dt-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .dt-search-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .dt-search-input {
+        border: 1px solid #d9dee3;
+        border-radius: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        min-width: 220px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .dt-search-input:focus {
+        outline: none;
+        border-color: #696cff;
+        box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.15);
+    }
+
+    /* ── Table ── */
+    .dt-table thead th {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6c757d;
+        border-top: none;
+        border-bottom: 1px solid #e9ecef !important;
+        padding: 0.85rem 1rem;
+        white-space: nowrap;
+        background: #fff;
+    }
+    .dt-table tbody td {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f1f3;
+        color: #4a5568;
+    }
+    .dt-table tbody tr:last-child td { border-bottom: none; }
+    .dt-table tbody tr:hover { background-color: #f8f8ff; }
+
+    /* ── Bottom controls ── */
+    .dt-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.25rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .dt-info {
+        font-size: 0.8125rem;
+        color: #6c757d;
+    }
+
+    /* ── Pagination ── */
+    .dt-pagination {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .dt-pagination .page-item .page-link {
+        border: 1px solid transparent;
+        border-radius: 0.375rem !important;
+        padding: 0.3rem 0.65rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+        background: transparent;
+        min-width: 34px;
+        text-align: center;
+        line-height: 1.5;
+        transition: background 0.15s, color 0.15s;
+    }
+    .dt-pagination .page-item .page-link:hover {
+        background: #f0f1ff;
+        color: #696cff;
+    }
+    .dt-pagination .page-item.active .page-link {
+        background: #696cff;
+        color: #fff;
+        border-color: #696cff;
+    }
+    .dt-pagination .page-item.disabled .page-link {
+        color: #c4c6d0;
+        pointer-events: none;
+    }
+
+    /* ── Empty state ── */
+    .dt-empty { padding: 3rem 1rem; text-align: center; }
+</style>
+
 <div class="container-xxl flex-grow-1 container-p-y">
-    <!-- Page Header with Breadcrumb -->
+
+    <!-- Page Header -->
     <div class="mb-4">
         <h4 class="fw-bold mb-2"><i class="bx bx-file me-2"></i>My Documents</h4>
         <nav aria-label="breadcrumb">
@@ -17,213 +175,192 @@
         </nav>
     </div>
 
-{{-- 
-    {{-- <div class="row">
-        <div class="col-md-12">
-            <!-- Header -->
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bx bx-file me-2"></i>My Documents
-                        @if(($inboxCount ?? 0) > 0)
-                            <span class="badge bg-danger ms-2">{{ $inboxCount }}</span>
+    <!-- Documents Card -->
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Top Controls -->
+            <form method="GET" action="{{ route('documents.all') }}" id="filterForm">
+                <div class="dt-controls">
+
+                    <!-- Left: show entries + filters -->
+                    <div class="dt-left-controls">
+                        <label class="dt-length-label">
+                            Show
+                            <select name="per_page"
+                                    class="dt-length-select"
+                                    onchange="document.getElementById('filterForm').submit()">
+                                @foreach([10, 25, 50, 100] as $len)
+                                    <option value="{{ $len }}"
+                                        {{ request('per_page', 10) == $len ? 'selected' : '' }}>
+                                        {{ $len }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            entries
+                        </label>
+
+                        <select name="document_type"
+                                class="dt-filter-select"
+                                onchange="document.getElementById('filterForm').submit()">
+                            <option value="">All Types</option>
+                            @foreach(['Memorandum','Request Letter','Office Order','Endorsement','Circular','Report','Communication Letter','Travel Order','Purchase Request'] as $type)
+                                <option value="{{ $type }}"
+                                    {{ request('document_type') == $type ? 'selected' : '' }}>
+                                    {{ $type }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        <select name="status"
+                                class="dt-filter-select"
+                                onchange="document.getElementById('filterForm').submit()">
+                            <option value="">All Status</option>
+                            <option value="pending"  {{ request('status') == 'pending'  ? 'selected' : '' }}>Pending</option>
+                            <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Received</option>
+                        </select>
+
+                        @if(request('search') || request('document_type') || request('status'))
+                            <a href="{{ route('documents.all') }}" class="btn btn-sm btn-outline-secondary" title="Reset">
+                                <i class="bx bx-reset"></i>
+                            </a>
                         @endif
-                    </h5>
-                    <a href="{{ route('documents.send') }}" class="btn btn-primary" title="Send New Document">
-                        <i class="bx bx-plus"></i>
-                    </a>
-                </div> 
-            </div> --}}
+                    </div>
 
-            <!-- Search Bar -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <form method="GET" action="{{ route('documents.all') }}" id="searchForm">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Search by Tracking Code or File Name</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       name="search" 
-                                       placeholder="Enter tracking code or file name..."
-                                       value="{{ request('search') }}">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Document Type</label>
-                                <select class="form-select" name="document_type">
-                                    <option value="">All Types</option>
-                                    <option value="Memorandum" {{ request('document_type') == 'Memorandum' ? 'selected' : '' }}>Memorandum</option>
-                                    <option value="Request Letter" {{ request('document_type') == 'Request Letter' ? 'selected' : '' }}>Request Letter</option>
-                                    <option value="Office Order" {{ request('document_type') == 'Office Order' ? 'selected' : '' }}>Office Order</option>
-                                    <option value="Endorsement" {{ request('document_type') == 'Endorsement' ? 'selected' : '' }}>Endorsement</option>
-                                    <option value="Circular" {{ request('document_type') == 'Circular' ? 'selected' : '' }}>Circular</option>
-                                    <option value="Report" {{ request('document_type') == 'Report' ? 'selected' : '' }}>Report</option>
-                                    <option value="Communication Letter" {{ request('document_type') == 'Communication Letter' ? 'selected' : '' }}>Communication Letter</option>
-                                    <option value="Travel Order" {{ request('document_type') == 'Travel Order' ? 'selected' : '' }}>Travel Order</option>
-                                    <option value="Purchase Request" {{ request('document_type') == 'Purchase Request' ? 'selected' : '' }}>Purchase Request</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" name="status">
-                                    <option value="">All Status</option>
-                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Sent</option>
-                                    <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Receive</option>
-                                    <option value="restored" {{ request('status') == 'restored' ? 'selected' : '' }}>Restored from archive</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">&nbsp;</label>
-                                <div class="d-flex justify-content-end align-items-center gap-2">
-                                    <button type="submit" class="btn btn-primary" title="Search">
-                                        <i class="bx bx-search"></i>
-                                    </button>
-                                    <a href="{{ route('documents.all') }}" class="btn btn-outline-secondary" title="Reset Search">
-                                        <i class="bx bx-reset"></i>
-                                    </a>
-                                    <a href="{{ route('documents.send') }}" class="btn btn-primary" title="Send New Document">
-                                         <i class="bx bx-plus"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+                    <!-- Right: search + new document -->
+                    <div class="dt-search-wrap">
+                        <label class="dt-search-label">
+                            Search:
+                            <input type="text"
+                                   name="search"
+                                   class="dt-search-input"
+                                   value="{{ request('search') }}"
+                                   placeholder="Tracking code or file name…"
+                                   autocomplete="off">
+                        </label>
+                        <a href="{{ route('documents.send') }}" class="btn btn-primary btn-sm ms-1" title="Send New Document">
+                            <i class="bx bx-plus"></i>
+                        </a>
+                    </div>
+
                 </div>
-            </div>
+            </form>
 
-            <!-- Documents List -->
-            <div class="card">
-                <div class="card-body">
-                    @if($documents->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle text-center">
-                            <thead>
-                                <tr>
-                                    <th>Tracking Code</th>
-                                    <th>Sent To</th>
-                                    <th>Document Type</th>
-                                    <th>Purpose</th>
-                                    <th>File Name</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Sent Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($documents as $document)
-                                <tr>
-                                    <td>
-                                        <span class="badge bg-primary">{{ $document->tracking_code }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $route = \App\Models\DocumentRoute::where('document_id', $document->document_id)->first();
-                                            $recipients = $route ? \App\Models\Recipient::with('user.employee')
-                                                ->where('route_id', $route->route_id)
-                                                ->get() : collect();
-                                            $isGroupSend = $recipients->count() > 1;
-                                        @endphp
-                                        @if($isGroupSend)
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-outline-info" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#recipientsModal{{ $document->document_id }}">
-                                                <i class="bx bx-group me-1"></i> Group ({{ $recipients->count() }})
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table table-hover dt-table w-100">
+                    <thead>
+                        <tr>
+                            <th>Tracking Code</th>
+                            <th>Sent To</th>
+                            <th>Document Type</th>
+                            <th>Purpose</th>
+                            <th>File Name</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Sent Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($documents as $document)
+                        @php
+                            $route = \App\Models\DocumentRoute::where('document_id', $document->document_id)->first();
+                            $recipients = $route
+                                ? \App\Models\Recipient::with('user.employee')->where('route_id', $route->route_id)->get()
+                                : collect();
+                            $isGroupSend = $recipients->count() > 1;
+
+                            // Priority
+                            $priorityValue = $route?->priority ?? 'normal';
+                            $priorityClass = match($priorityValue) {
+                                'urgent' => 'bg-danger',
+                                'high'   => 'bg-warning',
+                                'low'    => 'bg-secondary',
+                                default  => 'bg-primary',
+                            };
+
+                            // Status
+                            $statusValue = $document->status;
+                            if ($document->status === 'restored') {
+                                $statusValue = 'restored';
+                            } elseif ($recipients->isNotEmpty()) {
+                                $actions = $recipients->pluck('action')
+                                    ->filter()
+                                    ->map(fn($a) => strtolower(trim((string) $a)))
+                                    ->unique();
+
+                                $hasPending = $recipients->contains(fn($r) => is_null($r->action) || $r->action === 'pending');
+                                $hasReceive = $actions->contains('receive')
+                                    || $actions->contains('received')
+                                    || $recipients->whereNotNull('receive_at')->isNotEmpty();
+
+                                $statusValue = $hasPending ? 'pending' : ($hasReceive ? 'receive' : 'pending');
+                            }
+                            $statusClass = match($statusValue) {
+                                'pending'            => 'bg-warning',
+                                'receive','received' => 'bg-info',
+                                'archived'           => 'bg-secondary',
+                                'restored'           => 'bg-success',
+                                default              => 'bg-secondary',
+                            };
+                        @endphp
+                        <tr>
+                            <td>
+                                <span class="badge bg-label-primary">{{ $document->tracking_code }}</span>
+                            </td>
+                            <td>
+                                @if($isGroupSend)
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-info"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#recipientsModal{{ $document->document_id }}">
+                                        <i class="bx bx-group me-1"></i>Group ({{ $recipients->count() }})
+                                    </button>
+                                @elseif($recipients->count() > 0)
+                                    @php $r = $recipients->first(); @endphp
+                                    {{ $r->user->employee
+                                        ? $r->user->employee->firstname . ' ' . $r->user->employee->lastname
+                                        : $r->user->name }}
+                                @else
+                                    <span class="text-muted"><i>No recipients</i></span>
+                                @endif
+                            </td>
+                            <td>{{ $document->documentType->type_name ?? 'N/A' }}</td>
+                            <td>
+                                <span class="text-truncate d-inline-block"
+                                      style="max-width:200px"
+                                      title="{{ $document->purpose }}">
+                                    {{ $document->purpose }}
+                                </span>
+                            </td>
+                            <td>
+                                <i class="bx bx-file me-1"></i>{{ $document->file_name }}
+                            </td>
+                            <td>
+                                <span class="badge {{ $priorityClass }}">{{ ucfirst($priorityValue) }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {{ $statusClass }}">{{ ucfirst($statusValue) }}</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ $document->created_at->format('M d, Y h:i A') }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    @if($statusValue !== 'pending')
+                                        <form action="{{ route('documents.delete-document', encryptId($document->document_id)) }}"
+                                              method="POST"
+                                              class="d-inline delete-document-form">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Delete">
+                                                <i class="bx bx-trash"></i>
                                             </button>
-                                        @elseif($recipients->count() > 0)
-                                            @php
-                                                $recipient = $recipients->first();
-                                            @endphp
-                                            @if($recipient->user->employee)
-                                                {{ $recipient->user->employee->firstname }} {{ $recipient->user->employee->lastname }}
-                                            @else
-                                                {{ $recipient->user->name }}
-                                            @endif
-                                        @else
-                                            <span class="text-muted"><i>No recipients</i></span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $document->documentType->type_name ?? 'N/A' }}</td>
-                                    <td>
-                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ $document->purpose }}">
-                                            {{ $document->purpose }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <i class="bx bx-file me-1"></i>{{ $document->file_name }}
-                                    </td>
-                                    <td>
-                                        @php
-                                            $route = $route ?? \App\Models\DocumentRoute::where('document_id', $document->document_id)->first();
-                                            $priorityValue = $route?->priority ?? 'normal';
-                                            $priorityClass = match($priorityValue) {
-                                                'urgent' => 'bg-danger',
-                                                'high' => 'bg-warning',
-                                                'low' => 'bg-secondary',
-                                                default => 'bg-primary'
-                                            };
-                                        @endphp
-                                        <span class="badge {{ $priorityClass }}">{{ ucfirst($priorityValue) }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $statusValue = $document->status;
-                                            
-                                            // Check if document itself has restored status first
-                                            if ($document->status === 'restored') {
-                                                $statusValue = 'restored';
-                                            } elseif ($recipients->isNotEmpty()) {
-                                                $actions = $recipients->pluck('action')
-                                                    ->filter()
-                                                    ->map(fn ($action) => strtolower(trim((string) $action)))
-                                                    ->unique();
-
-                                                $hasPending = $recipients->contains(function ($recipient) {
-                                                    return is_null($recipient->action) || $recipient->action === 'pending';
-                                                });
-
-                                                $hasReceive = $actions->contains('receive')
-                                                    || $actions->contains('received')
-                                                    || $recipients->whereNotNull('receive_at')->isNotEmpty();
-
-                                                if ($hasPending) {
-                                                    $statusValue = 'pending';
-                                                } elseif ($hasReceive) {
-                                                    $statusValue = 'receive';
-                                                } else {
-                                                    $statusValue = 'pending';
-                                                }
-                                            }
-
-                                            $statusClass = match($statusValue) {
-                                                'pending' => 'bg-warning',
-                                                'receive', 'received' => 'bg-info',
-                                                'archived' => 'bg-secondary',
-                                                'restored' => 'bg-success',
-                                                default => 'bg-secondary'
-                                            };
-                                        @endphp
-                                        <span class="badge {{ $statusClass }}">{{ ucfirst($statusValue) }}</span>
-                                    </td>
-                                    <td>
-                                        <small>{{ $document->created_at->format('M d, Y h:i A') }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            @if($statusValue !== 'pending')
-                                            <form action="{{ route('documents.delete-document', encryptId($document->document_id)) }}"
-                                                  method="POST"
-                                                  class="d-inline delete-document-form">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                        class="btn btn-sm btn-outline-danger"
-                                                        title="Delete">
-                                                    <i class="bx bx-trash"></i>
-                                                </button>
-                                            </form>
-                                            @if($document->status !== 'archived')
+                                        </form>
+                                        @if($document->status !== 'archived')
                                             <form action="{{ route('documents.archive', encryptId($document->document_id)) }}"
                                                   method="POST"
                                                   class="d-inline archive-form">
@@ -234,102 +371,152 @@
                                                     <i class="bx bx-archive"></i>
                                                 </button>
                                             </form>
-                                            @endif
-                                            @endif
-                                            <a href="{{ route('documents.download', encryptId($document->document_id)) }}" 
-                                               class="btn btn-sm btn-outline-success" 
-                                               title="Download">
-                                                <i class="bx bx-download"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                        @endif
+                                    @endif
+                                    <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
+                                       class="btn btn-sm btn-outline-success"
+                                       title="Download">
+                                        <i class="bx bx-download"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="9" class="dt-empty">
+                                <i class="bx bx-folder-open" style="font-size:64px;color:#ccc;"></i>
+                                <p class="text-muted mt-3">No documents found.</p>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
 
-                    <!-- Modals for Recipients -->
-                    @foreach($documents as $document)
-                        @php
-                            $route = \App\Models\DocumentRoute::where('document_id', $document->document_id)->first();
-                            $recipients = $route ? \App\Models\Recipient::with('user.employee')
-                                ->where('route_id', $route->route_id)
-                                ->get() : collect();
-                            $isGroupSend = $recipients->count() > 1;
-                        @endphp
-                        @if($isGroupSend)
-                        <div class="modal fade" id="recipientsModal{{ $document->document_id }}" tabindex="-1" aria-labelledby="recipientsModalLabel{{ $document->document_id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="recipientsModalLabel{{ $document->document_id }}">
-                                            <i class="bx bx-group me-2"></i>Recipients - {{ $document->tracking_code }}
-                                        </h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <ul class="list-group">
-                                            @foreach($recipients as $recipient)
-                                                <li class="list-group-item">
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <i class="bx bx-user-circle fs-4"></i>
-                                                        <div>
-                                                            <div class="fw-semibold">
-                                                                @if($recipient->user->employee)
-                                                                    {{ $recipient->user->employee->firstname }} {{ $recipient->user->employee->lastname }}
-                                                                @else
-                                                                    {{ $recipient->user->name }}
-                                                                @endif
-                                                            </div>
-                                                            <div>
-                                                                <div class="d-flex align-items-center gap-2">
-                                                                <span class="badge bg-info">{{ ucfirst($recipient->action ?? 'pending') }}</span>
-                                                                </div>
-                                                            </div>
-                                                            <small class="text-muted">
-                                                                <i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}
-                                                            </small>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <!-- Bottom Controls: Info + Pagination -->
+            @if($documents->count() > 0)
+            <div class="dt-bottom">
+                <div class="dt-info">
+                    @php
+                        $total = method_exists($documents, 'total')     ? $documents->total()     : $documents->count();
+                        $from  = method_exists($documents, 'firstItem') ? $documents->firstItem() : 1;
+                        $to    = method_exists($documents, 'lastItem')  ? $documents->lastItem()  : $documents->count();
+                    @endphp
+                    Showing {{ $from }} to {{ $to }} of {{ $total }} entries
+                    @if(request('search') || request('document_type') || request('status'))
+                        <span class="text-muted">(filtered)</span>
+                    @endif
+                </div>
+
+                @if(method_exists($documents, 'lastPage'))
+                @php
+                    $current = $documents->currentPage();
+                    $last    = $documents->lastPage();
+                    $window  = 2;
+                    $start   = max(1, $current - $window);
+                    $end     = min($last, $current + $window);
+                    $query   = $documents->appends(request()->query());
+                @endphp
+                <ul class="dt-pagination">
+                    <li class="page-item {{ $documents->onFirstPage() ? 'disabled' : '' }}">
+                        <a class="page-link"
+                           href="{{ !$documents->onFirstPage() ? $query->previousPageUrl() : '#' }}">‹</a>
+                    </li>
+
+                    @if($start > 1)
+                        <li class="page-item"><a class="page-link" href="{{ $query->url(1) }}">1</a></li>
+                        @if($start > 2)
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        @endif
+                    @endif
+
+                    @for($p = $start; $p <= $end; $p++)
+                        <li class="page-item {{ $p === $current ? 'active' : '' }}">
+                            <a class="page-link" href="{{ $query->url($p) }}">{{ $p }}</a>
+                        </li>
+                    @endfor
+
+                    @if($end < $last)
+                        @if($end < $last - 1)
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        @endif
+                        <li class="page-item"><a class="page-link" href="{{ $query->url($last) }}">{{ $last }}</a></li>
+                    @endif
+
+                    <li class="page-item {{ !$documents->hasMorePages() ? 'disabled' : '' }}">
+                        <a class="page-link"
+                           href="{{ $documents->hasMorePages() ? $query->nextPageUrl() : '#' }}">›</a>
+                    </li>
+                </ul>
+                @endif
+            </div>
+            @endif
+
+        </div>
+    </div>
+
+    <!-- Recipient Modals -->
+    @foreach($documents as $document)
+        @php
+            $routeM = \App\Models\DocumentRoute::where('document_id', $document->document_id)->first();
+            $recipientsM = $routeM
+                ? \App\Models\Recipient::with('user.employee')->where('route_id', $routeM->route_id)->get()
+                : collect();
+        @endphp
+        @if($recipientsM->count() > 1)
+        <div class="modal fade"
+             id="recipientsModal{{ $document->document_id }}"
+             tabindex="-1"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bx bx-group me-2"></i>Recipients — {{ $document->tracking_code }}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="list-group list-group-flush">
+                            @foreach($recipientsM as $recipient)
+                            <li class="list-group-item">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bx bx-user-circle fs-4 text-muted"></i>
+                                    <div>
+                                        <div class="fw-semibold">
+                                            {{ $recipient->user->employee
+                                                ? $recipient->user->employee->firstname . ' ' . $recipient->user->employee->lastname
+                                                : $recipient->user->name }}
+                                        </div>
+                                        <span class="badge bg-info">{{ ucfirst($recipient->action ?? 'pending') }}</span>
+                                        <small class="text-muted d-block">
+                                            <i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}
+                                        </small>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        @endif
-                    @endforeach
-
-                    <!-- Pagination -->
-                    <div class="mt-4">
-                        {{ $documents->appends(request()->query())->links() }}
+                            </li>
+                            @endforeach
+                        </ul>
                     </div>
-                    @else
-                    <div class="text-center py-5">
-                        <i class="bx bx-folder-open" style="font-size: 64px; color: #ccc;"></i>
-                        <p class="text-muted mt-3">No documents found.</p>
-                        {{-- <a href="{{ route('documents.send') }}" class="btn btn-primary mt-2">
-                            <i class="bx bx-plus me-1"></i> Send Your First Document
-                        </a> --}}
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                     </div>
-                    @endif
                 </div>
             </div>
         </div>
-    </div>
-</div>
+        @endif
+    @endforeach
+
+</div>{{-- /container-xxl --}}
+
+@endsection
 
 @section('page-script')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-$(document).ready(function() {
-    // Setup AJAX headers
+$(document).ready(function () {
+
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -337,62 +524,74 @@ $(document).ready(function() {
         }
     });
 
-    // Delete document confirmation (sender only)
-    $('.delete-document-form').on('submit', function(e) {
+    // Delete confirmation
+    $('.delete-document-form').on('submit', function (e) {
         e.preventDefault();
         const form = this;
 
         Swal.fire({
-            title: 'Delete Document?'
-            ,html: 'Delete this document from your list? Receivers will keep their copies.'
-            ,icon: 'warning'
-            ,showCancelButton: true
-            ,confirmButtonColor: '#d33'
-            ,cancelButtonColor: '#6c757d'
-            ,confirmButtonText: 'Yes, delete'
-            ,cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (!result.isConfirmed) {
-                return;
-            }
+            title: 'Delete Document?',
+            html: 'Delete this document from your list? Receivers will keep their copies.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel'
+        }).then(result => {
+            if (!result.isConfirmed) return;
 
             Swal.fire({
-                title: 'Deleting...'
-                ,text: 'Please wait while we remove the document.'
-                ,allowOutsideClick: false
-                ,didOpen: () => {
-                    Swal.showLoading();
-                }
+                title: 'Deleting…',
+                text: 'Please wait.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
             });
 
             $.ajax({
-                url: $(form).attr('action')
-                ,type: 'POST'
-                ,dataType: 'json'
-                ,data: $(form).serialize()
-                ,success: function(response) {
+                url: $(form).attr('action'),
+                type: 'POST',
+                dataType: 'json',
+                data: $(form).serialize(),
+                success: function (response) {
                     Swal.fire({
-                        icon: 'success'
-                        ,title: 'Deleted'
-                        ,text: response.message || 'Document removed for sender.'
-                        ,confirmButtonColor: '#3085d6'
-                    }).then(() => {
-                        location.reload();
-                    });
-                }
-                ,error: function(xhr) {
+                        icon: 'success',
+                        title: 'Deleted',
+                        text: response.message || 'Document removed.',
+                        confirmButtonColor: '#3085d6'
+                    }).then(() => location.reload());
+                },
+                error: function (xhr) {
                     Swal.fire({
-                        icon: 'error'
-                        ,title: 'Error!'
-                        ,text: xhr.responseJSON?.message || 'Failed to delete document.'
-                        ,confirmButtonColor: '#d33'
+                        icon: 'error',
+                        title: 'Error!',
+                        text: xhr.responseJSON?.message || 'Failed to delete.',
+                        confirmButtonColor: '#d33'
                     });
                 }
             });
         });
     });
 
+    // Archive confirmation
+    $('.archive-form').on('submit', function (e) {
+        e.preventDefault();
+        const form = this;
+        const code = $(this).closest('tr').find('.badge.bg-label-primary').text().trim();
+
+        Swal.fire({
+            title: 'Archive Document?',
+            text: `Move "${code}" to archive?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#696cff',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, archive it',
+            cancelButtonText: 'Cancel'
+        }).then(result => {
+            if (result.isConfirmed) form.submit();
+        });
+    });
 });
 </script>
-@endsection
 @endsection

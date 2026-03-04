@@ -109,7 +109,9 @@ class Document extends Model
      */
     public function scopeArchived($query)
     {
-        return $query->where('status', 'archived');
+        return $query->whereIn('document_id', function($subquery) {
+            $subquery->select('document_id')->from('archives');
+        });
     }
 
     /**

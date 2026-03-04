@@ -169,6 +169,18 @@ $(document).ready(function() {
             allowOutsideClick: false
         }).then((result) => {
             if (result.isConfirmed) {
+                // Show loading alert
+                Swal.fire({
+                    title: 'Sending Document...',
+                    html: '<p class="text-muted">Please wait while we send your document to the group.</p>',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: (toast) => {
+                        Swal.showLoading();
+                    }
+                });
+
                 const formData = {
                     group_id: groupId,
                     priority: priority,

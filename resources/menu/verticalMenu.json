@@ -19,7 +19,7 @@
       "name": "Mail",
       "url": "/documents/incoming",
       "icon": "menu-icon icon-base bx bx-envelope",
-      "slug": "documents.incoming"
+      "slug": "documents.incoming,documents.received,documents.sent"
     },
     {
       "url": "/documents/archived",

@@ -104,8 +104,7 @@ class ReceivedDocumentController extends Controller
         try {
             // Soft delete with archive_at timestamp
             $receivedDocument->update([
-                'archive_at' => now(),
-                'status' => 'archive'
+                'archive_at' => now()
             ]);
             $receivedDocument->delete();
 

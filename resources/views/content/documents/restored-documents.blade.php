@@ -216,7 +216,7 @@
                                     <th>Document Type</th>
                                     <th>Purpose</th>
                                     <th>File Name</th>
-                                    <th>Restored At</th>
+                                    <th>Archived At</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -245,8 +245,8 @@
                                     </td>
                                     <td>
                                         <small class="text-muted">
-                                            @if($document->restored_at)
-                                                {{ $document->restored_at->format('M d, Y h:i A') }}
+                                            @if($document->deleted_at)
+                                                {{ $document->deleted_at->format('M d, Y h:i A') }}
                                             @else
                                                 <i>Not set</i>
                                             @endif
