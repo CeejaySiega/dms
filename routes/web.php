@@ -182,6 +182,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/received/{receivedDocument}', [ReceivedDocumentController::class, 'deleteReceived'])->name('received.delete');
         Route::get('/sent', [SentDocumentController::class, 'sent'])->name('sent');
         Route::get('/archived', [ArchiveDocumentController::class, 'index'])->name('archived');
+        Route::get('/restored', [ArchiveDocumentController::class, 'restored'])->name('restored');
         Route::get('/all', [DocumentController::class, 'all'])->name('all');
         Route::get('/stats', [DocumentController::class, 'getStats'])->name('stats');
         

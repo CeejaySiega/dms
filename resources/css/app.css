@@ -25,7 +25,7 @@
 
 /* Layout container tuning for all pages */
 .container-xxl {
-  max-width: 1440px;
+  max-width: 90%;
   padding-left: clamp(16px, 2.5vw, 32px);
   padding-right: clamp(16px, 2.5vw, 32px);
 }

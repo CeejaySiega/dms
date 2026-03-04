@@ -30,6 +30,35 @@ class ArchiveDocumentController extends Controller
     }
 
     /**
+     * Display restored documents
+     */
+    public function restored()
+    {
+        $currentUserId = Auth::user()->user_id;
+        $search = trim((string) request('search'));
+
+        $restoredDocuments = Document::where(function($query) use ($currentUserId) {
+                $query->where('documents.user_id', $currentUserId)
+                      ->orWhereHas('recipients', function($q) use ($currentUserId) {
+                          $q->where('recipients.user_id', $currentUserId);
+                      });
+            })
+            ->where('status', 'restored')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('tracking_code', 'like', "%{$search}%")
+                      ->orWhere('file_name', 'like', "%{$search}%")
+                      ->orWhere('purpose', 'like', "%{$search}%");
+                });
+            })
+            ->with('documentType')
+            ->orderBy('restored_at', 'desc')
+            ->paginate(15);
+
+        return view('content.documents.restored-documents', compact('restoredDocuments'));
+    }
+
+    /**
      * Archive a document
      */
     public function archive(Document $document)

@@ -28,10 +28,24 @@
       "slug": "documents.archived"
     },
     {
-      "url": "/documents/all",
       "name": "My Documents",
       "icon": "menu-icon icon-base bx bx-list-ul",
-      "slug": "documents.all"
+      "slug": [
+        "documents.all",
+        "documents.restored"
+      ],
+      "submenu": [
+        {
+          "url": "/documents/all",
+          "name": "All Documents",
+          "slug": "documents.all"
+        },
+        {
+          "url": "/documents/restored",
+          "name": "Restored Documents",
+          "slug": "documents.restored"
+        }
+      ]
     },
     {
       "menuHeader": "USERS-GROUPS"

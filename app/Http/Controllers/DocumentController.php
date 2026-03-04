@@ -23,7 +23,6 @@ class DocumentController extends Controller
     public function create()
     {
         $documentTypes = DocumentType::all();
-        // logActivity(auth()->id(), 'add', 'Opened send document form');
         return view('content.documents.send-document', compact('documentTypes'));
     }
 
