@@ -3,6 +3,39 @@
 @section('title', 'Send to Individual')
 
 @section('content')
+<style>
+    @media (max-width: 768px) {
+        .row {
+            flex-direction: column;
+        }
+        .col-md-7, .col-md-5 {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        .card {
+            margin-bottom: 1rem;
+        }
+        .form-label {
+            font-size: 0.875rem;
+        }
+        .form-control, .form-select {
+            font-size: 0.875rem;
+        }
+    }
+    @media (max-width: 576px) {
+        h4, h5, h6 {
+            font-size: 1.1rem;
+        }
+        .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        .list-group-item {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.85rem;
+        }
+    }
+</style>
 <div class="container-xxl flex-grow-1 container-p-y">
     <!-- Page Header with Breadcrumb -->
     <div class="mb-4">

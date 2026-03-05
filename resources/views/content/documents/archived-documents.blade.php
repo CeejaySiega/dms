@@ -3,6 +3,48 @@
 @section('title', 'Archived Documents')
 
 @section('content')
+<style>
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem !important;
+        }
+        .btn-group {
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table {
+            font-size: 0.75rem;
+        }
+        .table th, .table td {
+            padding: 0.5rem !important;
+        }
+        .badge {
+            font-size: 0.65rem;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.65rem;
+        }
+    }
+    @media (max-width: 576px) {
+        .d-flex {
+            flex-direction: column !important;
+        }
+        .align-items-md-center {
+            align-items: flex-start !important;
+        }
+        .mt-md-0 {
+            margin-top: 1rem !important;
+        }
+        .gap-4 {
+            gap: 1rem !important;
+        }
+    }
+</style>
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row">
         <div class="col-md-12">
@@ -100,22 +142,16 @@
                                                     <i class="bx bx-undo"></i>
                                                 </button>
                                             </form>
-                                            <a href="{{ route('documents.download', encryptId($archive->document_id)) }}"
-                                               class="btn btn-sm btn-outline-success"
-                                               title="Download">
-                                                <i class="bx bx-download"></i>
-                                            </a>
-                                            <form action="{{ route('documents.permanent-delete', $archive->archive_id) }}"
+                                            <form action="{{ route('documents.soft-delete-archive', $archive->archive_id) }}"
                                                   method="POST"
                                                   class="d-inline delete-form">
                                                 @csrf
-                                                @method('DELETE')
                                                 <button type="submit"
                                                     class="btn btn-sm btn-outline-danger"
                                                     id="delete-document-{{ $archive->archive_id }}"
                                                     name="delete"
-                                                    title="Permanently Delete"
-                                                    aria-label="Permanently delete archive">
+                                                    title="Delete"
+                                                    aria-label="Delete archive">
                                                     <i class="bx bx-trash"></i>
                                                 </button>
                                             </form>
@@ -177,13 +213,13 @@ $(document).ready(function() {
         const form = this;
 
         Swal.fire({
-            title: 'Permanently Delete?',
-            text: 'This action cannot be undone. The archived record will be permanently deleted.',
+            title: 'Delete Archive?',
+            text: 'Remove this archived record?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete permanently',
+            confirmButtonText: 'Yes, delete',
             cancelButtonText: 'Cancel'
         }).then((result) => {
             if (result.isConfirmed) {

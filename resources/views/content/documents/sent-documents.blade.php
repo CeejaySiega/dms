@@ -20,6 +20,11 @@
     letter-spacing: 0.1rem;
     color: #6c757d;
 }
+@media (max-width: 768px) {
+    .col-header {
+        font-size: 0.6rem;
+    }
+}
 .mail-header { background: #f5f6f8; }
 .mail-item:hover { background: rgba(67, 89, 113, 0.04); }
 .sent-document-row { cursor: pointer; }
@@ -32,6 +37,14 @@
     list-style: none;
     margin: 0;
     padding: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+@media (max-width: 576px) {
+    .dt-pagination {
+        justify-content: center;
+        width: 100%;
+    }
 }
 .dt-pagination .page-item .page-link {
     border: 1px solid transparent;
@@ -44,6 +57,13 @@
     text-align: center;
     line-height: 1.5;
     transition: background 0.15s, color 0.15s;
+}
+@media (max-width: 576px) {
+    .dt-pagination .page-item .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        min-width: 26px;
+    }
 }
 .dt-pagination .page-item .page-link:hover {
     background: #f0f1ff;
@@ -61,6 +81,33 @@
 
 /* SweetAlert2 always above Bootstrap modal */
 .swal2-container { z-index: 99999 !important; }
+
+/* Responsive sidebar */
+@media (max-width: 768px) {
+    .col-md-3 { position: sticky; top: 0; z-index: 100; }
+    .mail-item { font-size: 0.8rem; }
+}
+@media (max-width: 576px) {
+    .row.g-0 { flex-wrap: wrap; }
+    .col-12 { max-width: 100%; }
+}
+
+/* Zoom-safe container sizing with aspect ratio */
+.card[style*="min-height"] {
+    min-height: clamp(600px, 75vh, 900px) !important;
+    aspect-ratio: auto / 1.2;
+}
+
+.col-12.col-md-9.col-lg-10[style*="height"] {
+    height: clamp(600px, 75vh, 900px) !important;
+}
+
+.mail-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
 </style>
 
 <div class="container-xxl flex-grow-1 container-p-y">

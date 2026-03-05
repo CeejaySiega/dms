@@ -115,6 +115,31 @@ class Document extends Model
     }
 
     /**
+     * Check if all group members have received the document
+     */
+    public function allGroupMembersReceived()
+    {
+        $routes = $this->routes()->get();
+        
+        foreach ($routes as $route) {
+            // If this route is sent to a group
+            if ($route->group_id) {
+                // Check if all recipients in this group have received the message
+                $unreceived = Recipient::where('route_id', $route->route_id)
+                    ->whereNull('receive_at')
+                    ->count();
+                
+                // If any recipient hasn't received, return false
+                if ($unreceived > 0) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    /**
      * Generate tracking code if not exists
      */
     public static function generateTrackingCode()

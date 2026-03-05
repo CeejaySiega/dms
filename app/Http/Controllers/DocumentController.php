@@ -382,12 +382,13 @@ class DocumentController extends Controller
     {
         $query = Document::where('user_id', Auth::id())
             ->whereNull('unsend_at')
+            ->where('status', '!=', 'restored')  // Exclude restored documents
             ->whereHas('recipients', function ($q) {
                 $q->whereNull('unsend_at');
             })
             ->with('documentType');
 
-        // Exclude archived documents (via Archive table)
+        // Exclude archived documents (via Archive table - both active and soft-deleted)
         $query->whereNotIn('document_id', function($subquery) {
             $subquery->select('document_id')
                      ->from('archives')
@@ -458,9 +459,11 @@ class DocumentController extends Controller
             'received' => Document::where('user_id', Auth::id())
                 ->where('status', 'received')
                 ->count(),
-            'archived' => Archive::where('user_id', Auth::id())->count(),
+            'archived' => Archive::where('user_id', Auth::id())
+                ->whereNull('deleted_at')
+                ->count(),
             'restored' => Document::where('user_id', Auth::id())
-                ->whereNotNull('restored_at')
+                ->where('status', 'restored')
                 ->count(),
         ];
 

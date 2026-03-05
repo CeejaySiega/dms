@@ -1,4 +1,88 @@
-/* Menu hover/active style (dashboard-like selection) */
+/* ============================================
+   CSS VARIABLES FOR ALIGNMENT
+   ============================================ */
+:root {
+  /* Responsive horizontal padding (scales with zoom) */
+  --content-padding-inline: clamp(0.75rem, 2.5vw, 1.5rem);
+  /* Max content width for navbar and containers */
+  --content-max-width: 1420px;
+}
+
+/* ============================================
+   NAVBAR — Aligned with container content
+   ============================================ */
+
+#layout-navbar.navbar-detached {
+  /* Center and align navbar with content */
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 0.875rem !important;
+  margin-bottom: 0 !important;
+
+  /* Match container-xxl padding and max-width */
+  padding-left: var(--content-padding-inline) !important;
+  padding-right: var(--content-padding-inline) !important;
+  width: 100%;
+  max-width: calc(var(--content-max-width) + 2 * var(--content-padding-inline));
+  box-sizing: border-box;
+  border-radius: 0.375rem;
+}
+
+/* Content below navbar uses the same horizontal spacing */
+.content-wrapper > .container-xxl {
+  padding-top: 0.875rem;
+}
+
+/* ============================================
+   LAYOUT STRUCTURE
+   ============================================ */
+
+.layout-wrapper,
+.layout-container {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.layout-menu {
+  width: 16.25rem;
+  min-width: 16.25rem;
+  flex-shrink: 0;
+}
+
+.layout-page {
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   CONTAINER-XXL ALIGNMENT
+   ============================================ */
+
+.container-xxl {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: var(--content-max-width);
+  padding-left: var(--content-padding-inline);
+  padding-right: var(--content-padding-inline);
+  box-sizing: border-box;
+}
+
+/* Nested containers */
+.container-xxl .container-xxl {
+  max-width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ============================================
+   MENU HOVER / ACTIVE
+   ============================================ */
+
 .menu-vertical .menu-item .menu-link {
   border-radius: 0.5rem !important;
   transition: all 0.15s ease-in-out !important;
@@ -14,7 +98,7 @@
 .menu-vertical .menu-item.open > .menu-link {
   background-color: rgba(105, 108, 255, 0.16) !important;
   color: #696cff !important;
-  box-shadow: inset 3px 0 0 #696cff !important;
+  box-shadow: inset 0.1875rem 0 0 #696cff !important;
 }
 
 .menu-vertical .menu-item.active > .menu-link i,
@@ -23,31 +107,44 @@
   color: #696cff !important;
 }
 
-/* Layout container tuning for all pages */
-.container-xxl {
-  max-width: 90%;
-  padding-left: 2.5%;
-  padding-right: 2.5%;
-}
+/* ============================================
+   RESPONSIVE ADJUSTMENTS (em = zoom-safe)
+   ============================================ */
 
-/* Fallback for older browsers using clamp */
-@supports (padding-left: clamp(1px, 1vw, 1px)) {
-  .container-xxl {
-    padding-left: clamp(16px, 2.5vw, 32px);
-    padding-right: clamp(16px, 2.5vw, 32px);
+@media (max-width: 74.99em) {
+  #layout-navbar.navbar-detached {
+    /* Already inherits from CSS variables */
   }
 }
 
-/* Avoid double container padding on pages that already include container-xxl */
-.container-xxl .container-xxl {
-  max-width: 100%;
-  padding-left: 0;
-  padding-right: 0;
+@media (max-width: 61.99em) {
+  .layout-menu {
+    width: 220px;
+    min-width: 220px;
+  }
 }
 
-@media (max-width: 575.98px) {
-  .container-xxl {
-    padding-left: 12px;
-    padding-right: 12px;
+@media (max-width: 47.99em) {
+  .layout-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1050;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .layout-menu.open {
+    transform: translateX(0);
+  }
+
+  .layout-page {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  #layout-navbar.navbar-detached {
+    margin-top: 0.625rem !important;
   }
 }

@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Archive extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'archives';
     protected $primaryKey = 'archive_id';
@@ -19,10 +20,12 @@ class Archive extends Model
         'file_path',
         'file_name',
         'archive_at',
+        'deleted_at',
     ];
 
     protected $casts = [
         'archive_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     /**

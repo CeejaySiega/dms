@@ -14,12 +14,23 @@
         flex-wrap: wrap;
         gap: 0.75rem;
     }
+    @media (max-width: 768px) {
+        .dt-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
     .dt-length-label {
         font-size: 0.875rem;
         color: #6c757d;
         display: flex;
         align-items: center;
         gap: 0.4rem;
+    }
+    @media (max-width: 576px) {
+        .dt-length-label {
+            font-size: 0.75rem;
+        }
     }
     .dt-length-select {
         display: inline-block;
@@ -31,6 +42,12 @@
         appearance: auto;
         cursor: pointer;
         color: #4a5568;
+    }
+    @media (max-width: 576px) {
+        .dt-length-select {
+            width: 100%;
+            font-size: 0.75rem;
+        }
     }
     .dt-length-select:focus {
         outline: none;
@@ -44,6 +61,12 @@
         align-items: center;
         gap: 0.5rem;
     }
+    @media (max-width: 768px) {
+        .dt-search-label {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
     .dt-search-input {
         border: 1px solid #d9dee3;
         border-radius: 0.375rem;
@@ -51,6 +74,12 @@
         font-size: 0.875rem;
         min-width: 400px;
         transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    @media (max-width: 768px) {
+        .dt-search-input {
+            min-width: 100%;
+            width: 100%;
+        }
     }
     .dt-search-input:focus {
         outline: none;
@@ -71,12 +100,25 @@
         white-space: nowrap;
         background: #fff;
     }
+    @media (max-width: 576px) {
+        .dt-table thead th {
+            font-size: 0.65rem;
+            padding: 0.5rem 0.5rem;
+            white-space: normal;
+        }
+    }
     .dt-table tbody td {
         padding: 0.8rem 1rem;
         font-size: 0.875rem;
         vertical-align: middle;
         border-bottom: 1px solid #f0f1f3;
         color: #4a5568;
+    }
+    @media (max-width: 576px) {
+        .dt-table tbody td {
+            padding: 0.5rem 0.5rem;
+            font-size: 0.75rem;
+        }
     }
     .dt-table tbody tr:last-child td { border-bottom: none; }
     .dt-table tbody tr:hover { background-color: #f8f8ff; }
@@ -90,9 +132,21 @@
         flex-wrap: wrap;
         gap: 0.75rem;
     }
+    @media (max-width: 576px) {
+        .dt-bottom {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
     .dt-info {
         font-size: 0.8125rem;
         color: #6c757d;
+    }
+    @media (max-width: 576px) {
+        .dt-info {
+            font-size: 0.75rem;
+            text-align: center;
+        }
     }
 
     /* ── Pagination ── */
@@ -103,6 +157,14 @@
         list-style: none;
         margin: 0;
         padding: 0;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    @media (max-width: 576px) {
+        .dt-pagination {
+            justify-content: center;
+            width: 100%;
+        }
     }
     .dt-pagination .page-item .page-link {
         border: 1px solid transparent;
@@ -115,6 +177,13 @@
         text-align: center;
         line-height: 1.5;
         transition: background 0.15s, color 0.15s;
+    }
+    @media (max-width: 576px) {
+        .dt-pagination .page-item .page-link {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            min-width: 28px;
+        }
     }
     .dt-pagination .page-item .page-link:hover {
         background: #f0f1ff;

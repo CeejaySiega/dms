@@ -8,6 +8,7 @@ use App\Models\SentDocument;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
+use Illuminate\Http\Request;
 class ArchiveDocumentController extends Controller
 {
     /**
@@ -22,6 +23,7 @@ class ArchiveDocumentController extends Controller
                           $q->where('user_id', $currentUserId);
                       });
             })
+            ->whereNull('deleted_at') 
             ->with('document', 'document.documentType')
             ->orderBy('archive_at', 'desc')
             ->paginate(15);
@@ -32,9 +34,6 @@ class ArchiveDocumentController extends Controller
     /**
      * Display restored documents
      */
-    /**
-     * Display restored documents
-     */
     public function restored()
     {
         $currentUserId = Auth::user()->user_id;
@@ -42,6 +41,7 @@ class ArchiveDocumentController extends Controller
 
         // Get documents that were archived and then restored by this user
         $restoredDocuments = Document::where('user_id', $currentUserId)
+            ->where('status', 'restored')
             ->whereNotNull('restored_at')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -86,6 +86,9 @@ class ArchiveDocumentController extends Controller
             \App\Models\ReceivedDocument::where('document_id', $document->document_id)
                 ->where('user_id', Auth::user()->user_id)
                 ->delete();
+
+            // Update document status to 'archived'
+            $document->update(['status' => 'archived']);
 
             // DO NOT soft-delete the document - it's still needed by recipients!
             // Only archive it in the Archive table for the sender
@@ -207,10 +210,13 @@ class ArchiveDocumentController extends Controller
             // Delete archive record
             $archive->delete();
 
-            // Mark document as restored
+            // Mark document as restored with status and timestamp
             $document = Document::where('document_id', $archive->document_id)->first();
             if ($document) {
-                $document->update(['restored_at' => now()]);
+                $document->update([
+                    'status' => 'restored',
+                    'restored_at' => now()
+                ]);
             }
 
             if (request()->wantsJson()) {
@@ -234,6 +240,56 @@ class ArchiveDocumentController extends Controller
     }
 
     /**
+     * Soft delete an archived document (only marks as deleted, doesn't restore)
+     */
+    public function softDeleteArchive($archiveId)
+    {
+        $currentUserId = Auth::user()->user_id;
+        
+        try {
+            // Find archive by archive_id with authorization check
+            $archive = Archive::where('archive_id', $archiveId)
+                ->where(function($query) use ($currentUserId) {
+                    $query->where('user_id', $currentUserId)
+                          ->orWhereHas('document', function($q) use ($currentUserId) {
+                              $q->where('user_id', $currentUserId);
+                          });
+                })
+                ->firstOrFail();
+
+            // Soft delete the archive record (marks deleted_at timestamp)
+            $archive->delete();
+
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Archive record deleted'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Archive record deleted');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Archive record not found'
+                ], 404);
+            }
+            return redirect()->back()->with('error', 'Archive record not found');
+        } catch (\Exception $e) {
+            report($e);
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete archive record: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to delete archive record: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Permanently delete an archived document
      */
     public function destroy($archiveId)
@@ -251,9 +307,13 @@ class ArchiveDocumentController extends Controller
                 })
                 ->firstOrFail();
 
+            $documentId = $archive->document_id;
 
             // Force delete only the archive record, not the document
             $archive->forceDelete();
+
+            // Update document status to active (no longer archived)
+            Document::where('document_id', $documentId)->update(['status' => 'active']);
 
             if (request()->wantsJson()) {
                 return response()->json([

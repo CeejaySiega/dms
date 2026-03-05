@@ -196,6 +196,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{document}/archive', [ArchiveDocumentController::class, 'archive'])->name('archive');
         Route::post('/{document}/archive-receiver', [ArchiveDocumentController::class, 'archiveAsReceiver'])->name('archive-receiver');
         Route::post('/archives/{archive}/restore', [ArchiveDocumentController::class, 'restore'])->name('restore');
+        Route::post('/archives/{archive}/soft-delete', [ArchiveDocumentController::class, 'softDeleteArchive'])->name('soft-delete-archive');
         Route::delete('/{document}', [SentDocumentController::class, 'delete'])->name('delete');
         Route::delete('/archives/{archive}/permanent', [ArchiveDocumentController::class, 'destroy'])->name('permanent-delete');
     });

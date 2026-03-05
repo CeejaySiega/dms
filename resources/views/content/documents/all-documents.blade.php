@@ -14,11 +14,23 @@
         flex-wrap: wrap;
         gap: 0.75rem;
     }
+    @media (max-width: 768px) {
+        .dt-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
     .dt-left-controls {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 0.75rem;
+    }
+    @media (max-width: 768px) {
+        .dt-left-controls {
+            flex-direction: column;
+            width: 100%;
+        }
     }
     .dt-length-label {
         font-size: 0.875rem;
@@ -53,6 +65,12 @@
         color: #4a5568;
         min-width: 140px;
     }
+    @media (max-width: 576px) {
+        .dt-filter-select {
+            min-width: 100%;
+            width: 100%;
+        }
+    }
     .dt-filter-select:focus {
         outline: none;
         border-color: #696cff;
@@ -63,6 +81,13 @@
         align-items: center;
         gap: 0.5rem;
     }
+    @media (max-width: 768px) {
+        .dt-search-wrap {
+            flex-direction: column;
+            width: 100%;
+            align-items: stretch;
+        }
+    }
     .dt-search-label {
         font-size: 0.875rem;
         color: #6c757d;
@@ -70,13 +95,25 @@
         align-items: center;
         gap: 0.5rem;
     }
+    @media (max-width: 768px) {
+        .dt-search-label {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
     .dt-search-input {
         border: 1px solid #d9dee3;
         border-radius: 0.375rem;
         padding: 0.375rem 0.75rem;
         font-size: 0.875rem;
-        min-width: 220px;
+        min-width: 360px;
         transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    @media (max-width: 768px) {
+        .dt-search-input {
+            min-width: 100%;
+            width: 100%;
+        }
     }
     .dt-search-input:focus {
         outline: none;
@@ -97,12 +134,25 @@
         white-space: nowrap;
         background: #fff;
     }
+    @media (max-width: 576px) {
+        .dt-table thead th {
+            font-size: 0.65rem;
+            padding: 0.5rem 0.5rem;
+            white-space: normal;
+        }
+    }
     .dt-table tbody td {
         padding: 0.75rem 1rem;
         font-size: 0.875rem;
         vertical-align: middle;
         border-bottom: 1px solid #f0f1f3;
         color: #4a5568;
+    }
+    @media (max-width: 576px) {
+        .dt-table tbody td {
+            padding: 0.5rem 0.5rem;
+            font-size: 0.75rem;
+        }
     }
     .dt-table tbody tr:last-child td { border-bottom: none; }
     .dt-table tbody tr:hover { background-color: #f8f8ff; }
@@ -115,6 +165,12 @@
         margin-top: 1.25rem;
         flex-wrap: wrap;
         gap: 0.75rem;
+    }
+    @media (max-width: 576px) {
+        .dt-bottom {
+            flex-direction: column;
+            align-items: stretch;
+        }
     }
     .dt-info {
         font-size: 0.8125rem;
@@ -129,6 +185,13 @@
         list-style: none;
         margin: 0;
         padding: 0;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    @media (max-width: 576px) {
+        .dt-pagination {
+            justify-content: center;
+        }
     }
     .dt-pagination .page-item .page-link {
         border: 1px solid transparent;
@@ -142,6 +205,13 @@
         line-height: 1.5;
         transition: background 0.15s, color 0.15s;
     }
+    @media (max-width: 576px) {
+        .dt-pagination .page-item .page-link {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            min-width: 28px;
+        }
+    }
     .dt-pagination .page-item .page-link:hover {
         background: #f0f1ff;
         color: #696cff;
@@ -154,6 +224,24 @@
     .dt-pagination .page-item.disabled .page-link {
         color: #c4c6d0;
         pointer-events: none;
+    }
+
+    /* ── Action Icons ── */
+    .btn-icon {
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.375rem;
+        transition: all 0.15s ease-in-out;
+    }
+    .btn-icon:hover {
+        background-color: rgba(105, 108, 255, 0.1);
+        color: #696cff !important;
+    }
+    .btn-icon i {
+        font-size: 1.125rem;
     }
 
     /* ── Empty state ── */
@@ -232,10 +320,9 @@
                         <label class="dt-search-label">
                             Search:
                             <input type="text"
-                                   name="search"
+                                   id="liveSearchInput"
                                    class="dt-search-input"
-                                   value="{{ request('search') }}"
-                                   placeholder="Tracking code or file name…"
+                                   placeholder="Tracking code…"
                                    autocomplete="off">
                         </label>
                         <a href="{{ route('documents.send') }}" class="btn btn-primary btn-sm ms-1" title="Send New Document">
@@ -246,13 +333,20 @@
                 </div>
             </form>
 
+            <!-- Note about archive restriction -->
+            <div class="alert alert-info alert-dismissible fade show mb-3" role="alert" style="font-size: 0.875rem;">
+                <i class="bx bx-info-circle me-2"></i>
+                <strong>Note:</strong> You cannot archive a document if there are pending recipients or if group members haven't received it yet.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
             <!-- Table -->
             <div class="table-responsive">
                 <table class="table table-hover dt-table w-100">
                     <thead>
                         <tr>
                             <th>Tracking Code</th>
-                            <th>Sent To</th>
+                            <th>Recipients</th>
                             <th>Document Type</th>
                             <th>Purpose</th>
                             <th>File Name</th>
@@ -275,8 +369,6 @@
                             $priorityValue = $route?->priority ?? 'normal';
                             $priorityClass = match($priorityValue) {
                                 'urgent' => 'bg-danger',
-                                'high'   => 'bg-warning',
-                                'low'    => 'bg-secondary',
                                 default  => 'bg-primary',
                             };
 
@@ -347,39 +439,32 @@
                                 <small class="text-muted">{{ $document->created_at->format('M d, Y h:i A') }}</small>
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    @if($statusValue !== 'pending')
-                                        <form action="{{ route('documents.delete-document', encryptId($document->document_id)) }}"
+                                <div class="d-flex align-items-center gap-2 justify-content-center">
+                                    <!-- Archive button -->
+                                    @if($document->status !== 'archived' && $document->status !== 'pending' && $document->allGroupMembersReceived())
+                                        <form action="{{ route('documents.archive', encryptId($document->document_id)) }}"
                                               method="POST"
-                                              class="d-inline delete-document-form">
+                                              class="d-inline archive-form">
                                             @csrf
-                                            @method('DELETE')
                                             <button type="submit"
-                                                    class="btn btn-sm btn-outline-danger"
-                                                    title="Delete">
-                                                <i class="bx bx-trash"></i>
+                                                    class="btn btn-link btn-icon btn-sm p-0"
+                                                    title="Archive"
+                                                    style="color: #6c757d;">
+                                                <i class="bx bx-archive"></i>
                                             </button>
                                         </form>
-                                        @if($document->status !== 'archived')
-                                            <form action="{{ route('documents.archive', encryptId($document->document_id)) }}"
-                                                  method="POST"
-                                                  class="d-inline archive-form">
-                                                @csrf
-                                                <button type="submit"
-                                                        class="btn btn-sm btn-outline-secondary"
-                                                        title="Archive">
-                                                    <i class="bx bx-archive"></i>
-                                                </button>
-                                            </form>
-                                        @endif
                                     @endif
+                                    
+                                    <!-- Download button -->
                                     <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
-                                       class="btn btn-sm btn-outline-success"
-                                       title="Download">
+                                       class="btn btn-link btn-icon btn-sm p-0"
+                                       title="Download"
+                                       style="color: #6c757d;">
                                         <i class="bx bx-download"></i>
                                     </a>
                                 </div>
                             </td>
+
                         </tr>
                         @empty
                         <tr>
@@ -488,7 +573,7 @@
                                                 ? $recipient->user->employee->firstname . ' ' . $recipient->user->employee->lastname
                                                 : $recipient->user->name }}
                                         </div>
-                                        <span class="badge bg-info">{{ ucfirst($recipient->action ?? 'pending') }}</span>
+                                        <span class="badge {{ ($recipient->action ?? 'pending') === 'pending' ? 'bg-warning' : 'bg-info' }}">{{ ucfirst($recipient->action ?? 'pending') }}</span>
                                         <small class="text-muted d-block">
                                             <i class="bx bx-envelope me-1"></i>{{ $recipient->user->email }}
                                         </small>
@@ -524,53 +609,40 @@ $(document).ready(function () {
         }
     });
 
-    // Delete confirmation
-    $('.delete-document-form').on('submit', function (e) {
-        e.preventDefault();
-        const form = this;
+    // Live search filter
+    $('#liveSearchInput').on('keyup', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        const tableBody = $('.dt-table tbody');
+        let visibleCount = 0;
 
-        Swal.fire({
-            title: 'Delete Document?',
-            html: 'Delete this document from your list? Receivers will keep their copies.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete',
-            cancelButtonText: 'Cancel'
-        }).then(result => {
-            if (!result.isConfirmed) return;
+        tableBody.find('tr').each(function() {
+            // Skip empty state row
+            if ($(this).find('td').length === 1 && $(this).find('.dt-empty').length) {
+                return;
+            }
 
-            Swal.fire({
-                title: 'Deleting…',
-                text: 'Please wait.',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
+            // Get value from tracking code column only
+            const trackingCode = $(this).find('td:eq(0)').text().toLowerCase();
 
-            $.ajax({
-                url: $(form).attr('action'),
-                type: 'POST',
-                dataType: 'json',
-                data: $(form).serialize(),
-                success: function (response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Deleted',
-                        text: response.message || 'Document removed.',
-                        confirmButtonColor: '#3085d6'
-                    }).then(() => location.reload());
-                },
-                error: function (xhr) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: xhr.responseJSON?.message || 'Failed to delete.',
-                        confirmButtonColor: '#d33'
-                    });
-                }
-            });
+            // Check if search term matches tracking code
+            const matches = trackingCode.includes(searchTerm);
+
+            if (matches) {
+                $(this).show();
+                visibleCount++;
+            } else {
+                $(this).hide();
+            }
         });
+
+        // Show/hide empty state
+        if (visibleCount === 0 && searchTerm.length > 0) {
+            tableBody.find('tr:has(.dt-empty)').show();
+        } else if (searchTerm.length === 0) {
+            tableBody.find('tr').show();
+        } else {
+            tableBody.find('tr:has(.dt-empty)').hide();
+        }
     });
 
     // Archive confirmation
