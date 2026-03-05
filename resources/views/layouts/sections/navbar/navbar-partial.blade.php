@@ -39,9 +39,9 @@ use Illuminate\Support\Facades\Route;
     <ul class="navbar-nav flex-row align-items-center ms-auto">
         <!-- Place this tag where you want the button to render. -->
         <li class="nav-item navbar-dropdown dropdown-notifications me-4">
-            <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false">
+            <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false" style="position: relative;">
                 <i class="icon-base bx bx-bell icon-md"></i>
-                <span class="badge bg-danger rounded-pill badge-notifications" id="pendingBadge" style="display: none;">0</span>
+                <span class="badge bg-danger rounded-pill badge-notifications" id="pendingBadge" style="display: none; position: absolute; top: -8px; right: -8px; font-size: 0.65rem; padding: 0.35rem 0.5rem;">0</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end" id="notificationsDropdown" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
                 <li class="dropdown-header pb-0">
