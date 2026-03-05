@@ -249,6 +249,7 @@
                             $statusValue = $statusValue === 'received' ? 'receive' : $statusValue;
                             $statusClass = match($statusValue) {
                                 'pending'  => 'bg-warning',
+                                'read'     => 'bg-secondary',
                                 'approved' => 'bg-success',
                                 'receive'  => 'bg-info',
                                 'rejected' => 'bg-danger',
@@ -263,7 +264,9 @@
                         <div class="mail-item d-flex align-items-center gap-3 px-4 py-2 border-bottom {{ $isUnread ? 'mail-unread' : '' }}"
                              style="cursor: pointer; transition: background .15s;"
                              data-bs-toggle="modal"
-                             data-bs-target="#{{ $modalId }}">
+                             data-bs-target="#{{ $modalId }}"
+                             data-recipient-id="{{ $recipient->recipient_id }}"
+                             data-status="{{ $statusValue }}">
 
                             {{-- Sender --}}
                             <div class="flex-shrink-0" style="width: 200px; overflow: hidden;">
@@ -399,6 +402,7 @@
         $statusVal = $statusVal === 'received' ? 'receive' : $statusVal;
         $statusBadge = match($statusVal) {
             'pending'  => 'bg-warning',
+            'read'     => 'bg-secondary',
             'approved' => 'bg-success',
             'receive'  => 'bg-info',
             'rejected' => 'bg-danger',
@@ -529,6 +533,61 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
+    // Mark as read when modal is closed
+    document.querySelectorAll('.modal').forEach(function (modal) {
+        modal.addEventListener('hidden.bs.modal', function (event) {
+            const modalId     = event.target.id;
+            const recipientId = modalId.replace('inboxDocModal-', '');
+            const mailItem    = document.querySelector(`.mail-item[data-recipient-id="${recipientId}"]`);
+
+            if (mailItem && mailItem.getAttribute('data-status') === 'pending') {
+                fetch(`{{ url('/documents/mark-as-read') }}/${recipientId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove unread highlight from the row
+                        mailItem.classList.remove('mail-unread');
+
+                        // Flip status badge from Pending → Read
+                        mailItem.querySelectorAll('.badge').forEach(badge => {
+                            if (badge.textContent.trim().toLowerCase() === 'pending') {
+                                badge.className    = 'badge bg-secondary';
+                                badge.style.fontSize = '0.7rem';
+                                badge.textContent  = 'Read';
+                            }
+                        });
+
+                        // Remove bold from sender name
+                        const senderSpan = mailItem.querySelector('.flex-shrink-0 span');
+                        if (senderSpan) {
+                            senderSpan.classList.remove('fw-semibold', 'text-body');
+                            senderSpan.classList.add('text-body');
+                        }
+
+                        // Remove bold from doc-type span
+                        const docTypeSpan = mailItem.querySelector('.flex-grow-1 span:first-child');
+                        if (docTypeSpan) {
+                            docTypeSpan.classList.remove('fw-semibold', 'text-body');
+                            docTypeSpan.classList.add('text-muted');
+                        }
+
+                        // Update data attribute so repeated closes don't re-fire
+                        mailItem.setAttribute('data-status', 'read');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking document as read:', error);
+                });
+            }
+        });
+    });
+
     // Receive form confirmation
     document.querySelectorAll('.receive-form').forEach(function (form) {
         form.addEventListener('submit', function (e) {
@@ -556,4 +615,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 </script>
-@endsection
+@endsection 

@@ -23,7 +23,9 @@ class ReceivedDocumentController extends Controller
             ->where('user_id', Auth::id())
             ->whereNull('deleted_at')
             ->where(function ($query) {
-                $query->whereNull('action')->orWhere('action', 'pending');
+                $query->whereNull('action')
+                      ->orWhere('action', 'pending')
+                      ->orWhere('action', 'read');
             })
             ->orderByRaw("CASE WHEN (SELECT priority FROM document_routes WHERE document_routes.route_id = recipients.route_id) = 'urgent' THEN 0 ELSE 1 END")
             ->orderBy('sent_at', 'desc')
@@ -116,6 +118,120 @@ class ReceivedDocumentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to archive document: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark document as read (AJAX)
+     */
+    public function markAsRead($recipientId)
+    {
+        try {
+            $recipient = Recipient::where('recipient_id', $recipientId)
+                ->where('user_id', Auth::id())
+                ->first();
+
+            if (!$recipient) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Recipient not found or unauthorized.'
+                ], 404);
+            }
+
+            // Only update if status is pending or null
+            if (is_null($recipient->action) || $recipient->action === 'pending') {
+                $recipient->update(['action' => 'read']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document marked as read.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark document as read: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get count of pending documents for notification (AJAX)
+     */
+    public function getPendingCount()
+    {
+        try {
+            $pendingCount = Recipient::where('user_id', Auth::id())
+                ->whereNull('deleted_at')
+                ->where(function ($query) {
+                    $query->whereNull('action')->orWhere('action', 'pending');
+                })
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'count' => $pendingCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'message' => 'Failed to get pending count: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get pending documents list for notification dropdown (AJAX)
+     */
+    public function getPendingDocuments()
+    {
+        try {
+            $documents = Recipient::with([
+                    'route.document.documentType',
+                    'route.document.user.employee'
+                ])
+                ->where('user_id', Auth::id())
+                ->whereNull('deleted_at')
+                ->where(function ($query) {
+                    $query->whereNull('action')->orWhere('action', 'pending');
+                })
+                ->orderByRaw("CASE WHEN (SELECT priority FROM document_routes WHERE document_routes.route_id = recipients.route_id) = 'urgent' THEN 0 ELSE 1 END")
+                ->orderBy('sent_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            $documents = $documents->map(function ($recipient) {
+                $document = optional($recipient->route)->document;
+                if (!$document) return null;
+                
+                $sender = optional($document->user)->employee;
+                $senderName = $sender
+                    ? ($sender->firstname . ' ' . $sender->lastname)
+                    : (optional($document->user)->name ?? 'N/A');
+
+                return [
+                    'recipient_id' => $recipient->recipient_id,
+                    'sender_name' => $senderName,
+                    'document_type' => optional($document->documentType)->type_name ?? 'Document',
+                    'purpose' => $document->purpose,
+                    'tracking_code' => $document->tracking_code,
+                    'sent_at' => optional($recipient->sent_at)->format('M d, Y')
+                ];
+            })->filter()->values();
+
+            return response()->json([
+                'success' => true,
+                'count' => $documents->count(),
+                'documents' => $documents
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'documents' => [],
+                'message' => 'Failed to get pending documents: ' . $e->getMessage()
             ], 500);
         }
     }

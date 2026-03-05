@@ -176,9 +176,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/receipt/{documentId}', [DocumentController::class, 'showReceipt'])->name('receipt');
         Route::get('/incoming', [ReceivedDocumentController::class, 'index'])->name('incoming');
         Route::get('/received', [ReceivedDocumentController::class, 'received'])->name('received');
+        Route::get('/pending-count', [ReceivedDocumentController::class, 'getPendingCount'])->name('pending-count');
+        Route::get('/pending-documents', [ReceivedDocumentController::class, 'getPendingDocuments'])->name('pending-documents');
         Route::post('/{document}/approve', [ReceivedDocumentController::class, 'approve'])->name('approve');
         Route::post('/{document}/receive', [ReceivedDocumentController::class, 'receive'])->name('receive');
         Route::post('/{document}/disapprove', [ReceivedDocumentController::class, 'disapprove'])->name('disapprove');
+        Route::post('/mark-as-read/{recipientId}', [ReceivedDocumentController::class, 'markAsRead'])->name('mark-as-read');
         Route::delete('/received/{receivedDocument}', [ReceivedDocumentController::class, 'deleteReceived'])->name('received.delete');
         Route::get('/sent', [SentDocumentController::class, 'sent'])->name('sent');
         Route::get('/archived', [ArchiveDocumentController::class, 'index'])->name('archived');
