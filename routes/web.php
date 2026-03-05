@@ -143,6 +143,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
+    // profile routes
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [UserController::class, 'viewProfile'])->name('view');
+        Route::get('/edit', [UserController::class, 'editProfile'])->name('edit');
+        Route::put('/update', [UserController::class, 'updateProfile'])->name('update');
+    });
+
     // group management
     Route::prefix('groups')->name('groups.')->group(function () {
         Route::get('/', [GroupController::class, 'index'])->name('index');

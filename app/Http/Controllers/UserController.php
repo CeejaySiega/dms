@@ -9,6 +9,16 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     /**
+     * Display the user's profile
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function viewProfile()
+    {
+        return view('content.profile.view-profile');
+    }
+
+    /**
      * Display a listing of the users.
      *
      * @return \Illuminate\Http\Response
@@ -239,5 +249,63 @@ class UserController extends Controller
                 'message' => 'Error deleting user: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Display the edit profile form
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function editProfile()
+    {
+        $departments = Department::all();
+        return view('content.profile.edit-profile', compact('departments'));
+    }
+
+    /**
+     * Update the user's profile
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($user->user_id, 'user_id')
+            ],
+            'firstname' => 'required|string|min:2|max:50',
+            'lastname' => 'required|string|min:2|max:50',
+            'contact_number' => 'nullable|string|max:20',
+            'department_id' => 'nullable|integer|exists:departments,department_id',
+            'position' => 'nullable|string|max:100',
+        ]);
+
+        // Update user email
+        if ($user->email !== $validated['email']) {
+            $user->update(['email' => $validated['email']]);
+        }
+
+        // Update employee information
+        if ($user->employee) {
+            $user->employee->update([
+                'firstname' => $validated['firstname'],
+                'lastname' => $validated['lastname'],
+                'contact_number' => $validated['contact_number'],
+                'department_id' => $validated['department_id'],
+                'position' => $validated['position'],
+            ]);
+
+            // Update user name
+            $user->update([
+                'name' => $validated['firstname'] . ' ' . $validated['lastname']
+            ]);
+        }
+
+        return redirect()->route('profile.view')->with('success', 'Profile updated successfully!');
     }
 }
