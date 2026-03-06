@@ -34,31 +34,6 @@
 }
 
 /* ============================================
-   LAYOUT STRUCTURE
-   ============================================ */
-
-.layout-wrapper,
-.layout-container {
-  display: flex;
-  width: 100%;
-  min-height: 100vh;
-}
-
-.layout-menu {
-  width: 16.25rem;
-  min-width: 16.25rem;
-  flex-shrink: 0;
-}
-
-.layout-page {
-  flex: 1 1 0%;
-  min-width: 0;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ============================================
    CONTAINER-XXL ALIGNMENT
    ============================================ */
 
@@ -88,10 +63,40 @@
   transition: all 0.15s ease-in-out !important;
 }
 
+.layout-menu .menu-inner,
+.menu-vertical .menu-inner {
+  overflow-x: hidden !important;
+}
+
+.layout-menu .ps__rail-x,
+.layout-menu .ps__thumb-x {
+  display: none !important;
+  height: 0 !important;
+}
+
+.menu-vertical .menu-link > div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .menu-vertical .menu-item .menu-link:hover,
 .menu-vertical .menu-item .menu-link:focus {
   background-color: rgba(44, 47, 218, 0.16) !important;
   color: #696cff !important;
+}
+
+/* Expand sidebar on hover when collapsed */
+.layout-menu-collapsed.layout-menu-hover .layout-menu .menu-vertical,
+.layout-menu-collapsed.layout-menu-hover .layout-menu.menu-vertical {
+  inline-size: var(--bs-menu-width) !important;
+}
+.layout-menu-collapsed.layout-menu-hover .layout-menu .menu-inner > .menu-header .menu-header-text,
+.layout-menu-collapsed.layout-menu-hover .layout-menu .menu-inner > .menu-item > .menu-link > div,
+.layout-menu-collapsed.layout-menu-hover .layout-menu .menu-inner > .menu-item > .menu-link .badge,
+.layout-menu-collapsed.layout-menu-hover .layout-menu .menu-inner > .menu-item > .menu-toggle::after {
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .menu-vertical .menu-item.active > .menu-link,
@@ -108,42 +113,10 @@
 }
 
 /* ============================================
-   RESPONSIVE ADJUSTMENTS (em = zoom-safe)
+   RESPONSIVE ADJUSTMENTS
    ============================================ */
 
-@media (max-width: 74.99em) {
-  #layout-navbar.navbar-detached {
-    /* Already inherits from CSS variables */
-  }
-}
-
-@media (max-width: 61.99em) {
-  .layout-menu {
-    width: 220px;
-    min-width: 220px;
-  }
-}
-
-@media (max-width: 47.99em) {
-  .layout-menu {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    z-index: 1050;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
-
-  .layout-menu.open {
-    transform: translateX(0);
-  }
-
-  .layout-page {
-    margin-left: 0 !important;
-    width: 100%;
-  }
-
+@media (max-width: 991.98px) {
   #layout-navbar.navbar-detached {
     margin-top: 0.625rem !important;
   }

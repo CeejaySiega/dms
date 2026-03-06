@@ -17,9 +17,29 @@
     },
     {
       "name": "Mail",
-      "url": "/documents/incoming",
       "icon": "menu-icon icon-base bx bx-envelope",
-      "slug": "documents.incoming,documents.received,documents.sent"
+      "slug": [
+        "documents.incoming",
+        "documents.received",
+        "documents.sent"
+      ],
+      "submenu": [
+        {
+          "url": "/documents/incoming",
+          "name": "Incoming",
+          "slug": "documents.incoming"
+        },
+        {
+          "url": "/documents/received",
+          "name": "Received",
+          "slug": "documents.received"
+        },
+        {
+          "url": "/documents/sent",
+          "name": "Sent",
+          "slug": "documents.sent"
+        }
+      ]
     },
     {
       "url": "/documents/archived",

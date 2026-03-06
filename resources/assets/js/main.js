@@ -4,8 +4,7 @@
 
 'use strict';
 
-let menu,
-  animate;
+let menu, animate;
 document.addEventListener('DOMContentLoaded', function () {
   // class for ios specific styles
   if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
@@ -33,33 +32,43 @@ document.addEventListener('DOMContentLoaded', function () {
   menuToggler.forEach(item => {
     item.addEventListener('click', event => {
       event.preventDefault();
-      window.Helpers.toggleCollapsed();
+      if (window.Helpers.isSmallScreen()) {
+        // Mobile: toggle off-canvas slide-in
+        window.Helpers.toggleCollapsed();
+      } else {
+        // Desktop: toggle icon-only collapsed sidebar
+        document.documentElement.classList.toggle('layout-menu-collapsed');
+      }
     });
   });
 
-  // Display menu toggle (layout-menu-toggle) on hover with delay
-  let delay = function (elem, callback) {
-    let timeout = null;
-    elem.onmouseenter = function () {
-      // Set timeout to be a timer which will invoke callback after 300ms (not for small screen)
-      if (!Helpers.isSmallScreen()) {
-        timeout = setTimeout(callback, 300);
-      } else {
-        timeout = setTimeout(callback, 0);
-      }
-    };
+  // Hover expand/collapse for desktop collapsed sidebar
+  const layoutMenu = document.getElementById('layout-menu');
+  if (layoutMenu) {
+    let hoverTimeout = null;
 
-    elem.onmouseleave = function () {
-      // Clear any timers set to timeout
-      document.querySelector('.layout-menu-toggle').classList.remove('d-block');
-      clearTimeout(timeout);
-    };
-  };
-  if (document.getElementById('layout-menu')) {
-    delay(document.getElementById('layout-menu'), function () {
-      // not for small screen
-      if (!Helpers.isSmallScreen()) {
-        document.querySelector('.layout-menu-toggle').classList.add('d-block');
+    layoutMenu.addEventListener('mouseenter', function () {
+      if (Helpers.isSmallScreen()) return;
+      // Show toggle button
+      const toggle = layoutMenu.querySelector('.layout-menu-toggle');
+      if (toggle) toggle.classList.add('d-block');
+      // If collapsed, temporarily expand on hover
+      if (document.documentElement.classList.contains('layout-menu-collapsed')) {
+        clearTimeout(hoverTimeout);
+        document.documentElement.classList.add('layout-menu-hover');
+      }
+    });
+
+    layoutMenu.addEventListener('mouseleave', function () {
+      if (Helpers.isSmallScreen()) return;
+      // Hide toggle button
+      const toggle = layoutMenu.querySelector('.layout-menu-toggle');
+      if (toggle) toggle.classList.remove('d-block');
+      // Collapse back if we were hovering
+      if (document.documentElement.classList.contains('layout-menu-collapsed')) {
+        hoverTimeout = setTimeout(function () {
+          document.documentElement.classList.remove('layout-menu-hover');
+        }, 100);
       }
     });
   }
@@ -121,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // If current layout is vertical and current window screen is > small
 
   // Auto update menu collapsed/expanded based on the themeConfig
-      window.Helpers.setCollapsed(true, false);
+  window.Helpers.setCollapsed(true, false);
 })();
 // Utils
 function isMacOS() {

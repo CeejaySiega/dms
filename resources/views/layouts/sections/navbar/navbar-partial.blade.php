@@ -46,7 +46,7 @@ use Illuminate\Support\Facades\Route;
             <ul class="dropdown-menu dropdown-menu-end" id="notificationsDropdown" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
                 <li class="dropdown-header pb-0">
                     <div class="d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0">Incoming Documents</h6>
+                        <h6 class="mb-0">Notifications</h6>
                         <small class="text-muted" id="docCount">0</small>
                     </div>
                 </li>
@@ -56,7 +56,7 @@ use Illuminate\Support\Facades\Route;
                 <li class="dropdown-notifications-list" id="notificationsList">
                     <div class="text-center py-3 text-muted">
                         <i class="bx bxs-inbox" style="font-size: 2rem;"></i>
-                        <p class="mt-2 mb-0">0 incoming documents</p>
+                        <p class="mt-2 mb-0">0 notifications</p>
                     </div>
                 </li>
                 <li>

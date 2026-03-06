@@ -5,14 +5,7 @@
 @section('content')
 
 <style>
-.mail-nav .nav-link.active {
-    background: rgba(105, 108, 255, 0.16);
-    color: #696cff !important;
-    font-weight: 600;
-}
-.mail-nav .nav-link:hover:not(.active) {
-    background: rgba(67, 89, 113, 0.06);
-}
+/* ── Column headers ── */
 .col-header {
     font-size: 0.65rem;
     font-weight: 700;
@@ -21,13 +14,58 @@
     color: #6c757d;
 }
 @media (max-width: 768px) {
-    .col-header {
-        font-size: 0.6rem;
-    }
+    .col-header { font-size: 0.6rem; }
 }
-.mail-header { background: #f5f6f8; }
-.mail-item:hover { background: rgba(67, 89, 113, 0.04); }
+
+/* ── Mail rows ── */
+.mail-header { background: #f8f9fc; }
+.mail-item { transition: background .15s; }
+.mail-item:hover { background: #f5f6ff; }
 .sent-document-row { cursor: pointer; }
+
+/* ── Scrollable list ── */
+.mail-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* ── Search input in toolbar ── */
+.mail-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0f2f7;
+    border: 1px solid #e2e5f0;
+    border-radius: 7px;
+    padding: 6px 12px;
+    max-width: 280px;
+    flex: 1;
+}
+.mail-search-wrap input {
+    border: none;
+    background: transparent;
+    font-size: 0.8125rem;
+    color: #1a1d3a;
+    outline: none;
+    width: 100%;
+}
+.mail-search-wrap input::placeholder { color: #8b90b8; }
+
+/* ── Hint bar ── */
+.hint-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    margin-bottom: 16px;
+}
 
 /* ── DataTables-style pagination ── */
 .dt-pagination {
@@ -41,10 +79,7 @@
     justify-content: flex-end;
 }
 @media (max-width: 576px) {
-    .dt-pagination {
-        justify-content: center;
-        width: 100%;
-    }
+    .dt-pagination { justify-content: center; width: 100%; }
 }
 .dt-pagination .page-item .page-link {
     border: 1px solid transparent;
@@ -59,328 +94,263 @@
     transition: background 0.15s, color 0.15s;
 }
 @media (max-width: 576px) {
-    .dt-pagination .page-item .page-link {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.7rem;
-        min-width: 26px;
-    }
+    .dt-pagination .page-item .page-link { padding: 0.25rem 0.5rem; font-size: 0.7rem; min-width: 26px; }
 }
-.dt-pagination .page-item .page-link:hover {
-    background: #f0f1ff;
-    color: #696cff;
-}
-.dt-pagination .page-item.active .page-link {
-    background: #696cff;
-    color: #fff;
-    border-color: #696cff;
-}
-.dt-pagination .page-item.disabled .page-link {
-    color: #c4c6d0;
-    pointer-events: none;
-}
+.dt-pagination .page-item .page-link:hover { background: #f0f1ff; color: #696cff; }
+.dt-pagination .page-item.active .page-link { background: #696cff; color: #fff; border-color: #696cff; }
+.dt-pagination .page-item.disabled .page-link { color: #c4c6d0; pointer-events: none; }
 
 /* SweetAlert2 always above Bootstrap modal */
 .swal2-container { z-index: 99999 !important; }
 
-/* Responsive sidebar */
-@media (max-width: 768px) {
-    .col-md-3 { position: sticky; top: 0; z-index: 100; }
-    .mail-item { font-size: 0.8rem; }
-}
-@media (max-width: 576px) {
-    .row.g-0 { flex-wrap: wrap; }
-    .col-12 { max-width: 100%; }
-}
-
-/* Zoom-safe container sizing with aspect ratio */
-.card[style*="min-height"] {
-    min-height: clamp(600px, 75vh, 900px) !important;
-    aspect-ratio: auto / 1.2;
+/* ── Mail card ── */
+.mail-card {
+    min-height: clamp(600px, 75vh, 900px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(26,29,58,0.07), 0 4px 16px rgba(26,29,58,0.05);
+    border: 1px solid #e2e5f0;
 }
 
-.col-12.col-md-9.col-lg-10[style*="height"] {
-    height: clamp(600px, 75vh, 900px) !important;
+/* ── Page title icon ── */
+.page-title-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(105, 108, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
-
-.mail-list {
-    flex-grow: 1;
-    overflow-y: auto;
-    min-height: 0;
-}
-
 </style>
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="mb-4">
-        <h4 class="fw-bold mb-2"><i class="bx bx-envelope me-2"></i>Mail</h4>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb breadcrumb-style1">
-                <li class="breadcrumb-item"><a href="{{ route('dashboard-analytics') }}">Home</a></li>
-                <li class="breadcrumb-item inactive">Mail</li>
-                <li class="breadcrumb-item active">Sent Documents</li>
-            </ol>
-        </nav>
+
+    {{-- ── Page header ── --}}
+    <div class="mb-4 d-flex align-items-start justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="page-title-icon">
+                <i class="bx bx-send text-primary fs-4"></i>
+            </div>
+            <div>
+                <h4 class="fw-bold mb-1">Sent</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0" style="font-size: 0.8rem;">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard-analytics') }}">Home</a></li>
+                        <li class="breadcrumb-item inactive">Mail</li>
+                        <li class="breadcrumb-item active">Sent Documents</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        <a href="{{ route('documents.send') }}" class="btn btn-primary fw-semibold align-self-start d-flex align-items-center gap-1"
+           style="box-shadow: 0 2px 8px rgba(105,108,255,0.25);">
+            <i class="bx bx-plus"></i> Send Document
+        </a>
     </div>
 
-    <div class="card overflow-hidden" style="min-height: 75vh;">
-        <div class="row g-0 h-100">
+    {{-- ── Hint bar ── --}}
+    <div class="hint-bar">
+        <i class="bx bx-info-circle"></i>
+        Click a row to view document details and actions.
+    </div>
 
-            {{-- ── LEFT SIDEBAR ── --}}
-            <div class="col-12 col-md-3 col-lg-2 border-end" style="background: #fff;">
-                <div class="p-3">
-                    <a href="{{ route('documents.send') }}" class="btn btn-primary w-100 mb-3 fw-semibold">
-                        <i class="bx bx-plus me-1"></i> Send Document
-                    </a>
+    {{-- ── Mail card — full width ── --}}
+    <div class="card mail-card">
 
-                    <form class="mb-3">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text border-end-0 bg-transparent">
-                                <i class="bx bx-search text-muted"></i>
-                            </span>
-                            <input class="form-control border-start-0 ps-0"
-                                   type="search"
-                                   placeholder="Search documents">
-                        </div>
-                    </form>
+        {{-- Toolbar ── --}}
+        <div class="d-flex align-items-center gap-3 px-4 py-3 border-bottom flex-shrink-0">
+            <div class="mail-search-wrap">
+                <i class="bx bx-search text-muted" style="font-size: 0.95rem; flex-shrink:0;"></i>
+                <input type="text" placeholder="Search documents…" />
+            </div>
+            <div class="ms-auto d-flex align-items-center gap-1 text-muted" style="font-size: 0.85rem; white-space: nowrap;">
+                {{ $documents->firstItem() ?? 0 }}&ndash;{{ $documents->lastItem() ?? 0 }}
+                of {{ $documents->total() ?? 0 }}
+                <a href="{{ !$documents->onFirstPage() ? $documents->previousPageUrl() : '#' }}"
+                   class="btn btn-icon btn-sm btn-outline-secondary border-0 {{ $documents->onFirstPage() ? 'disabled' : '' }}">
+                    <i class="bx bx-chevron-left"></i>
+                </a>
+                <a href="{{ $documents->hasMorePages() ? $documents->nextPageUrl() : '#' }}"
+                   class="btn btn-icon btn-sm btn-outline-secondary border-0 {{ !$documents->hasMorePages() ? 'disabled' : '' }}">
+                    <i class="bx bx-chevron-right"></i>
+                </a>
+            </div>
+        </div>
 
-                    <ul class="nav flex-column mail-nav gap-1">
-                        <li class="nav-item">
-                            <a href="{{ route('documents.incoming') }}"
-                               class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
-                                <i class="bx bxs-inbox fs-5"></i>
-                                <span class="flex-grow-1">Inbox</span>
-                                @if(($inboxCount ?? 0) > 0)
-                                    <span class="badge rounded-pill bg-primary">{{ $inboxCount }}</span>
-                                @endif
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('documents.sent') }}"
-                               class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded active">
-                                <i class="bx bx-send fs-5"></i>
-                                <span>Sent</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('documents.received') }}"
-                               class="nav-link d-flex align-items-center gap-2 px-3 py-2 rounded text-body">
-                                <i class="bx bxs-download fs-5"></i>
-                                <span>Received</span>
-                            </a>
-                        </li>
-                    </ul>
+        {{-- Column Headers ── --}}
+        <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom flex-shrink-0">
+            <div class="col-header" style="width: 200px;">Recipient</div>
+            <div class="col-header flex-grow-1">Document Type — Purpose</div>
+            <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 90px; text-align: center;">Sent Date</div>
+        </div>
+
+        {{-- Mail list ── --}}
+        <div class="mail-list">
+            @forelse($documents as $document)
+            @php
+                $route = \App\Models\DocumentRoute::with('group')
+                    ->where('document_id', $document->document_id)
+                    ->first();
+                $recipients = $route
+                    ? \App\Models\Recipient::with('user.employee')
+                        ->where('route_id', $route->route_id)
+                        ->get()
+                    : collect();
+
+                $groupName     = $route?->group ? $route->group->position : null;
+                $priorityValue = $route?->priority ?? 'normal';
+                $priorityClass = match($priorityValue) {
+                    'urgent' => 'bg-danger',
+                    'high'   => 'bg-warning',
+                    'low'    => 'bg-secondary',
+                    default  => 'bg-primary',
+                };
+
+                $statusValue = $document->status;
+                if ($recipients->isNotEmpty()) {
+                    $actions    = $recipients->pluck('action')->filter()->map(fn($a) => strtolower(trim((string)$a)))->unique();
+                    $hasPending = $recipients->contains(fn($r) => is_null($r->action) || $r->action === 'pending');
+                    $hasReceive = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
+                    if ($hasPending)                        $statusValue = 'pending';
+                    elseif ($hasReceive)                    $statusValue = 'receive';
+                    elseif ($actions->contains('approved')) $statusValue = 'approved';
+                    elseif ($actions->contains('rejected')) $statusValue = 'rejected';
+                    else                                    $statusValue = 'pending';
+                }
+                $statusClass = match($statusValue) {
+                    'pending'            => 'bg-warning',
+                    'approved'           => 'bg-success',
+                    'rejected'           => 'bg-danger',
+                    'receive','received' => 'bg-info',
+                    default              => 'bg-secondary',
+                };
+
+                $singleRecipient = $recipients->count() === 1 ? $recipients->first() : null;
+                $recipientLabel  = 'No recipients';
+                if ($groupName) {
+                    $recipientLabel = $groupName;
+                } elseif ($recipients->count() > 1) {
+                    $recipientLabel = $recipients->count() . ' Recipients';
+                } elseif ($singleRecipient) {
+                    $emp = $singleRecipient->user->employee;
+                    $recipientLabel = $emp
+                        ? ($emp->firstname . ' ' . $emp->lastname)
+                        : $singleRecipient->user->name;
+                }
+            @endphp
+
+            <div class="mail-item d-flex align-items-center gap-3 px-4 py-2 border-bottom sent-document-row"
+                 data-bs-toggle="modal"
+                 data-bs-target="#sentDocumentModal-{{ $document->document_id }}">
+
+                {{-- Recipient --}}
+                <div class="flex-shrink-0" style="width: 200px; overflow: hidden;">
+                    <span class="text-body"
+                          style="font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">
+                        {{ $recipientLabel }}
+                    </span>
+                </div>
+
+                {{-- Subject / preview --}}
+                <div class="flex-grow-1 text-truncate" style="font-size: 0.875rem;">
+                    <span class="fw-semibold text-body">
+                        {{ $document->documentType?->type_name ?? 'Document' }} &mdash;
+                    </span>
+                    <span class="text-muted">{{ $document->purpose }}</span>
+                </div>
+
+                {{-- Tracking Code --}}
+                <div class="d-none d-xl-block" style="min-width: 160px;">
+                    <span class="badge bg-label-primary" style="font-size: 0.7rem;">
+                        {{ $document->tracking_code ?? 'N/A' }}
+                    </span>
+                </div>
+
+                {{-- Priority --}}
+                <div class="d-none d-lg-block" style="min-width: 80px;">
+                    <span class="badge {{ $priorityClass }}" style="font-size: 0.7rem;">
+                        {{ ucfirst($priorityValue) }}
+                    </span>
+                </div>
+
+                {{-- Status --}}
+                <div class="d-none d-lg-block" style="min-width: 80px;">
+                    <span class="badge {{ $statusClass }}" style="font-size: 0.7rem;">
+                        {{ ucfirst($statusValue) }}
+                    </span>
+                </div>
+
+                {{-- Date --}}
+                <div class="text-muted d-none d-lg-flex flex-shrink-0"
+                     style="font-size: 0.8rem; min-width: 90px; justify-content: center;">
+                    {{ $document->created_at?->format('M d, Y') ?? 'N/A' }}
                 </div>
             </div>
 
-            {{-- ── MAIN CONTENT ── --}}
-            <div class="col-12 col-md-9 col-lg-10 d-flex flex-column" style="min-height: 0; height: 75vh;">
-
-                {{-- Toolbar --}}
-                <div class="d-flex align-items-center justify-content-between px-4 py-2 border-bottom"
-                     style="min-height: 52px;">
-
-                    {{-- Hint --}}
-                    <div class="d-flex align-items-center gap-1 px-3 py-1 rounded"
-                         style="font-size: 0.78rem; background: #eafbe7; color: #6fd44c; font-weight: 600;">
-                        <i class="bx bx-info-circle" style="font-size: 0.95rem; color: #6fd44c;"></i>
-                        <span style="color: #6fd44c;">Click a row to view document details and actions.</span>
-                    </div>
-
-                    {{-- Entry count + chevron nav --}}
-                    <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.85rem;">
-                        {{ $documents->firstItem() ?? 0 }}&ndash;{{ $documents->lastItem() ?? 0 }}
-                        of {{ $documents->total() ?? 0 }}
-                        <a href="{{ !$documents->onFirstPage() ? $documents->previousPageUrl() : '#' }}"
-                           class="btn btn-icon btn-sm btn-outline-secondary border-0 {{ $documents->onFirstPage() ? 'disabled' : '' }}">
-                            <i class="bx bx-chevron-left"></i>
-                        </a>
-                        <a href="{{ $documents->hasMorePages() ? $documents->nextPageUrl() : '#' }}"
-                           class="btn btn-icon btn-sm btn-outline-secondary border-0 {{ !$documents->hasMorePages() ? 'disabled' : '' }}">
-                            <i class="bx bx-chevron-right"></i>
-                        </a>
-                    </div>
+            @empty
+                <div class="text-center py-5 my-5">
+                    <i class="bx bx-send" style="font-size: 64px; color: #ccc;"></i>
+                    <p class="text-muted mt-3 mb-0">No sent documents found.</p>
                 </div>
-
-                {{-- Column Headers --}}
-                <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom">
-                    <div class="col-header" style="width: 200px;">Recipient</div>
-                    <div class="col-header flex-grow-1">Document Type — Purpose</div>
-                    <div class="col-header d-none d-xl-block" style="min-width: 150px;">Tracking Code</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
-                    <div class="col-header d-none d-lg-block" style="min-width: 90px; text-align: center;">Sent Date</div>
-                </div>
-
-                {{-- Mail list --}}
-                <div class="mail-list flex-grow-1" style="overflow-y: auto; min-height: 0;">
-                    @forelse($documents as $document)
-                    @php
-                        $route = \App\Models\DocumentRoute::with('group')
-                            ->where('document_id', $document->document_id)
-                            ->first();
-                        $recipients = $route
-                            ? \App\Models\Recipient::with('user.employee')
-                                ->where('route_id', $route->route_id)
-                                ->get()
-                            : collect();
-
-                        $groupName     = $route?->group ? $route->group->position : null;
-                        $priorityValue = $route?->priority ?? 'normal';
-                        $priorityClass = match($priorityValue) {
-                            'urgent' => 'bg-danger',
-                            'high'   => 'bg-warning',
-                            'low'    => 'bg-secondary',
-                            default  => 'bg-primary',
-                        };
-
-                        $statusValue = $document->status;
-                        if ($recipients->isNotEmpty()) {
-                            $actions    = $recipients->pluck('action')->filter()->map(fn($a) => strtolower(trim((string)$a)))->unique();
-                            $hasPending = $recipients->contains(fn($r) => is_null($r->action) || $r->action === 'pending');
-                            $hasReceive = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
-                            if ($hasPending)                        $statusValue = 'pending';
-                            elseif ($hasReceive)                    $statusValue = 'receive';
-                            elseif ($actions->contains('approved')) $statusValue = 'approved';
-                            elseif ($actions->contains('rejected')) $statusValue = 'rejected';
-                            else                                    $statusValue = 'pending';
-                        }
-                        $statusClass = match($statusValue) {
-                            'pending'            => 'bg-warning',
-                            'approved'           => 'bg-success',
-                            'rejected'           => 'bg-danger',
-                            'receive','received' => 'bg-info',
-                            default              => 'bg-secondary',
-                        };
-
-                        $singleRecipient = $recipients->count() === 1 ? $recipients->first() : null;
-                        $recipientLabel  = 'No recipients';
-                        if ($groupName) {
-                            $recipientLabel = $groupName;
-                        } elseif ($recipients->count() > 1) {
-                            $recipientLabel = $recipients->count() . ' Recipients';
-                        } elseif ($singleRecipient) {
-                            $emp = $singleRecipient->user->employee;
-                            $recipientLabel = $emp
-                                ? ($emp->firstname . ' ' . $emp->lastname)
-                                : $singleRecipient->user->name;
-                        }
-                    @endphp
-
-                    <div class="mail-item d-flex align-items-center gap-3 px-4 py-2 border-bottom sent-document-row"
-                         data-bs-toggle="modal"
-                         data-bs-target="#sentDocumentModal-{{ $document->document_id }}">
-
-                        {{-- Recipient --}}
-                        <div class="flex-shrink-0" style="width: 200px; overflow: hidden;">
-                            <span class="text-body"
-                                  style="font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">
-                                {{ $recipientLabel }}
-                            </span>
-                        </div>
-
-                        {{-- Subject / preview --}}
-                        <div class="flex-grow-1 text-truncate" style="font-size: 0.875rem;">
-                            <span class="fw-semibold text-body">
-                                {{ $document->documentType?->type_name ?? 'Document' }} &mdash;
-                            </span>
-                            <span class="text-muted">{{ $document->purpose }}</span>
-                        </div>
-
-                        {{-- Tracking Code --}}
-                        <div class="d-none d-xl-block" style="min-width: 150px;">
-                            <span class="badge bg-label-primary" style="font-size: 0.7rem;">
-                                {{ $document->tracking_code ?? 'N/A' }}
-                            </span>
-                        </div>
-
-                        {{-- Priority --}}
-                        <div class="d-none d-lg-block" style="min-width: 80px;">
-                            <span class="badge {{ $priorityClass }}" style="font-size: 0.7rem;">
-                                {{ ucfirst($priorityValue) }}
-                            </span>
-                        </div>
-
-                        {{-- Status --}}
-                        <div class="d-none d-lg-block" style="min-width: 80px;">
-                            <span class="badge {{ $statusClass }}" style="font-size: 0.7rem;">
-                                {{ ucfirst($statusValue) }}
-                            </span>
-                        </div>
-
-                        {{-- Date --}}
-                        <div class="text-muted d-none d-lg-flex flex-shrink-0"
-                             style="font-size: 0.8rem; min-width: 90px; justify-content: center;">
-                            {{ $document->created_at?->format('M d, Y') ?? 'N/A' }}
-                        </div>
-                    </div>
-
-                    @empty
-                        <div class="text-center py-5 my-5">
-                            <i class="bx bx-send" style="font-size: 64px; color: #ccc;"></i>
-                            <p class="text-muted mt-3 mb-0">No sent documents found.</p>
-                        </div>
-                    @endforelse
-                </div>
-
-                {{-- ── Pagination footer — always visible at bottom ── --}}
-                <div class="px-4 py-3 border-top d-flex align-items-center justify-content-between flex-shrink-0">
-
-                    {{-- Info --}}
-                    <span class="text-muted" style="font-size: 0.8125rem;">
-                        Showing {{ $documents->firstItem() }} to {{ $documents->lastItem() }}
-                        of {{ $documents->total() }} results
-                    </span>
-
-                    {{-- Numbered pagination --}}
-                    @php
-                        $current = $documents->currentPage();
-                        $last    = $documents->lastPage();
-                        $window  = 2;
-                        $start   = max(1, $current - $window);
-                        $end     = min($last, $current + $window);
-                        $query   = $documents->appends(request()->query());
-                    @endphp
-                    <ul class="dt-pagination">
-                        <li class="page-item {{ $documents->onFirstPage() ? 'disabled' : '' }}">
-                            <a class="page-link"
-                               href="{{ !$documents->onFirstPage() ? $query->previousPageUrl() : '#' }}">‹</a>
-                        </li>
-
-                        @if($start > 1)
-                            <li class="page-item"><a class="page-link" href="{{ $query->url(1) }}">1</a></li>
-                            @if($start > 2)
-                                <li class="page-item disabled"><span class="page-link">…</span></li>
-                            @endif
-                        @endif
-
-                        @for($p = $start; $p <= $end; $p++)
-                            <li class="page-item {{ $p === $current ? 'active' : '' }}">
-                                <a class="page-link" href="{{ $query->url($p) }}">{{ $p }}</a>
-                            </li>
-                        @endfor
-
-                        @if($end < $last)
-                            @if($end < $last - 1)
-                                <li class="page-item disabled"><span class="page-link">…</span></li>
-                            @endif
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $query->url($last) }}">{{ $last }}</a>
-                            </li>
-                        @endif
-
-                        <li class="page-item {{ !$documents->hasMorePages() ? 'disabled' : '' }}">
-                            <a class="page-link"
-                               href="{{ $documents->hasMorePages() ? $query->nextPageUrl() : '#' }}">›</a>
-                        </li>
-                    </ul>
-                </div>
-
-            </div>{{-- /main content --}}
+            @endforelse
         </div>
-    </div>
+
+        {{-- ── Pagination footer ── --}}
+        <div class="px-4 py-3 border-top d-flex align-items-center justify-content-between flex-shrink-0 mt-auto"
+             style="background: #fafbff;">
+            <span class="text-muted" style="font-size: 0.8125rem;">
+                Showing {{ $documents->firstItem() }} to {{ $documents->lastItem() }}
+                of {{ $documents->total() }} results
+            </span>
+
+            @php
+                $current = $documents->currentPage();
+                $last    = $documents->lastPage();
+                $window  = 2;
+                $start   = max(1, $current - $window);
+                $end     = min($last, $current + $window);
+                $query   = $documents->appends(request()->query());
+            @endphp
+            <ul class="dt-pagination">
+                <li class="page-item {{ $documents->onFirstPage() ? 'disabled' : '' }}">
+                    <a class="page-link" href="{{ !$documents->onFirstPage() ? $query->previousPageUrl() : '#' }}">‹</a>
+                </li>
+                @if($start > 1)
+                    <li class="page-item"><a class="page-link" href="{{ $query->url(1) }}">1</a></li>
+                    @if($start > 2)
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    @endif
+                @endif
+                @for($p = $start; $p <= $end; $p++)
+                    <li class="page-item {{ $p === $current ? 'active' : '' }}">
+                        <a class="page-link" href="{{ $query->url($p) }}">{{ $p }}</a>
+                    </li>
+                @endfor
+                @if($end < $last)
+                    @if($end < $last - 1)
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    @endif
+                    <li class="page-item">
+                        <a class="page-link" href="{{ $query->url($last) }}">{{ $last }}</a>
+                    </li>
+                @endif
+                <li class="page-item {{ !$documents->hasMorePages() ? 'disabled' : '' }}">
+                    <a class="page-link" href="{{ $documents->hasMorePages() ? $query->nextPageUrl() : '#' }}">›</a>
+                </li>
+            </ul>
+        </div>
+
+    </div>{{-- /mail-card --}}
 </div>
 
-{{-- ── MODALS ── --}}
+{{-- ── MODALS (unchanged) ── --}}
 @foreach($documents as $document)
     @php
         $route = \App\Models\DocumentRoute::with('group')

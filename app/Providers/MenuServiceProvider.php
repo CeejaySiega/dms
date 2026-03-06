@@ -36,7 +36,8 @@ class MenuServiceProvider extends ServiceProvider
         })
         ->count();
       if ($inboxCount > 0) {
-        $this->applyBadgeToAllMenu($verticalMenuData->menu, ['danger', (string) $inboxCount]);
+        // Apply badge only to the incoming documents submenu
+        $this->applyBadgeBySlug($verticalMenuData->menu, 'documents.incoming', ['danger', (string) $inboxCount]);
       }
     }
 
