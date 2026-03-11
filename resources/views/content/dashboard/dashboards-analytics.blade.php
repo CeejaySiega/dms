@@ -154,11 +154,11 @@
                 {{-- Sub-label --}}
                 <div class="dms-stat-sub">{{ $s['sub'] }}</div>
 
-                {{-- % Change --}}
+                {{-- % Change
                 <div class="dms-stat-delta">
                     <span class="dms-delta-pct" style="color:{{ $up ? '#16a34a' : '#dc2626' }};">
                         {{-- arrow svg --}}
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                        {{-- <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                             @if($up)
                             <path d="M6 9.5V2.5M6 2.5L2.5 6M6 2.5L9.5 6"
                                   stroke="#16a34a" stroke-width="1.8"
@@ -172,7 +172,7 @@
                         {{ $up ? '+' : '' }}{{ $s['delta'] }}%
                     </span>
                     <span class="dms-delta-text">than last month</span>
-                </div>
+                </div>  --}}
 
                 {{-- Coloured bottom bar --}}
                 <div class="dms-stat-bar" style="background:{{ $s['color'] }};"></div>
