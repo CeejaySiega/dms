@@ -423,6 +423,48 @@ class DocumentController extends Controller
     }
 
     /**
+     * Navbar quick-search (returns JSON)
+     */
+    public function search(Request $request)
+    {
+        $q      = trim((string) $request->query('q', ''));
+        $userId = \Illuminate\Support\Facades\Auth::id();
+
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        // Documents the user sent or received
+        $documents = Document::where(function ($query) use ($userId) {
+                $query->where('documents.user_id', $userId)
+                      ->orWhereHas('recipients', function ($q2) use ($userId) {
+                          $q2->where('recipients.user_id', $userId);
+                      });
+            })
+            ->where(function ($query) use ($q) {
+                $query->where('documents.tracking_code', 'like', "%{$q}%")
+                      ->orWhere('documents.purpose', 'like', "%{$q}%")
+                      ->orWhere('documents.file_name', 'like', "%{$q}%")
+                      ->orWhereHas('documentType', function ($q2) use ($q) {
+                          $q2->where('type_name', 'like', "%{$q}%");
+                      });
+            })
+            ->with('documentType')
+            ->limit(8)
+            ->get();
+
+        $results = $documents->map(function ($doc) {
+            return [
+                'title'    => $doc->tracking_code ?? 'No tracking code',
+                'sub'      => ($doc->documentType->type_name ?? 'Document') . ' — ' . \Illuminate\Support\Str::limit($doc->purpose ?? '', 50),
+                'url'      => route('documents.receipt', encryptId($doc->document_id)),
+            ];
+        });
+
+        return response()->json($results);
+    }
+
+    /**
      * Download a document file
      */
     public function download(Document $document)

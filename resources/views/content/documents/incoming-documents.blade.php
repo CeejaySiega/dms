@@ -572,7 +572,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (el) el.style.zIndex = 99999;
                 }
             }).then(function (result) {
-                if (result.isConfirmed) submittedForm.submit();
+                if (result.isConfirmed) {
+                    // Show loading alert while the request is being processed
+                    Swal.fire({
+                        title: 'Receiving Document…',
+                        text: 'Please wait while we process your request.',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        customClass: { container: 'swal-over-modal' },
+                        didOpen: function () {
+                            const el = document.querySelector('.swal-over-modal');
+                            if (el) el.style.zIndex = 99999;
+                            Swal.showLoading();
+                        }
+                    });
+                    submittedForm.submit();
+                }
             });
         });
     });

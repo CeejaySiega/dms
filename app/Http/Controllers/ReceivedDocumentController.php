@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\DocumentReceivedNotification;
 use App\Models\Document;
 use App\Models\Recipient;
 use App\Models\ReceivedDocument;
 use App\Models\SentDocument;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class ReceivedDocumentController extends Controller
 {
@@ -76,6 +78,8 @@ class ReceivedDocumentController extends Controller
         );
 
         $this->storeReceivedDocument($document, $recipient, $receiveAt);
+
+        $this->notifySender($document, $recipient);
 
         return redirect()->route('documents.received')->with('success', 'Document marked as received.');
     }
@@ -212,12 +216,13 @@ class ReceivedDocumentController extends Controller
                     : (optional($document->user)->name ?? 'N/A');
 
                 return [
-                    'recipient_id' => $recipient->recipient_id,
-                    'sender_name' => $senderName,
+                    'recipient_id'  => $recipient->recipient_id,
+                    'sender_name'   => $senderName,
                     'document_type' => optional($document->documentType)->type_name ?? 'Document',
-                    'purpose' => $document->purpose,
+                    'purpose'       => $document->purpose,
                     'tracking_code' => $document->tracking_code,
-                    'sent_at' => optional($recipient->sent_at)->format('M d, Y')
+                    'sent_at'       => optional($recipient->sent_at)->format('M d, Y'),
+                    'sent_at_raw'   => optional($recipient->sent_at)->toIso8601String(),
                 ];
             })->filter()->values();
 
@@ -234,6 +239,92 @@ class ReceivedDocumentController extends Controller
                 'message' => 'Failed to get pending documents: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get documents the current user sent that have been received by recipients (for sender navbar notifications).
+     */
+    public function getReceivedByOthersNotifications()
+    {
+        try {
+            $received = ReceivedDocument::with([
+                    'document.documentType',
+                    'user.employee',
+                ])
+                ->whereHas('document', function ($q) {
+                    $q->where('user_id', Auth::id());
+                })
+                ->whereNotNull('receive_at')
+                ->orderBy('receive_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            $newCount = ReceivedDocument::whereHas('document', function ($q) {
+                    $q->where('user_id', Auth::id());
+                })
+                ->whereNotNull('receive_at')
+                ->where('receive_at', '>=', now()->subHours(24))
+                ->count();
+
+            $documents = $received->map(function ($rec) {
+                $document = $rec->document;
+                if (!$document) return null;
+
+                $receiverEmp  = optional($rec->user)->employee;
+                $receiverName = $receiverEmp && $receiverEmp->firstname
+                    ? $receiverEmp->firstname . ' ' . $receiverEmp->lastname
+                    : (optional($rec->user)->name ?? 'Unknown');
+
+                return [
+                    'received_id'    => $rec->received_id,
+                    'receiver_name'  => $receiverName,
+                    'document_type'  => optional($document->documentType)->type_name ?? 'Document',
+                    'tracking_code'  => $document->tracking_code,
+                    'receive_at'     => optional($rec->receive_at)->format('M d, Y g:i A'),
+                    'receive_at_raw' => optional($rec->receive_at)->toIso8601String(),
+                ];
+            })->filter()->values();
+
+            return response()->json([
+                'success'   => true,
+                'new_count' => $newCount,
+                'documents' => $documents,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success'   => false,
+                'new_count' => 0,
+                'documents' => [],
+                'message'   => 'Failed to get received notifications: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Send an email notification to the document sender when a recipient marks it as received.
+     */
+    private function notifySender(Document $document, Recipient $recipient): void
+    {
+        $sender = $document->user;
+        if (!$sender || !$sender->email) {
+            return;
+        }
+
+        $senderEmployee = optional($sender->employee);
+        $senderName     = $senderEmployee->firstname
+            ? $senderEmployee->firstname . ' ' . $senderEmployee->lastname
+            : ($sender->name ?? $sender->email);
+
+        $receiverUser     = Auth::user();
+        $receiverEmployee = optional($receiverUser->employee);
+        $recipientName    = $receiverEmployee->firstname
+            ? $receiverEmployee->firstname . ' ' . $receiverEmployee->lastname
+            : ($receiverUser->name ?? $receiverUser->email);
+
+        $link = route('documents.sent');
+
+        Mail::to($sender->email)
+            ->send(new DocumentReceivedNotification($document, $senderName, $recipientName, $link));
     }
 
     /**

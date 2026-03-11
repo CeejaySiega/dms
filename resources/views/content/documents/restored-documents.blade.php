@@ -292,19 +292,23 @@
                             </thead>
                             <tbody>
                                 @forelse($restoredDocuments as $document)
+                                @php
+                                    $doc = $document->document;
+                                    $isSender = $doc && $doc->user_id === auth()->user()->user_id;
+                                @endphp
                                 <tr>
                                     <td>
-                                        <span class="badge bg-label-primary">{{ $document->tracking_code }}</span>
+                                        <span class="badge bg-label-primary">{{ $doc->tracking_code ?? 'N/A' }}</span>
                                     </td>
                                     <td>
                                         <i class="bx bx-file me-1 text-info"></i>
-                                        {{ $document->documentType->type_name ?? 'N/A' }}
+                                        {{ $doc->documentType->type_name ?? 'N/A' }}
                                     </td>
                                     <td>
                                         <span class="text-truncate d-inline-block"
                                               style="max-width:250px"
-                                              title="{{ $document->purpose }}">
-                                            {{ Str::limit($document->purpose, 50) }}
+                                              title="{{ $doc->purpose ?? '' }}">
+                                            {{ Str::limit($doc->purpose ?? '', 50) }}
                                         </span>
                                     </td>
                                     <td>
@@ -314,8 +318,8 @@
                                     </td>
                                     <td>
                                         <small class="text-muted">
-                                            @if($document->deleted_at)
-                                                {{ $document->deleted_at->format('M d, Y h:i A') }}
+                                            @if($document->archive_at)
+                                                {{ $document->archive_at->format('M d, Y h:i A') }}
                                             @else
                                                 <i>Not set</i>
                                             @endif
@@ -323,22 +327,19 @@
                                     </td>
                                     <td>
                                         <span class="badge bg-label-success">
-                                            <i class="bx bx-check-circle me-1"></i>Active
+                                            <i class="bx bx-check-circle me-1"></i>Restored
                                         </span>
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ route('documents.show', encryptId($document->document_id)) }}"
-                                               class="btn btn-outline-info"
-                                               title="View Details">
-                                                <i class="bx bx-eye"></i>
-                                            </a>
+                                            @if($doc)
                                             <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
                                                class="btn btn-outline-success"
                                                title="Download">
                                                 <i class="bx bx-download"></i>
                                             </a>
-                                            <form action="{{ route('documents.archive', $document->document_id) }}"
+                                            @if($isSender)
+                                            <form action="{{ route('documents.archive', encryptId($document->document_id)) }}"
                                                   method="POST"
                                                   class="d-inline archive-form">
                                                 @csrf
@@ -348,6 +349,19 @@
                                                     <i class="bx bx-archive"></i>
                                                 </button>
                                             </form>
+                                            @else
+                                            <form action="{{ route('documents.archive-receiver', encryptId($document->document_id)) }}"
+                                                  method="POST"
+                                                  class="d-inline archive-form">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="btn btn-outline-secondary"
+                                                        title="Archive Again">
+                                                    <i class="bx bx-archive"></i>
+                                                </button>
+                                            </form>
+                                            @endif
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

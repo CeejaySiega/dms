@@ -185,6 +185,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/received', [ReceivedDocumentController::class, 'received'])->name('received');
         Route::get('/pending-count', [ReceivedDocumentController::class, 'getPendingCount'])->name('pending-count');
         Route::get('/pending-documents', [ReceivedDocumentController::class, 'getPendingDocuments'])->name('pending-documents');
+        Route::get('/received-by-others', [ReceivedDocumentController::class, 'getReceivedByOthersNotifications'])->name('received-by-others');
         Route::post('/{document}/approve', [ReceivedDocumentController::class, 'approve'])->name('approve');
         Route::post('/{document}/receive', [ReceivedDocumentController::class, 'receive'])->name('receive');
         Route::post('/{document}/disapprove', [ReceivedDocumentController::class, 'disapprove'])->name('disapprove');
@@ -195,6 +196,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/restored', [ArchiveDocumentController::class, 'restored'])->name('restored');
         Route::get('/all', [DocumentController::class, 'all'])->name('all');
         Route::get('/stats', [DocumentController::class, 'getStats'])->name('stats');
+        Route::get('/search', [DocumentController::class, 'search'])->name('search');
         
 
 

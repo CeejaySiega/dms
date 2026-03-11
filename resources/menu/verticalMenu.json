@@ -1,6 +1,9 @@
 {
   "menu": [
     {
+      "menuHeader": "GENERAL"
+    },
+    {
       "url": "/dashboard",
       "name": "Dashboard",
       "icon": "menu-icon icon-base bx bx-home-smile",

@@ -20,12 +20,14 @@ class Archive extends Model
         'file_path',
         'file_name',
         'archive_at',
+        'restored_at',
         'deleted_at',
     ];
 
     protected $casts = [
-        'archive_at' => 'datetime',
-        'deleted_at' => 'datetime',
+        'archive_at'  => 'datetime',
+        'restored_at' => 'datetime',
+        'deleted_at'  => 'datetime',
     ];
 
     /**

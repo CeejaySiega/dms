@@ -23,7 +23,8 @@ class ArchiveDocumentController extends Controller
                           $q->where('user_id', $currentUserId);
                       });
             })
-            ->whereNull('deleted_at') 
+            ->whereNull('deleted_at')
+            ->whereNull('restored_at')
             ->with('document', 'document.documentType')
             ->orderBy('archive_at', 'desc')
             ->paginate(15);
@@ -38,21 +39,22 @@ class ArchiveDocumentController extends Controller
     {
         $currentUserId = Auth::user()->user_id;
         $search = trim((string) request('search'));
+        $perPage = max(1, (int) request('per_page', 10));
 
-        // Get documents that were archived and then restored by this user
-        $restoredDocuments = Document::where('user_id', $currentUserId)
-            ->where('status', 'restored')
+        // Get all archive records that have been restored by this user
+        $restoredDocuments = Archive::where('user_id', $currentUserId)
             ->whereNotNull('restored_at')
+            ->whereNull('deleted_at')
             ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
+                $query->whereHas('document', function ($q) use ($search) {
                     $q->where('tracking_code', 'like', "%{$search}%")
                       ->orWhere('file_name', 'like', "%{$search}%")
                       ->orWhere('purpose', 'like', "%{$search}%");
-                });
+                })->orWhere('file_name', 'like', "%{$search}%");
             })
-            ->with('documentType')
+            ->with('document.documentType')
             ->orderBy('restored_at', 'desc')
-            ->paginate(15);
+            ->paginate($perPage);
 
         return view('content.documents.restored-documents', compact('restoredDocuments'));
     }
@@ -136,13 +138,13 @@ class ArchiveDocumentController extends Controller
         }
 
         try {
-            // Check if already archived by checking ReceivedDocument archive_at timestamp
-            $checkArchived = \App\Models\ReceivedDocument::where('document_id', $document->document_id)
+            // Check if an active (non-restored) archive record already exists
+            $existingArchive = Archive::where('document_id', $document->document_id)
                 ->where('user_id', $currentUserId)
-                ->whereNotNull('archive_at')
+                ->whereNull('deleted_at')
                 ->first();
 
-            if ($checkArchived) {
+            if ($existingArchive && is_null($existingArchive->restored_at)) {
                 if (request()->wantsJson()) {
                     return response()->json([
                         'success' => false,
@@ -152,23 +154,24 @@ class ArchiveDocumentController extends Controller
                 return redirect()->back()->with('error', 'Document is already archived');
             }
 
-            // Create archive record for this receiver
-            Archive::create([
-                'user_id' => $currentUserId,
-                'document_id' => $document->document_id,
-                'file_path' => $document->file_path,
-                'file_name' => $document->file_name,
-                'archive_at' => now(),
-            ]);
-
-            // Soft delete ReceivedDocument for this user
-            \App\Models\ReceivedDocument::where('document_id', $document->document_id)
-                ->where('user_id', $currentUserId)
-                ->update([
-                    'archive_at' => now()
+            if ($existingArchive && $existingArchive->restored_at) {
+                // Re-archive a previously restored document
+                $existingArchive->update([
+                    'archive_at'  => now(),
+                    'restored_at' => null,
                 ]);
-            
-            // Soft delete the received document
+            } else {
+                // Create a fresh archive record for this receiver
+                Archive::create([
+                    'user_id'     => $currentUserId,
+                    'document_id' => $document->document_id,
+                    'file_path'   => $document->file_path,
+                    'file_name'   => $document->file_name,
+                    'archive_at'  => now(),
+                ]);
+            }
+
+            // Remove the received document entry for this user (if still present)
             \App\Models\ReceivedDocument::where('document_id', $document->document_id)
                 ->where('user_id', $currentUserId)
                 ->delete();
@@ -207,15 +210,15 @@ class ArchiveDocumentController extends Controller
             ->firstOrFail();
 
         try {
-            // Delete archive record
-            $archive->delete();
+            // Mark as restored — keep the archive record as history
+            $archive->update(['restored_at' => now()]);
 
-            // Mark document as restored with status and timestamp
+            // Only update document status to 'restored' if the archiver is the sender
             $document = Document::where('document_id', $archive->document_id)->first();
-            if ($document) {
+            if ($document && $document->user_id === $currentUserId) {
                 $document->update([
                     'status' => 'restored',
-                    'restored_at' => now()
+                    'restored_at' => now(),
                 ]);
             }
 
@@ -226,7 +229,7 @@ class ArchiveDocumentController extends Controller
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Document restored successfully');
+            return redirect()->route('documents.restored')->with('success', 'Document restored successfully');
         } catch (\Exception $e) {
             if (request()->wantsJson()) {
                 return response()->json([
