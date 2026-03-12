@@ -29,7 +29,7 @@
       "submenu": [
         {
           "url": "/documents/incoming",
-          "name": "Incoming",
+          "name": "Pending",
           "slug": "documents.incoming"
         },
         {
@@ -43,12 +43,6 @@
           "slug": "documents.sent"
         }
       ]
-    },
-    {
-      "url": "/documents/archived",
-      "name": "Archived Documents",
-      "icon": "menu-icon icon-base bx bx-archive",
-      "slug": "documents.archived"
     },
     {
       "name": "My Documents",
@@ -65,10 +59,22 @@
         },
         {
           "url": "/documents/restored",
-          "name": "Restored Documents",
+          "name": "Restored from Archive",
           "slug": "documents.restored"
         }
       ]
+    },
+    {
+      "url": "/documents/archived",
+      "name": "Archived Documents",
+      "icon": "menu-icon icon-base bx bx-archive",
+      "slug": "documents.archived"
+    },
+    {
+      "url": "",
+      "name": "Workflow",
+      "icon": "menu-icon icon-base bx bx-cog",
+      "slug": ""
     },
     {
       "menuHeader": "USERS-GROUPS"

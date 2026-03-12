@@ -132,7 +132,7 @@
 {{-- ══════════════════════════════════════════
      4 STAT CARDS  (matches screenshot layout)
      ══════════════════════════════════════════ --}}
-<div class="row g-2 mb-4">
+<div class="row g-2 mb-4 w-100">
     @foreach($miniStats as $s)
     @php $up = $s['delta'] >= 0; @endphp
     <div class="col-sm-6 col-xl-3">
@@ -162,7 +162,7 @@
                             @if($up)
                             <path d="M6 9.5V2.5M6 2.5L2.5 6M6 2.5L9.5 6"
                                   stroke="#16a34a" stroke-width="1.8"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
+                                  stroke-linecap="round" stroke-linejoin="round"/>  
                             @else
                             <path d="M6 2.5V9.5M6 9.5L2.5 6M6 9.5L9.5 6"
                                   stroke="#dc2626" stroke-width="1.8"
@@ -393,7 +393,7 @@
     </div>
 </div> --}}
 
-<div class="row">
+<div class="row d-flex align-items-center">
     <div class="col-md-6 col-lg-4 col-xl-4 order-0 mb-6">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between">

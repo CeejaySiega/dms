@@ -30,7 +30,6 @@ const Helpers = {
   RESIZE_DELAY: 200,
 
   menuPsScroll: null,
-
   mainMenu: null,
 
   // Internal variables
@@ -43,25 +42,23 @@ const Helpers = {
   _listeners: [],
   _initialized: false,
   _autoUpdate: false,
-  // _lastWindowHeight: 0,
+
+  // ── NEW: hover expand delay timer ────────────────────────────────────────────
+  _hoverExpandTimeout: null,
+  _hoverCollapseTimeout: null,
+  HOVER_EXPAND_DELAY: 0, // ms before expanding  (0 = instant)
+  HOVER_COLLAPSE_DELAY: 300, // ms before collapsing (300 = slight grace period)
+  // ─────────────────────────────────────────────────────────────────────────────
 
   // *******************************************************************************
   // * Utilities
 
-  // ---
-  // Scroll To Active Menu Item
   _scrollToActive(animate = false, duration = 500) {
     const layoutMenu = this.getLayoutMenu()
-
     if (!layoutMenu) return
 
     let activeEl = layoutMenu.querySelector('li.menu-item.active:not(.open)')
-
     if (activeEl) {
-      // t = current time
-      // b = start value
-      // c = change in value
-      // d = duration
       const easeInOutQuad = (t, b, c, d) => {
         t /= d / 2
         if (t < 1) return (c / 2) * t * t + b
@@ -70,15 +67,8 @@ const Helpers = {
       }
 
       const element = this.getLayoutMenu().querySelector('.menu-inner')
-
-      if (typeof activeEl === 'string') {
-        activeEl = document.querySelector(activeEl)
-      }
-      if (typeof activeEl !== 'number') {
-        activeEl = activeEl.getBoundingClientRect().top + element.scrollTop
-      }
-
-      // If active element's top position is less than 2/3 (66%) of menu height than do not scroll
+      if (typeof activeEl === 'string') activeEl = document.querySelector(activeEl)
+      if (typeof activeEl !== 'number') activeEl = activeEl.getBoundingClientRect().top + element.scrollTop
       if (activeEl < parseInt((element.clientHeight * 2) / 3, 10)) return
 
       const start = element.scrollTop
@@ -91,11 +81,8 @@ const Helpers = {
           const currentTime = currentDate - startDate
           const val = easeInOutQuad(currentTime, start, change, duration)
           element.scrollTop = val
-          if (currentTime < duration) {
-            requestAnimationFrame(animateScroll)
-          } else {
-            element.scrollTop = change
-          }
+          if (currentTime < duration) requestAnimationFrame(animateScroll)
+          else element.scrollTop = change
         }
         animateScroll()
       } else {
@@ -104,222 +91,155 @@ const Helpers = {
     }
   },
 
-  // ---
-  // Add classes
   _addClass(cls, el = this.ROOT_EL) {
     if (el && el.length !== undefined) {
-      // Add classes to multiple elements
       el.forEach(e => {
-        if (e) {
-          cls.split(' ').forEach(c => e.classList.add(c))
-        }
+        if (e) cls.split(' ').forEach(c => e.classList.add(c))
       })
     } else if (el) {
-      // Add classes to single element
       cls.split(' ').forEach(c => el.classList.add(c))
     }
   },
 
-  // ---
-  // Remove classes
   _removeClass(cls, el = this.ROOT_EL) {
     if (el && el.length !== undefined) {
-      // Remove classes to multiple elements
       el.forEach(e => {
-        if (e) {
-          cls.split(' ').forEach(c => e.classList.remove(c))
-        }
+        if (e) cls.split(' ').forEach(c => e.classList.remove(c))
       })
     } else if (el) {
-      // Remove classes to single element
       cls.split(' ').forEach(c => el.classList.remove(c))
     }
   },
 
-  // Toggle classes
   _toggleClass(el = this.ROOT_EL, cls1, cls2) {
-    if (el.classList.contains(cls1)) {
-      el.classList.replace(cls1, cls2)
-    } else {
-      el.classList.replace(cls2, cls1)
-    }
+    if (el.classList.contains(cls1)) el.classList.replace(cls1, cls2)
+    else el.classList.replace(cls2, cls1)
   },
 
-  // ---
-  // Has class
   _hasClass(cls, el = this.ROOT_EL) {
     let result = false
-
     cls.split(' ').forEach(c => {
       if (el.classList.contains(c)) result = true
     })
-
     return result
   },
 
   _findParent(el, cls) {
     if ((el && el.tagName.toUpperCase() === 'BODY') || el.tagName.toUpperCase() === 'HTML') return null
     el = el.parentNode
-    while (el && el.tagName.toUpperCase() !== 'BODY' && !el.classList.contains(cls)) {
-      el = el.parentNode
-    }
+    while (el && el.tagName.toUpperCase() !== 'BODY' && !el.classList.contains(cls)) el = el.parentNode
     el = el && el.tagName.toUpperCase() !== 'BODY' ? el : null
     return el
   },
 
-  // ---
-  // Trigger window event
   _triggerWindowEvent(name) {
     if (typeof window === 'undefined') return
-
     if (document.createEvent) {
       let event
-
-      if (typeof Event === 'function') {
-        event = new Event(name)
-      } else {
+      if (typeof Event === 'function') event = new Event(name)
+      else {
         event = document.createEvent('Event')
         event.initEvent(name, false, true)
       }
-
       window.dispatchEvent(event)
     } else {
       window.fireEvent(`on${name}`, document.createEventObject())
     }
   },
 
-  // ---
-  // Trigger event
   _triggerEvent(name) {
     this._triggerWindowEvent(`layout${name}`)
-
     this._listeners.filter(listener => listener.event === name).forEach(listener => listener.callback.call(null))
   },
 
-  // ---
-  // Update style
   _updateInlineStyle(navbarHeight = 0, footerHeight = 0) {
     if (!this._styleEl) {
       this._styleEl = document.createElement('style')
       this._styleEl.type = 'text/css'
       document.head.appendChild(this._styleEl)
     }
-
     const newStyle = INLINE_STYLES.replace(/\{navbarHeight\}/gi, navbarHeight).replace(
       /\{footerHeight\}/gi,
       footerHeight
     )
-
     if (this._curStyle !== newStyle) {
       this._curStyle = newStyle
       this._styleEl.textContent = newStyle
     }
   },
 
-  // ---
-  // Remove style
   _removeInlineStyle() {
     if (this._styleEl) document.head.removeChild(this._styleEl)
     this._styleEl = null
     this._curStyle = null
   },
 
-  // ---
-  // Redraw layout menu (Safari bugfix)
   _redrawLayoutMenu() {
     const layoutMenu = this.getLayoutMenu()
-
     if (layoutMenu && layoutMenu.querySelector('.menu')) {
       const inner = layoutMenu.querySelector('.menu-inner')
       const { scrollTop } = inner
       const pageScrollTop = document.documentElement.scrollTop
-
       layoutMenu.style.display = 'none'
-      // layoutMenu.offsetHeight
       layoutMenu.style.display = ''
       inner.scrollTop = scrollTop
       document.documentElement.scrollTop = pageScrollTop
-
       return true
     }
-
     return false
   },
 
-  // ---
-  // Check for transition support
   _supportsTransitionEnd() {
     if (window.QUnit) return false
-
     const el = document.body || document.documentElement
-
     if (!el) return false
-
     let result = false
     TRANS_PROPERTIES.forEach(evnt => {
       if (typeof el.style[evnt] !== 'undefined') result = true
     })
-
     return result
   },
 
-  // ---
-  // Calculate current navbar height
   _getNavbarHeight() {
     const layoutNavbar = this.getLayoutNavbar()
-
     if (!layoutNavbar) return 0
     if (!this.isSmallScreen()) return layoutNavbar.getBoundingClientRect().height
-
-    // Needs some logic to get navbar height on small screens
-
     const clonedEl = layoutNavbar.cloneNode(true)
     clonedEl.id = null
     clonedEl.style.visibility = 'hidden'
     clonedEl.style.position = 'absolute'
-
     Array.prototype.slice.call(clonedEl.querySelectorAll('.collapse.show')).forEach(el => this._removeClass('show', el))
-
     layoutNavbar.parentNode.insertBefore(clonedEl, layoutNavbar)
-
     const navbarHeight = clonedEl.getBoundingClientRect().height
-
     clonedEl.parentNode.removeChild(clonedEl)
-
     return navbarHeight
   },
 
-  // ---
-  // Get current footer height
   _getFooterHeight() {
     const layoutFooter = this.getLayoutFooter()
-
     if (!layoutFooter) return 0
-
     return layoutFooter.getBoundingClientRect().height
   },
 
-  // ---
-  // Get animation duration of element
   _getAnimationDuration(el) {
     const duration = window.getComputedStyle(el).transitionDuration
-
     return parseFloat(duration) * (duration.indexOf('ms') !== -1 ? 1 : 1000)
   },
 
-  // ---
-  // Set menu hover state
+  // ── FIXED: properly sets/removes layout-menu-hover class ─────────────────────
   _setMenuHoverState(hovered) {
-    this[hovered ? '_addClass' : '_removeClass']('layout-menu-hover')
+    if (hovered) {
+      this._addClass('layout-menu-hover')
+    } else {
+      this._removeClass('layout-menu-hover')
+    }
   },
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  // ---
-  // Toggle collapsed
   _setCollapsed(collapsed) {
     if (this.isSmallScreen()) {
-      if (collapsed) {
-        this._removeClass('layout-menu-expanded')
-      } else {
+      if (collapsed) this._removeClass('layout-menu-expanded')
+      else {
         setTimeout(
           () => {
             this._addClass('layout-menu-expanded')
@@ -330,61 +250,44 @@ const Helpers = {
     }
   },
 
-  // ---
-  // Add layout sidenav toggle animationEnd event
   _bindLayoutAnimationEndEvent(modifier, cb) {
     const menu = this.getMenu()
     const duration = menu ? this._getAnimationDuration(menu) + 50 : 0
-
     if (!duration) {
       modifier.call(this)
       cb.call(this)
       return
     }
-
     this._transitionCallback = e => {
       if (e.target !== menu) return
       this._unbindLayoutAnimationEndEvent()
       cb.call(this)
     }
-
     TRANS_EVENTS.forEach(e => {
       menu.addEventListener(e, this._transitionCallback, false)
     })
-
     modifier.call(this)
-
     this._transitionCallbackTimeout = setTimeout(() => {
       this._transitionCallback.call(this, { target: menu })
     }, duration)
   },
 
-  // ---
-  // Remove layout sidenav toggle animationEnd event
   _unbindLayoutAnimationEndEvent() {
     const menu = this.getMenu()
-
     if (this._transitionCallbackTimeout) {
       clearTimeout(this._transitionCallbackTimeout)
       this._transitionCallbackTimeout = null
     }
-
     if (menu && this._transitionCallback) {
       TRANS_EVENTS.forEach(e => {
         menu.removeEventListener(e, this._transitionCallback, false)
       })
     }
-
-    if (this._transitionCallback) {
-      this._transitionCallback = null
-    }
+    if (this._transitionCallback) this._transitionCallback = null
   },
 
-  // ---
-  // Bind delayed window resize event
   _bindWindowResizeEvent() {
     this._unbindWindowResizeEvent()
-
     const cb = () => {
       if (this._resizeTimeout) {
         clearTimeout(this._resizeTimeout)
@@ -392,29 +295,25 @@ const Helpers = {
       }
       this._triggerEvent('resize')
     }
-
     this._resizeCallback = () => {
       if (this._resizeTimeout) clearTimeout(this._resizeTimeout)
       this._resizeTimeout = setTimeout(cb, this.RESIZE_DELAY)
     }
-
     window.addEventListener('resize', this._resizeCallback, false)
   },
 
-  // ---
-  // Unbind delayed window resize event
   _unbindWindowResizeEvent() {
     if (this._resizeTimeout) {
       clearTimeout(this._resizeTimeout)
       this._resizeTimeout = null
     }
-
     if (this._resizeCallback) {
       window.removeEventListener('resize', this._resizeCallback, false)
       this._resizeCallback = null
     }
   },
 
+  // ── FIXED & ENHANCED: hover expand/collapse with delays ──────────────────────
   _bindMenuMouseEvents() {
     if (this._menuMouseEnter && this._menuMouseLeave && this._windowTouchStart) return
 
@@ -423,11 +322,21 @@ const Helpers = {
 
     if (!this._menuMouseEnter) {
       this._menuMouseEnter = () => {
-        if (this.isSmallScreen() || this._hasClass('layout-transitioning')) {
-          return this._setMenuHoverState(false)
+        // Only activate hover-expand on large screens when sidebar is collapsed
+        if (this.isSmallScreen()) return
+
+        // Cancel any pending collapse
+        if (this._hoverCollapseTimeout) {
+          clearTimeout(this._hoverCollapseTimeout)
+          this._hoverCollapseTimeout = null
         }
 
-        return this._setMenuHoverState(false)
+        // Only expand if sidebar is collapsed (not manually expanded)
+        if (this._hasClass('layout-menu-collapsed')) {
+          this._hoverExpandTimeout = setTimeout(() => {
+            this._setMenuHoverState(true) // ← THE FIX: was (false), now (true)
+          }, this.HOVER_EXPAND_DELAY)
+        }
       }
       layoutMenu.addEventListener('mouseenter', this._menuMouseEnter, false)
       layoutMenu.addEventListener('touchstart', this._menuMouseEnter, false)
@@ -435,7 +344,16 @@ const Helpers = {
 
     if (!this._menuMouseLeave) {
       this._menuMouseLeave = () => {
-        this._setMenuHoverState(false)
+        // Cancel any pending expand
+        if (this._hoverExpandTimeout) {
+          clearTimeout(this._hoverExpandTimeout)
+          this._hoverExpandTimeout = null
+        }
+
+        // Collapse after a short grace period
+        this._hoverCollapseTimeout = setTimeout(() => {
+          this._setMenuHoverState(false) // ← collapse when mouse leaves
+        }, this.HOVER_COLLAPSE_DELAY)
       }
       layoutMenu.addEventListener('mouseleave', this._menuMouseLeave, false)
     }
@@ -449,6 +367,7 @@ const Helpers = {
       window.addEventListener('touchstart', this._windowTouchStart, true)
     }
   },
+  // ─────────────────────────────────────────────────────────────────────────────
 
   _unbindMenuMouseEvents() {
     if (!this._menuMouseEnter && !this._menuMouseLeave && !this._windowTouchStart) return
@@ -464,17 +383,23 @@ const Helpers = {
     }
 
     if (this._menuMouseLeave) {
-      if (layoutMenu) {
-        layoutMenu.removeEventListener('mouseleave', this._menuMouseLeave, false)
-      }
+      if (layoutMenu) layoutMenu.removeEventListener('mouseleave', this._menuMouseLeave, false)
       this._menuMouseLeave = null
     }
 
     if (this._windowTouchStart) {
-      if (layoutMenu) {
-        window.addEventListener('touchstart', this._windowTouchStart, true)
-      }
+      window.removeEventListener('touchstart', this._windowTouchStart, true)
       this._windowTouchStart = null
+    }
+
+    // Clear hover timers
+    if (this._hoverExpandTimeout) {
+      clearTimeout(this._hoverExpandTimeout)
+      this._hoverExpandTimeout = null
+    }
+    if (this._hoverCollapseTimeout) {
+      clearTimeout(this._hoverCollapseTimeout)
+      this._hoverCollapseTimeout = null
     }
 
     this._setMenuHoverState(false)
@@ -487,12 +412,21 @@ const Helpers = {
     this._scrollToActive(animate)
   },
 
-  // ---
-  // Collapse / expand layout
   setCollapsed(collapsed = requiredParam('collapsed'), animate = true) {
     const layoutMenu = this.getLayoutMenu()
-
     if (!layoutMenu) return
+
+    // ── When manually toggling, clear hover state & timers ───────────────────
+    this._setMenuHoverState(false)
+    if (this._hoverExpandTimeout) {
+      clearTimeout(this._hoverExpandTimeout)
+      this._hoverExpandTimeout = null
+    }
+    if (this._hoverCollapseTimeout) {
+      clearTimeout(this._hoverCollapseTimeout)
+      this._hoverCollapseTimeout = null
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     this._unbindLayoutAnimationEndEvent()
 
@@ -502,7 +436,6 @@ const Helpers = {
 
       this._bindLayoutAnimationEndEvent(
         () => {
-          // Collapse / Expand
           if (this.isSmallScreen) this._setCollapsed(collapsed)
         },
         () => {
@@ -515,10 +448,7 @@ const Helpers = {
     } else {
       this._addClass('layout-no-transition')
       if (collapsed) this._setMenuHoverState(false)
-
-      // Collapse / Expand
       this._setCollapsed(collapsed)
-
       setTimeout(() => {
         this._removeClass('layout-no-transition')
         this._triggerWindowEvent('resize')
@@ -528,27 +458,20 @@ const Helpers = {
     }
   },
 
-  // ---
-  // Toggle layout
   toggleCollapsed(animate = true) {
     this.setCollapsed(!this.isCollapsed(), animate)
   },
 
-  // ---
-  // Set layout positioning
   setPosition(fixed = requiredParam('fixed'), offcanvas = requiredParam('offcanvas')) {
     this._removeClass('layout-menu-offcanvas layout-menu-fixed layout-menu-fixed-offcanvas')
-
-    if (!fixed && offcanvas) {
-      this._addClass('layout-menu-offcanvas')
-    } else if (fixed && !offcanvas) {
+    if (!fixed && offcanvas) this._addClass('layout-menu-offcanvas')
+    else if (fixed && !offcanvas) {
       this._addClass('layout-menu-fixed')
       this._redrawLayoutMenu()
     } else if (fixed && offcanvas) {
       this._addClass('layout-menu-fixed-offcanvas')
       this._redrawLayoutMenu()
     }
-
     this.update()
   },
 
@@ -561,16 +484,13 @@ const Helpers = {
 
   getMenu() {
     const layoutMenu = this.getLayoutMenu()
-
     if (!layoutMenu) return null
-
     return !this._hasClass('menu', layoutMenu) ? layoutMenu.querySelector('.menu') : layoutMenu
   },
 
   getLayoutNavbar() {
     return document.querySelector('.layout-navbar')
   },
-
   getLayoutFooter() {
     return document.querySelector('.content-footer')
   },
@@ -586,7 +506,6 @@ const Helpers = {
     ) {
       this._updateInlineStyle(this._getNavbarHeight(), this._getFooterHeight())
     }
-
     this._bindMenuMouseEvents()
   },
 
@@ -618,9 +537,7 @@ const Helpers = {
   },
 
   isCollapsed() {
-    if (this.isSmallScreen()) {
-      return !this._hasClass('layout-menu-expanded')
-    }
+    if (this.isSmallScreen()) return !this._hasClass('layout-menu-expanded')
     return this._hasClass('layout-menu-collapsed')
   },
 
@@ -648,9 +565,7 @@ const Helpers = {
   on(event = requiredParam('event'), callback = requiredParam('callback')) {
     const [_event] = event.split('.')
     let [, ...namespace] = event.split('.')
-    // let [_event, ...namespace] = event.split('.')
     namespace = namespace.join('.') || null
-
     this._listeners.push({ event: _event, namespace, callback })
   },
 
@@ -658,7 +573,6 @@ const Helpers = {
     const [_event] = event.split('.')
     let [, ...namespace] = event.split('.')
     namespace = namespace.join('.') || null
-
     this._listeners
       .filter(listener => listener.event === _event && listener.namespace === namespace)
       .forEach(listener => this._listeners.splice(this._listeners.indexOf(listener), 1))
@@ -671,29 +585,22 @@ const Helpers = {
     if (this._initialized) return
     this._initialized = true
 
-    // Initialize `style` element
     this._updateInlineStyle(0)
-
-    // Bind window resize event
     this._bindWindowResizeEvent()
 
-    // Bind init event
     this.off('init._Helpers')
     this.on('init._Helpers', () => {
       this.off('resize._Helpers:redrawMenu')
       this.on('resize._Helpers:redrawMenu', () => {
-        // eslint-disable-next-line no-unused-expressions
         this.isSmallScreen() && !this.isCollapsed() && this._redrawLayoutMenu()
       })
 
-      // Force repaint in IE 10
       if (typeof document.documentMode === 'number' && document.documentMode < 11) {
         this.off('resize._Helpers:ie10RepaintBody')
         this.on('resize._Helpers:ie10RepaintBody', () => {
           if (this.isFixed()) return
           const { scrollTop } = document.documentElement
           document.body.style.display = 'none'
-          // document.body.offsetHeight
           document.body.style.display = 'block'
           document.documentElement.scrollTop = scrollTop
         })
@@ -713,17 +620,13 @@ const Helpers = {
     this._unbindWindowResizeEvent()
     this._unbindMenuMouseEvents()
     this.setAutoUpdate(false)
-
     this.off('init._Helpers')
 
-    // Remove all listeners except `init`
     this._listeners
       .filter(listener => listener.event !== 'init')
       .forEach(listener => this._listeners.splice(this._listeners.indexOf(listener), 1))
   },
 
-  // ---
-  // Init Password Toggle
   initPasswordToggle() {
     const toggler = document.querySelectorAll('.form-password-toggle i')
     if (typeof toggler !== 'undefined' && toggler !== null) {
@@ -733,7 +636,6 @@ const Helpers = {
           const formPasswordToggle = el.closest('.form-password-toggle')
           const formPasswordToggleIcon = formPasswordToggle.querySelector('i')
           const formPasswordToggleInput = formPasswordToggle.querySelector('input')
-
           if (formPasswordToggleInput.getAttribute('type') === 'text') {
             formPasswordToggleInput.setAttribute('type', 'password')
             formPasswordToggleIcon.classList.replace('bx-show', 'bx-hide')
@@ -746,8 +648,6 @@ const Helpers = {
     }
   },
 
-  // ---
-  // Init Speech To Text
   initSpeechToText() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const speechToText = document.querySelectorAll('.speech-to-text')
@@ -762,9 +662,7 @@ const Helpers = {
             recognition.onspeechstart = () => {
               listening = true
             }
-            if (listening === false) {
-              recognition.start()
-            }
+            if (listening === false) recognition.start()
             recognition.onerror = () => {
               listening = false
             }
@@ -781,7 +679,6 @@ const Helpers = {
     }
   },
 
-  // Ajax Call Promise
   ajaxCall(url) {
     return new Promise((resolve, reject) => {
       const req = new XMLHttpRequest()
@@ -792,18 +689,14 @@ const Helpers = {
     })
   },
 
-  // ---
-  // SidebarToggle (Used in Apps)
   initSidebarToggle() {
     const sidebarToggler = document.querySelectorAll('[data-bs-toggle="sidebar"]')
-
     sidebarToggler.forEach(el => {
       el.addEventListener('click', () => {
         const target = el.getAttribute('data-target')
         const overlay = el.getAttribute('data-overlay')
         const appOverlay = document.querySelectorAll('.app-overlay')
         const targetEl = document.querySelectorAll(target)
-
         targetEl.forEach(tel => {
           tel.classList.toggle('show')
           if (
@@ -812,11 +705,8 @@ const Helpers = {
             overlay !== false &&
             typeof appOverlay !== 'undefined'
           ) {
-            if (tel.classList.contains('show')) {
-              appOverlay[0].classList.add('show')
-            } else {
-              appOverlay[0].classList.remove('show')
-            }
+            if (tel.classList.contains('show')) appOverlay[0].classList.add('show')
+            else appOverlay[0].classList.remove('show')
             appOverlay[0].addEventListener('click', e => {
               e.currentTarget.classList.remove('show')
               tel.classList.remove('show')
@@ -827,7 +717,6 @@ const Helpers = {
     })
   },
 
-  // get css variables for theme colors
   getCssVar(color, isChartJs = false) {
     if (isChartJs === true) {
       return getComputedStyle(document.documentElement).getPropertyValue(`--${window.Helpers.prefix}${color}`).trim()
@@ -846,7 +735,6 @@ if (typeof window !== 'undefined') {
     document.documentElement.classList.add('layout-menu-100vh')
   }
 
-  // Update layout after page load
   if (document.readyState === 'complete') Helpers.update()
   else
     document.addEventListener('DOMContentLoaded', function onContentLoaded() {
@@ -855,6 +743,5 @@ if (typeof window !== 'undefined') {
     })
 }
 
-// ---
 window.Helpers = Helpers
 export { Helpers }

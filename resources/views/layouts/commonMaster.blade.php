@@ -30,6 +30,36 @@
     <!-- Include Styles -->
     @include('layouts/sections/styles')
 
+
+    <style>
+            /* ── Detached Navbar Full CSS (all important) ── */
+        .layout-navbar {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 97% !important;
+            background-color: #fff !important;
+            box-shadow: 0 2px 10px rgba(26,29,58,0.1) !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 0.5rem !important;
+            z-index: 1030 !important;
+            margin-top: 1rem !important;
+            transition: margin 0.3s ease, border-radius 0.3s ease !important;
+            
+        }
+        .layout-page{
+            display: flex !important;
+          
+            justify-content: space-between !important;
+        }
+       
+
+       
+
+        
+      
+    </style>
+
     <!-- Include Scripts for customizer, helper, analytics, config -->
     @include('layouts/sections/scriptsIncludes')
 </head>

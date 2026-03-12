@@ -23,7 +23,7 @@
                     <form action="{{ route('user.activity-logs.delete') }}" method="POST" class="d-inline">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-danger">Delete All Logs</button>
+                        <button type="submit" class="btn btn-sm btn-danger">ClearAll Logs</button>
                     </form>
 
             </div>
