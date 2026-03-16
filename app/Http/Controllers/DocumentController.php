@@ -10,11 +10,14 @@ use App\Models\Group;
 use App\Models\Group_user;
 use App\Models\SentDocument;
 use App\Models\Archive;
+use App\Models\DocumentRoute;
+use App\Models\Recipient;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DocumentNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class DocumentController extends Controller
 {
@@ -410,6 +413,106 @@ class DocumentController extends Controller
         }
 
         return view('content.documents.show-document', compact('document'));
+    }
+
+    /**
+     * Show forward form for an existing document
+     */
+    public function forwardForm(string $documentId, Request $request)
+    {
+        $decryptedDocumentId = decryptId($documentId);
+        $document = Document::with(['documentType', 'user.employee'])->findOrFail($decryptedDocumentId);
+
+        if (!$this->canAccessDocument($document)) {
+            abort(403, 'Unauthorized to forward this document');
+        }
+
+        $baseRouteId = null;
+        if ($request->filled('base_route')) {
+            $baseRouteId = decryptId((string) $request->input('base_route'));
+        }
+
+        $users = User::with('employee')
+            ->where('user_id', '!=', Auth::id())
+            ->get();
+
+        return view('content.documents.forward-document', [
+            'document' => $document,
+            'users' => $users,
+            'baseRouteId' => $baseRouteId,
+            'source' => (string) $request->input('source', 'unknown'),
+        ]);
+    }
+
+    /**
+     * Store forwarded recipients for an existing document
+     */
+    public function forwardStore(string $documentId, Request $request)
+    {
+        $decryptedDocumentId = decryptId($documentId);
+        $document = Document::findOrFail($decryptedDocumentId);
+
+        if (!$this->canAccessDocument($document)) {
+            abort(403, 'Unauthorized to forward this document');
+        }
+
+        if ($request->has('user_ids')) {
+            $decryptedUserIds = array_map(function ($id) {
+                return decryptId($id);
+            }, (array) $request->input('user_ids', []));
+            $request->merge(['user_ids' => $decryptedUserIds]);
+        }
+
+        $validated = $request->validate([
+            'user_ids' => 'required|array|min:1|max:5',
+            'user_ids.*' => 'required|integer|exists:users,user_id|different:' . Auth::id(),
+            'priority' => 'required|in:low,normal,high,urgent',
+            'base_route_id' => 'nullable|integer|exists:document_routes,route_id',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        DB::transaction(function () use ($document, $validated) {
+            $route = DocumentRoute::create([
+                'user_id' => Auth::id(),
+                'document_id' => $document->document_id,
+                'group_id' => null,
+                'action' => 'pending',
+                'priority' => $validated['priority'],
+            ]);
+
+            foreach ($validated['user_ids'] as $userId) {
+                $recipient = Recipient::create([
+                    'route_id' => $route->route_id,
+                    'user_id' => $userId,
+                    'role' => 'recipient',
+                    'action' => 'pending',
+                    'sent_at' => now(),
+                ]);
+
+                SentDocument::create([
+                    'user_id' => Auth::id(),
+                    'document_id' => $document->document_id,
+                    'route_id' => $route->route_id,
+                    'recipient_id' => $recipient->recipient_id,
+                    'file_path' => $document->file_path,
+                    'purpose' => $document->purpose,
+                    'status' => 'pending',
+                    'sent_at' => now(),
+                ]);
+
+                $recipientUser = User::find($userId);
+                if ($recipientUser && $recipientUser->email) {
+                    $link = $recipientUser->getInboxLink();
+                    Mail::to($recipientUser->email)->send(
+                        new DocumentNotification($document, $recipientUser->name ?? 'User', $link)
+                    );
+                }
+            }
+        });
+
+        logActivity(auth()->id(), 'add', 'Forwarded document to new recipient(s)');
+
+        return redirect()->route('documents.sent')->with('success', 'Document forwarded successfully.');
     }
 
 

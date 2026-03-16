@@ -400,10 +400,16 @@
                 </div>
 
                 <div class="modal-footer border-top-0 justify-content-between pt-1">
-                    <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
-                       class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-                        <i class="bx bx-download me-1"></i> Download
-                    </a>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
+                           class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+                            <i class="bx bx-download me-1"></i> Download
+                        </a>
+                        <a href="{{ route('documents.forward.form', ['documentId' => encryptId($document->document_id), 'base_route' => encryptId($receivedDocument->route_id), 'source' => 'received']) }}"
+                           class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+                            <i class="bx bx-share-alt me-1"></i> Forward
+                        </a>
+                    </div>
                     <div class="d-flex gap-2">
                         @if($document->status !== 'archived')
                             <form action="{{ route('documents.archive-receiver', encryptId($document->document_id)) }}"

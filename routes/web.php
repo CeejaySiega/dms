@@ -197,6 +197,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/all', [DocumentController::class, 'all'])->name('all');
         Route::get('/stats', [DocumentController::class, 'getStats'])->name('stats');
         Route::get('/search', [DocumentController::class, 'search'])->name('search');
+        Route::get('/forward/{documentId}', [DocumentController::class, 'forwardForm'])->name('forward.form');
+        Route::post('/forward/{documentId}', [DocumentController::class, 'forwardStore'])->name('forward.store');
         
 
 
