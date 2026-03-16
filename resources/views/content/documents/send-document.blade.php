@@ -115,6 +115,7 @@
                                 class="form-control @error('tracking_code') is-invalid @enderror"
                                 id="tracking_code"
                                 name="tracking_code"
+                                value="{{ old('tracking_code', $trackingCode ?? '') }}"
                                 readonly
                                 required
                             />
@@ -245,7 +246,6 @@
         const form = document.getElementById('sendDocumentForm');
         const submitBtn = document.getElementById('submitBtn');
         const trackingCodeInput = document.getElementById('tracking_code');
-        const campusAbbr = form.getAttribute('data-campus-abbr') || 'SG';
         const othersRadio = document.getElementById('for8');
         const othersTextboxContainer = document.getElementById('othersTextboxContainer');
         const purposeOthersInput = document.getElementById('purpose_others');
@@ -268,20 +268,8 @@
 
         toggleOthers();
 
-        // Generate tracking code on page load
-        function generateTrackingCode() {
-            const now = new Date();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const year = now.getFullYear();
-            const random = String(Math.floor(Math.random() * 999999)).padStart(6, '0');
-            
-            // Format: ABBR-MMDD-YYYY-RRRRRR
-            return `${campusAbbr}-${month}${day}-${year}-${random}`;
-        }
-
         if (trackingCodeInput && !trackingCodeInput.value) {
-            trackingCodeInput.value = generateTrackingCode();
+            trackingCodeInput.value = @json($trackingCode ?? '');
         }
 
         // Form validation and submission

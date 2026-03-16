@@ -24,7 +24,45 @@ class DocumentController extends Controller
     public function create()
     {
         $documentTypes = DocumentType::all();
-        return view('content.documents.send-document', compact('documentTypes'));
+        $trackingCode = $this->buildTrackingCode();
+
+        return view('content.documents.send-document', compact('documentTypes', 'trackingCode'));
+    }
+
+    /**
+     * Build tracking code in CAMPUS-DATEYEAR-SEQUENCE format (e.g., SG-03162026-01).
+     */
+    private function buildTrackingCode(): string
+    {
+        $campuses = getCampuses();
+        $campusAbbr = 'SG';
+        $userCampusId = auth()->user()->employee->campus ?? null;
+
+        if ($userCampusId) {
+            foreach ($campuses as $abbr => $campus) {
+                if (($campus['ID'] ?? null) == $userCampusId) {
+                    $campusAbbr = $abbr;
+                    break;
+                }
+            }
+        }
+
+        $dateYear = now()->format('mdY');
+        $prefix = $campusAbbr . '-' . $dateYear;
+
+        $maxSequence = Document::where('tracking_code', 'like', $prefix . '-%')
+            ->pluck('tracking_code')
+            ->map(function ($code) {
+                $parts = explode('-', (string) $code);
+                $lastPart = end($parts);
+
+                return is_numeric($lastPart) ? (int) $lastPart : 0;
+            })
+            ->max() ?? 0;
+
+        $nextSequence = str_pad((string) ($maxSequence + 1), 2, '0', STR_PAD_LEFT);
+
+        return $prefix . '-' . $nextSequence;
     }
 
     /**
