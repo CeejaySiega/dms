@@ -15,8 +15,13 @@ class SentDocumentController extends Controller
 {
     public function sent()
     {
-        // Get documents sent by current user that are NOT archived
-        $documents = Document::where('user_id', Auth::id())
+        // Get documents sent/forwarded by current user that are NOT archived for this user
+        $documents = Document::whereIn('document_id', function ($query) {
+                $query->select('document_id')
+                    ->from('sent_documents')
+                    ->where('user_id', Auth::id())
+                    ->whereNull('unsend_at');
+            })
             ->whereNotIn('document_id', function($query) {
                 $query->select('document_id')
                       ->from('archives')
@@ -389,8 +394,11 @@ class SentDocumentController extends Controller
      */
     private function getStatusFromRecipients(Document $document): string
     {
-        $routeIds = DocumentRoute::where('document_id', $document->document_id)
-            ->pluck('route_id');
+        $routes = DocumentRoute::where('document_id', $document->document_id)
+            ->get(['route_id', 'forward_at']);
+
+        $routeIds = $routes->pluck('route_id');
+        $hasForwarded = $routes->contains(fn ($route) => !is_null($route->forward_at));
 
         $actions = Recipient::whereIn('route_id', $routeIds)
             ->whereNull('deleted_at')
@@ -409,6 +417,7 @@ class SentDocumentController extends Controller
         if ($hasReceive)                    return 'receive';
         if ($actions->contains('approved')) return 'approved';
         if ($actions->contains('rejected')) return 'rejected';
+        if ($hasForwarded)                  return 'forwarded';
 
         return 'pending';
     }

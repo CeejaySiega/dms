@@ -214,4 +214,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{document}', [SentDocumentController::class, 'delete'])->name('delete');
         Route::delete('/archives/{archive}/permanent', [ArchiveDocumentController::class, 'destroy'])->name('permanent-delete');
     });
+
+    // workflow
+    Route::prefix('workflow')->name('workflow.')->group(function () {
+        Route::view('/document-trail', 'content.workflow.document-trail')->name('document-trail');
+    });
 });

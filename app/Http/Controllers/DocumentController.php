@@ -469,6 +469,7 @@ class DocumentController extends Controller
                     'receiver_id' => $userId,
                     'action' => 'pending',
                     'priority' => $validated['priority'],
+                    'forward_at' => now(),
                 ]);
 
                 $recipient = Recipient::create([

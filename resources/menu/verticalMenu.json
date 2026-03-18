@@ -71,10 +71,18 @@
       "slug": "documents.archived"
     },
     {
-      "url": "",
       "name": "Workflow",
       "icon": "menu-icon icon-base bx bx-cog",
-      "slug": ""
+      "slug": [
+        "workflow.document-trail"
+      ],
+      "submenu": [
+        {
+          "url": "/workflow/document-trail",
+          "name": "Document Trail",
+          "slug": "workflow.document-trail"
+        }
+      ]
     },
     {
       "menuHeader": "USERS-GROUPS"

@@ -197,6 +197,7 @@
             @php
                 $route = \App\Models\DocumentRoute::with('group')
                     ->where('document_id', $document->document_id)
+                    ->where('sender_id', Auth::id())
                     ->first();
                 $recipients = $route
                     ? \App\Models\Recipient::with('user.employee')
@@ -218,7 +219,9 @@
                     $actions    = $recipients->pluck('action')->filter()->map(fn($a) => strtolower(trim((string)$a)))->unique();
                     $hasPending = $recipients->contains(fn($r) => is_null($r->action) || $r->action === 'pending');
                     $hasReceive = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
-                    if ($hasPending)                        $statusValue = 'pending';
+                    $isForwarded = !is_null($route?->forward_at);
+                    if ($hasPending && $isForwarded)        $statusValue = 'forwarded';
+                    elseif ($hasPending)                    $statusValue = 'pending';
                     elseif ($hasReceive)                    $statusValue = 'receive';
                     elseif ($actions->contains('approved')) $statusValue = 'approved';
                     elseif ($actions->contains('rejected')) $statusValue = 'rejected';
@@ -226,6 +229,7 @@
                 }
                 $statusClass = match($statusValue) {
                     'pending'            => 'bg-warning',
+                    'forwarded'          => 'bg-primary',
                     'approved'           => 'bg-success',
                     'rejected'           => 'bg-danger',
                     'receive','received' => 'bg-info',
@@ -354,6 +358,7 @@
     @php
         $route = \App\Models\DocumentRoute::with('group')
             ->where('document_id', $document->document_id)
+            ->where('sender_id', Auth::id())
             ->first();
         $recipients = $route
             ? \App\Models\Recipient::with('user.employee')
@@ -375,7 +380,9 @@
             $actions    = $recipients->pluck('action')->filter()->map(fn($a) => strtolower(trim((string)$a)))->unique();
             $hasPending = $recipients->contains(fn($r) => is_null($r->action) || $r->action === 'pending');
             $hasReceive = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
-            if ($hasPending)                        $statusVal = 'pending';
+            $isForwarded = !is_null($route?->forward_at);
+            if ($hasPending && $isForwarded)        $statusVal = 'forwarded';
+            elseif ($hasPending)                    $statusVal = 'pending';
             elseif ($hasReceive)                    $statusVal = 'receive';
             elseif ($actions->contains('approved')) $statusVal = 'approved';
             elseif ($actions->contains('rejected')) $statusVal = 'rejected';
@@ -383,6 +390,7 @@
         }
         $statusBadge = match($statusVal) {
             'pending'            => 'bg-warning',
+            'forwarded'          => 'bg-primary',
             'approved'           => 'bg-success',
             'rejected'           => 'bg-danger',
             'receive','received' => 'bg-info',
@@ -490,7 +498,7 @@
                                                   style="font-size: 0.75rem; min-width: 60px; text-align: center;">
                                                 {{ ucfirst($action) }}
                                             </span>
-                                            @if($isPending)
+                                            @if($isPending && Auth::id() === $document->user_id)
                                                 <button type="button"
                                                         class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
                                                         style="font-size: 0.78rem; padding: 3px 10px;"
