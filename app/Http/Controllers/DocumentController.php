@@ -209,17 +209,15 @@ class DocumentController extends Controller
         ]);
         logActivity(auth()->id(), 'add', 'Created and sent document');
 
-        // Create document route
-        $route = \App\Models\DocumentRoute::create([
-            'user_id' => Auth::id(),
-            'document_id' => $document->document_id,
-            'group_id' => $validated['group_id'] ?? null,
-            'action' => 'pending',
-            'priority' => $validated['priority'],
-        ]);
-
-        // Create recipient
+        // Create document route for each recipient
         foreach ($validated['user_ids'] as $userId) {
+            $route = \App\Models\DocumentRoute::create([
+                'sender_id' => Auth::id(),
+                'document_id' => $document->document_id,
+                'receiver_id' => $userId,
+                'action' => 'pending',
+                'priority' => $validated['priority'],
+            ]);
             $recipient = \App\Models\Recipient::create([
                 'route_id' => $route->route_id,
                 'user_id' => $userId,
@@ -236,18 +234,17 @@ class DocumentController extends Controller
                 'status' => 'pending',
                 'sent_at' => now(),
             ]);
-        }
 
-                // Send email notification to each recipient (HTML, with details and link)
-                    foreach ($validated['user_ids'] as $userId) {
-                    $recipientUser = \App\Models\User::find($userId);
-                    if ($recipientUser && $recipientUser->email) {
-                    $link = $recipientUser->getInboxLink();
-                    Mail::to($recipientUser->email)->send(
+            // Send email notification
+            $recipientUser = \App\Models\User::find($userId);
+            if ($recipientUser && $recipientUser->email) {
+                $link = $recipientUser->getInboxLink();
+                Mail::to($recipientUser->email)->send(
                     new DocumentNotification($document, $recipientUser->name ?? 'User', $link)
                 );
             }
         }
+
         // Clear session data
         session()->forget('document_data');
 
@@ -325,49 +322,45 @@ class DocumentController extends Controller
         ]);
         logActivity(auth()->id(), 'add', 'Created and sent document to group');
 
+        // Create document route for the group
         $route = \App\Models\DocumentRoute::create([
-            'user_id' => Auth::id(),
+            'sender_id' => Auth::id(),
             'document_id' => $document->document_id,
-            'group_id' => $validated['group_id'],
+            'receiver_id' => $validated['group_id'],
             'action' => 'pending',
             'priority' => $validated['priority'],
         ]);
 
        foreach ($userIds as $userId) {
+            $recipient = \App\Models\Recipient::create([
+                'route_id' => $route->route_id,
+                'user_id' => $userId,
+                'role' => 'recipient',
+                'action' => 'pending',
+                'sent_at' => now(),
+            ]);
 
-    $recipient = \App\Models\Recipient::create([
-        'route_id' => $route->route_id,
-        'user_id' => $userId,
-        'role' => 'recipient',
-        'action' => 'pending',
-        'sent_at' => now(),
-    ]);
+            SentDocument::create([
+                'user_id' => Auth::id(),
+                'document_id' => $document->document_id,
+                'route_id' => $route->route_id,
+                'recipient_id' => $recipient->recipient_id,
+                'status' => 'pending',
+                'sent_at' => now(),
+            ]);
 
-    SentDocument::create([
-        'user_id' => Auth::id(),
-        'document_id' => $document->document_id,
-        'route_id' => $route->route_id,
-        'recipient_id' => $recipient->recipient_id,
-        'status' => 'pending',
-        'sent_at' => now(),
-
-    ]);
-
-    // ✅ SEND EMAIL HERE
-    $recipientUser = \App\Models\User::find($userId);
-
-    if ($recipientUser && $recipientUser->email) {
-        $link = $recipientUser->getInboxLink();
-
-        Mail::to($recipientUser->email)->send(
-            new DocumentNotification(
-                $document,
-                $recipientUser->name ?? 'User',
-                $link
-            )
-        );
-    }
-}
+            $recipientUser = \App\Models\User::find($userId);
+            if ($recipientUser && $recipientUser->email) {
+                $link = $recipientUser->getInboxLink();
+                Mail::to($recipientUser->email)->send(
+                    new DocumentNotification(
+                        $document,
+                        $recipientUser->name ?? 'User',
+                        $link
+                    )
+                );
+            }
+        }
         session()->forget('document_data');
 
         return response()->json([
@@ -468,16 +461,16 @@ class DocumentController extends Controller
         ]);
 
         DB::transaction(function () use ($document, $validated) {
-            $route = DocumentRoute::create([
-                // Must match documents(document_id, user_id) composite FK.
-                'user_id' => $document->user_id,
-                'document_id' => $document->document_id,
-                'group_id' => null,
-                'action' => 'pending',
-                'priority' => $validated['priority'],
-            ]);
-
+            // Create route for each individual recipient
             foreach ($validated['user_ids'] as $userId) {
+                $route = DocumentRoute::create([
+                    'sender_id' => Auth::id(),
+                    'document_id' => $document->document_id,
+                    'receiver_id' => $userId,
+                    'action' => 'pending',
+                    'priority' => $validated['priority'],
+                ]);
+
                 $recipient = Recipient::create([
                     'route_id' => $route->route_id,
                     'user_id' => $userId,

@@ -18,10 +18,12 @@ class ReceivedDocumentController extends Controller
      */
     public function index()
     {
+        // Get direct individual recipients (for this user)
         $latestInboxRecipientIds = Recipient::query()
             ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
             ->where('recipients.user_id', Auth::id())
             ->whereNull('recipients.deleted_at')
+            ->where('document_routes.receiver_id', Auth::id())
             ->where(function ($query) {
                 $query->whereNull('recipients.action')
                     ->orWhere('recipients.action', 'pending')
@@ -43,6 +45,7 @@ class ReceivedDocumentController extends Controller
             ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
             ->where('recipients.user_id', Auth::id())
             ->whereNull('recipients.deleted_at')
+            ->where('document_routes.receiver_id', Auth::id())
             ->where(function ($query) {
                 $query->whereNull('recipients.action')->orWhere('recipients.action', 'pending');
             })
@@ -200,6 +203,7 @@ class ReceivedDocumentController extends Controller
                 ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
                 ->where('recipients.user_id', Auth::id())
                 ->whereNull('recipients.deleted_at')
+                ->where('document_routes.receiver_id', Auth::id())
                 ->where(function ($query) {
                     $query->whereNull('recipients.action')->orWhere('recipients.action', 'pending');
                 })
@@ -229,6 +233,7 @@ class ReceivedDocumentController extends Controller
                 ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
                 ->where('recipients.user_id', Auth::id())
                 ->whereNull('recipients.deleted_at')
+                ->where('document_routes.receiver_id', Auth::id())
                 ->where(function ($query) {
                     $query->whereNull('recipients.action')->orWhere('recipients.action', 'pending');
                 })

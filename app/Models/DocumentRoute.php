@@ -17,22 +17,37 @@ class DocumentRoute extends Model
         'user_id',
         'document_id',
         'group_id',
-        'approve_at',
-        'receive_at',
+        'sender_id',
+        'receiver_id',
         'action',
         'priority',
         'unsend_at',
+        'forward_at',
     ];
 
     protected $casts = [
-        'approve_at' => 'datetime',
-        'receive_at' => 'datetime',
+        'forward_at' => 'datetime',
         'unsend_at' => 'datetime',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'sender_id', 'user_id');
+    }
+
+    public function receiverUser()
+    {
+        return $this->belongsTo(User::class, 'receiver_id', 'user_id');
+    }
+
+    public function receiverGroup()
+    {
+        return $this->belongsTo(Group::class, 'receiver_id', 'group_id');
     }
 
     public function document()
