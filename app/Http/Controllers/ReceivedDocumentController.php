@@ -18,27 +18,36 @@ class ReceivedDocumentController extends Controller
      */
     public function index()
     {
+        $latestInboxRecipientIds = Recipient::query()
+            ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
+            ->where('recipients.user_id', Auth::id())
+            ->whereNull('recipients.deleted_at')
+            ->where(function ($query) {
+                $query->whereNull('recipients.action')
+                    ->orWhere('recipients.action', 'pending')
+                    ->orWhere('recipients.action', 'read');
+            })
+            ->selectRaw('MAX(recipients.recipient_id) as recipient_id')
+            ->groupBy('document_routes.document_id');
+
         $inbox = Recipient::with([
                 'route.document.documentType',
                 'route.document.user.employee'
             ])
-            ->where('user_id', Auth::id())
-            ->whereNull('deleted_at')
-            ->where(function ($query) {
-                $query->whereNull('action')
-                      ->orWhere('action', 'pending')
-                      ->orWhere('action', 'read');
-            })
+            ->whereIn('recipient_id', $latestInboxRecipientIds)
             ->orderByRaw("CASE WHEN (SELECT priority FROM document_routes WHERE document_routes.route_id = recipients.route_id) = 'urgent' THEN 0 ELSE 1 END")
             ->orderBy('sent_at', 'desc')
             ->paginate(15);
 
-        $inboxCount = Recipient::where('user_id', Auth::id())
-            ->whereNull('deleted_at')
+        $inboxCount = Recipient::query()
+            ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
+            ->where('recipients.user_id', Auth::id())
+            ->whereNull('recipients.deleted_at')
             ->where(function ($query) {
-                $query->whereNull('action')->orWhere('action', 'pending');
+                $query->whereNull('recipients.action')->orWhere('recipients.action', 'pending');
             })
-            ->count();
+            ->distinct('document_routes.document_id')
+            ->count('document_routes.document_id');
 
         return view('content.documents.incoming-documents', compact('inbox', 'inboxCount'));
     }
@@ -54,7 +63,6 @@ class ReceivedDocumentController extends Controller
             $document,
             $recipient,
             'approved',
-            now(),
             null
         );
 
@@ -69,15 +77,32 @@ class ReceivedDocumentController extends Controller
         $recipient = $this->getRecipientOrFail($document);
         $receiveAt = now();
 
+        $recipients = Recipient::where('user_id', Auth::id())
+            ->whereHas('route', function ($query) use ($document) {
+                $query->where('document_id', $document->document_id);
+            })
+            ->where(function ($query) {
+                $query->whereNull('action')
+                    ->orWhere('action', 'pending')
+                    ->orWhere('action', 'read')
+                    ->orWhere('action', 'receive');
+            })
+            ->get();
+
         $this->updateRouteAndDocument(
             $document,
             $recipient,
             'receive',
-            null,
             $receiveAt
         );
 
-        $this->storeReceivedDocument($document, $recipient, $receiveAt);
+        if ($recipients->isEmpty()) {
+            $this->storeReceivedDocument($document, $recipient, $receiveAt);
+        } else {
+            foreach ($recipients as $recipientItem) {
+                $this->storeReceivedDocument($document, $recipientItem, $receiveAt);
+            }
+        }
 
         $this->notifySender($document, $recipient);
 
@@ -89,12 +114,17 @@ class ReceivedDocumentController extends Controller
      */
     public function received()
     {
+        $latestReceivedIds = ReceivedDocument::query()
+            ->where('user_id', Auth::id())
+            ->whereNull('archive_at')
+            ->selectRaw('MAX(received_id) as received_id')
+            ->groupBy('document_id');
+
         $received = ReceivedDocument::with([
                 'document.documentType',
                 'document.user.employee'
             ])
-            ->where('user_id', Auth::id())
-            ->whereNull('archive_at')
+            ->whereIn('received_id', $latestReceivedIds)
             ->orderBy('receive_at', 'desc')
             ->paginate(15);
 
@@ -166,12 +196,15 @@ class ReceivedDocumentController extends Controller
     public function getPendingCount()
     {
         try {
-            $pendingCount = Recipient::where('user_id', Auth::id())
-                ->whereNull('deleted_at')
+            $pendingCount = Recipient::query()
+                ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
+                ->where('recipients.user_id', Auth::id())
+                ->whereNull('recipients.deleted_at')
                 ->where(function ($query) {
-                    $query->whereNull('action')->orWhere('action', 'pending');
+                    $query->whereNull('recipients.action')->orWhere('recipients.action', 'pending');
                 })
-                ->count();
+                ->distinct('document_routes.document_id')
+                ->count('document_routes.document_id');
 
             return response()->json([
                 'success' => true,
@@ -192,15 +225,21 @@ class ReceivedDocumentController extends Controller
     public function getPendingDocuments()
     {
         try {
+            $latestInboxRecipientIds = Recipient::query()
+                ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
+                ->where('recipients.user_id', Auth::id())
+                ->whereNull('recipients.deleted_at')
+                ->where(function ($query) {
+                    $query->whereNull('recipients.action')->orWhere('recipients.action', 'pending');
+                })
+                ->selectRaw('MAX(recipients.recipient_id) as recipient_id')
+                ->groupBy('document_routes.document_id');
+
             $documents = Recipient::with([
                     'route.document.documentType',
                     'route.document.user.employee'
                 ])
-                ->where('user_id', Auth::id())
-                ->whereNull('deleted_at')
-                ->where(function ($query) {
-                    $query->whereNull('action')->orWhere('action', 'pending');
-                })
+                ->whereIn('recipient_id', $latestInboxRecipientIds)
                 ->orderByRaw("CASE WHEN (SELECT priority FROM document_routes WHERE document_routes.route_id = recipients.route_id) = 'urgent' THEN 0 ELSE 1 END")
                 ->orderBy('sent_at', 'desc')
                 ->limit(5)
@@ -219,7 +258,6 @@ class ReceivedDocumentController extends Controller
                     'recipient_id'  => $recipient->recipient_id,
                     'sender_name'   => $senderName,
                     'document_type' => optional($document->documentType)->type_name ?? 'Document',
-                    'purpose'       => $document->purpose,
                     'tracking_code' => $document->tracking_code,
                     'sent_at'       => optional($recipient->sent_at)->format('M d, Y'),
                     'sent_at_raw'   => optional($recipient->sent_at)->toIso8601String(),
@@ -336,6 +374,7 @@ class ReceivedDocumentController extends Controller
             ->whereHas('route', function ($query) use ($document) {
                 $query->where('document_id', $document->document_id);
             })
+            ->orderByDesc('recipient_id')
             ->with('route')
             ->first();
 
@@ -353,15 +392,30 @@ class ReceivedDocumentController extends Controller
         Document $document,
         Recipient $recipient,
         string $routeAction,
-        $approveAt,
         $receiveAt
     ): void {
-        DB::transaction(function () use ($document, $recipient, $routeAction, $approveAt, $receiveAt) {
-            $recipient->update([
-                'action' => $routeAction,
-                'approve_at' => $approveAt,
-                'receive_at' => $receiveAt,
-            ]);
+        DB::transaction(function () use ($document, $recipient, $routeAction, $receiveAt) {
+            if ($routeAction === 'receive') {
+                Recipient::where('user_id', Auth::id())
+                    ->whereHas('route', function ($query) use ($document) {
+                        $query->where('document_id', $document->document_id);
+                    })
+                    ->where(function ($query) {
+                        $query->whereNull('action')
+                            ->orWhere('action', 'pending')
+                            ->orWhere('action', 'read')
+                            ->orWhere('action', 'receive');
+                    })
+                    ->update([
+                        'action' => 'receive',
+                        'receive_at' => $receiveAt,
+                    ]);
+            } else {
+                $recipient->update([
+                    'action' => $routeAction,
+                    'receive_at' => $receiveAt,
+                ]);
+            }
 
             $document->update(['status' => $this->getStatusFromRecipients($document)]);
         });
@@ -412,8 +466,6 @@ class ReceivedDocumentController extends Controller
                 'document_id' => $document->document_id,
                 'route_id' => $recipient->route_id,
                 'recipient_id' => $recipient->recipient_id,
-                'file_path' => $document->file_path,
-                'purpose' => $document->purpose,
                 'status' => 'receive',
                 'sent_at' => $recipient->sent_at ?? now(),
                 
@@ -424,14 +476,14 @@ class ReceivedDocumentController extends Controller
 
         ReceivedDocument::updateOrCreate(
             [
-                'sent_id' => $sent->sent_id,
+                'user_id' => $recipient->user_id,
+                'document_id' => $document->document_id,
             ],
             [
+                'sent_id' => $sent->sent_id,
                 'user_id' => $recipient->user_id,
                 'document_id' => $document->document_id,
                 'route_id' => $recipient->route_id,
-                'purpose' => $document->purpose,
-                'file_path' => $document->file_path,
                 'status' => 'receive',
                 'receive_at' => $receiveAt,
             ]

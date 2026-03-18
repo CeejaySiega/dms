@@ -17,8 +17,6 @@ class ReceivedDocument extends Model
         'sent_id',
         'document_id',
         'route_id',
-        'purpose',
-        'file_path',
         'status',
         'receive_at',
         'archive_at',

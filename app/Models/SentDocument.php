@@ -17,8 +17,6 @@ class SentDocument extends Model
         'document_id',
         'route_id',
         'recipient_id',
-        'file_path',
-        'purpose',
         'status',
         'sent_at',
         'unsend_at',

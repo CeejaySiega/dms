@@ -183,7 +183,7 @@
         {{-- Column Headers ── --}}
         <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom flex-shrink-0">
             <div class="col-header" style="width: 200px;">Sender</div>
-            <div class="col-header flex-grow-1">Document Type — Purpose</div>
+            <div class="col-header flex-grow-1">Document Type</div>
             <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
             <div class="col-header d-none d-lg-block" style="min-width: 70px;">Status</div>
             <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Date</div>
@@ -220,9 +220,8 @@
                     {{-- Subject / preview --}}
                     <div class="flex-grow-1 text-truncate" style="font-size: 0.875rem;">
                         <span class="fw-semibold text-body">
-                            {{ $document->documentType->type_name ?? 'Document' }} —
+                            {{ $document->documentType->type_name ?? 'Document' }}
                         </span>
-                        <span class="text-muted">{{ $document->purpose }}</span>
                     </div>
 
                     {{-- Tracking Code --}}
@@ -348,10 +347,6 @@
                                 <div class="fw-semibold" style="color: #e74c3c; font-size: 0.9rem;">
                                     {{ $document->tracking_code ?? 'N/A' }}
                                 </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="text-muted mb-1" style="font-size: 0.78rem;">Purpose</div>
-                                <div style="font-size: 0.9rem;">{{ $document->purpose }}</div>
                             </div>
                             <div class="col-4">
                                 <div class="text-muted mb-1" style="font-size: 0.78rem;">Status</div>

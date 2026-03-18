@@ -84,7 +84,7 @@ class SentDocumentController extends Controller
                     })
                     ->get();
 
-                // Update and delete SentDocuments for pending recipients
+               
                 SentDocument::whereIn('route_id', $routeIds)
                     ->whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
                     ->update([
@@ -95,7 +95,7 @@ class SentDocumentController extends Controller
                     ->whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
                     ->delete();
 
-                // Soft delete recipients using delete() method
+             
                 Recipient::whereIn('recipient_id', $pendingRecipients->pluck('recipient_id'))
                     ->delete();
 
@@ -116,21 +116,18 @@ class SentDocumentController extends Controller
                         'message' => 'Document removed for sender. Receivers keep their copy.'
                     ]);
                 }
-
-                // Delete sent documents first to avoid foreign key constraint
                 SentDocument::where('route_id', $route->route_id)
                     ->update([
                         'unsend_at' => now()
                     ]);
                 
                 SentDocument::where('route_id', $route->route_id)->delete();
-                
-                // Soft delete recipients using delete() method
+            
                 Recipient::withTrashed()
                     ->where('route_id', $route->route_id)
                     ->delete();
                 
-                // Delete route (must delete before document due to foreign keys)
+              
                 $route->delete();
             }
 
@@ -138,7 +135,7 @@ class SentDocumentController extends Controller
                 Storage::disk('public')->delete($document->file_path);
             }
 
-            // Soft delete document
+           
             $document->update([
                 'unsend_at' => now()
             ]);
@@ -158,15 +155,10 @@ class SentDocumentController extends Controller
 
     /**
      * Unsend a document to a specific recipient.
-     *
-     * Route: DELETE /documents/{document}/recipients/{recipient}
-     *
-     * Both {document} and {recipient} are encrypted IDs resolved by route model binding
-     * via the decryptId() helper registered in RouteServiceProvider.
      */
     public function unsendRecipient(Document $document, Recipient $recipient)
     {
-        // Verify the recipient actually belongs to this document (via DocumentRoute)
+    
         $routeIds = DocumentRoute::where('document_id', $document->document_id)
             ->pluck('route_id');
 

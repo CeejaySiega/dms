@@ -48,7 +48,6 @@ class DocumentInboxController extends Controller
             $document,
             $recipient,
             'approved',
-            now(),
             null
         );
 
@@ -67,7 +66,6 @@ class DocumentInboxController extends Controller
             $document,
             $recipient,
             'receive',
-            null,
             $receiveAt
         );
 
@@ -130,7 +128,6 @@ class DocumentInboxController extends Controller
             $document,
             $recipient,
             'rejected',
-            null,
             null
         );
 
@@ -163,13 +160,11 @@ class DocumentInboxController extends Controller
         Document $document,
         Recipient $recipient,
         string $routeAction,
-        $approveAt,
         $receiveAt
     ): void {
-        DB::transaction(function () use ($document, $recipient, $routeAction, $approveAt, $receiveAt) {
+        DB::transaction(function () use ($document, $recipient, $routeAction, $receiveAt) {
             $recipient->update([
                 'action' => $routeAction,
-                'approve_at' => $approveAt,
                 'receive_at' => $receiveAt,
             ]);
 
@@ -224,11 +219,9 @@ class DocumentInboxController extends Controller
             [
                 'user_id' => $recipient->user_id,
                 'document_id' => $document->document_id,
-                'route_id' => $recipient->route_id,
             ],
             [
-                'purpose' => $document->purpose,
-                'file_path' => $document->file_path,
+                'route_id' => $recipient->route_id,
                 'status' => 'receive',
                 'receive_at' => $receiveAt,
             ]

@@ -233,8 +233,6 @@ class DocumentController extends Controller
                 'document_id' => $document->document_id,
                 'route_id' => $route->route_id,
                 'recipient_id' => $recipient->recipient_id,
-                'file_path' => $document->file_path,
-                'purpose' => $document->purpose,
                 'status' => 'pending',
                 'sent_at' => now(),
             ]);
@@ -350,8 +348,6 @@ class DocumentController extends Controller
         'document_id' => $document->document_id,
         'route_id' => $route->route_id,
         'recipient_id' => $recipient->recipient_id,
-        'file_path' => $document->file_path,
-        'purpose' => $document->purpose,
         'status' => 'pending',
         'sent_at' => now(),
 
@@ -473,7 +469,8 @@ class DocumentController extends Controller
 
         DB::transaction(function () use ($document, $validated) {
             $route = DocumentRoute::create([
-                'user_id' => Auth::id(),
+                // Must match documents(document_id, user_id) composite FK.
+                'user_id' => $document->user_id,
                 'document_id' => $document->document_id,
                 'group_id' => null,
                 'action' => 'pending',
@@ -494,8 +491,6 @@ class DocumentController extends Controller
                     'document_id' => $document->document_id,
                     'route_id' => $route->route_id,
                     'recipient_id' => $recipient->recipient_id,
-                    'file_path' => $document->file_path,
-                    'purpose' => $document->purpose,
                     'status' => 'pending',
                     'sent_at' => now(),
                 ]);
