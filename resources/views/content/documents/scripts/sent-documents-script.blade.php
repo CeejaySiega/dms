@@ -1,112 +1,73 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// ── Colour map ────────────────────────────────────────────────────────────
-const TC = {
-    sent:      { dot: '#7F77DD', bg: '#F3F2FE', tx: '#3C3489', border: '#C9C6F0' },
-    received:  { dot: '#1D9E75', bg: '#E8F8F2', tx: '#085041', border: '#9FE1CB' },
-    forwarded: { dot: '#BA7517', bg: '#FDF3E3', tx: '#633806', border: '#FAC775' },
-    active:    { dot: '#3B82F6', bg: '#EFF6FF', tx: '#1e40af', border: '#BFDBFE' },
-    pending:   { dot: '#9ca3af', bg: '#f3f4f6', tx: '#6b7280', border: '#e5e7eb' },
-};
-
-// ── Helpers ───────────────────────────────────────────────────────────────
-function fmtDate(ts) {
-    if (!ts) return '—';
+function formatTrailDate(ts) {
+    if (!ts) return 'N/A';
     const d = new Date(ts);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-         + ' · '
-         + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-function timeAgo(ts) {
-    if (!ts) return '—';
-    const s = Math.floor((Date.now() - new Date(ts)) / 1000);
-    if (s < 60)     return 'Just now';
-    if (s < 3600)   return Math.floor(s / 60) + 'm ago';
-    if (s < 86400)  return Math.floor(s / 3600) + 'h ago';
-    if (s < 172800) return 'Yesterday';
-    return Math.floor(s / 86400) + 'd ago';
+function trailText(step) {
+    if (step.type === 'sent') return 'Sent document';
+    if (step.type === 'received') return step.remarks ? ('Received (' + step.remarks + ')') : 'Received document';
+    if (step.type === 'forwarded') return 'Forwarded to ' + (step.forwarded_to || 'N/A');
+    if (step.type === 'active') return 'Currently handling document';
+    return 'Pending';
 }
 
-// ── Build trail log ───────────────────────────────────────────────────────
-// unsendMap = { user_id: { url, name } } — only populated for pending recipients
-// when the logged-in user is the original sender
-function buildTrailLog(container, trail, unsendMap) {
+function trailBadgeClass(type) {
+    if (type === 'sent') return 'bg-label-primary';
+    if (type === 'received') return 'bg-label-success';
+    if (type === 'forwarded') return 'bg-label-warning';
+    if (type === 'active') return 'bg-label-info';
+    return 'bg-label-secondary';
+}
+
+function buildTrailList(container, trail, unsendMap) {
     container.innerHTML = '';
     unsendMap = unsendMap || {};
 
-    trail.forEach((step, i) => {
-        const c      = TC[step.type] || TC.pending;
-        const isLast = i === trail.length - 1;
+    if (!Array.isArray(trail) || trail.length === 0) {
+        container.innerHTML = '<li class="list-group-item text-muted" style="font-size:0.82rem;">No trail entries found.</li>';
+        return;
+    }
 
-        // Action text
-        let actionHtml = '';
-        switch (step.type) {
-            case 'sent':      actionHtml = 'sent the document'; break;
-            case 'received':  actionHtml = 'received the document'; break;
-            case 'forwarded': actionHtml = `forwarded to <strong style="color:#1a1d3a;font-weight:600;">${step.forwarded_to || '—'}</strong>`; break;
-            case 'active':    actionHtml = 'has the document now'; break;
-            default:          actionHtml = 'pending';
-        }
-
-        // Badge
-        let badgeLabel = { sent:'Sender', received:'Received', forwarded:'Forwarded', active:'Waiting', pending:'Pending' }[step.type] || step.type;
-        if (step.type === 'active' && step.action_at) {
-            badgeLabel = 'Waiting · ' + timeAgo(step.action_at);
-        }
-
-        // Dot animation for active
-        const dotAnim = step.type === 'active' ? 'animation:pulseBlue 2s infinite;' : '';
-
-        // ── Unsend button — shown only on 'active' rows where user_id is in unsendMap ──
+    trail.forEach(function (step) {
         let unsendBtn = '';
         const unsendData = unsendMap[step.user_id];
-        if ((step.type === 'active') && unsendData) {
+        if ((step.type === 'active' || step.type === 'pending') && unsendData) {
             unsendBtn = `
-                <button type="button"
-                        class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 ms-2"
-                        style="font-size:.72rem;padding:2px 9px;white-space:nowrap;"
-                        onclick="confirmUnsend('${unsendData.url}','${unsendData.name.replace(/'/g,"\\'")}')">
-                    <i class="bx bx-x" style="font-size:.85rem;"></i> Unsend
-                </button>`;
+                <div class="mt-1">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            style="font-size:.72rem;padding:2px 9px;"
+                            onclick="confirmUnsend('${unsendData.url}','${unsendData.name.replace(/'/g,"\\'")}')">
+                        <i class="bx bx-x" style="font-size:.85rem;"></i> Unsend
+                    </button>
+                </div>`;
         }
 
-        const row = document.createElement('div');
-        row.className = 'tl-row';
-
-        row.innerHTML = `
-            <div class="tl-dot-col">
-                <div class="tl-dot" style="background:${c.dot};${dotAnim}"></div>
-                ${!isLast ? '<div class="tl-vline"></div>' : ''}
-            </div>
-            <div class="tl-content">
-                <div class="tl-main">
-                    <div class="tl-left">
-                        <div>
-                            <span class="tl-name">${step.actor_name}</span>
-                            <span class="tl-action">${actionHtml}</span>
-                        </div>
-                        <div class="tl-dept">${step.department} · ${step.campus}</div>
-                    </div>
-                    <div class="tl-right">
-                        <span class="tl-badge"
-                              style="background:${c.bg};color:${c.tx};border-color:${c.border};">
-                            ${badgeLabel}
-                        </span>
-                        <span class="tl-date">${fmtDate(step.action_at)}</span>
-                        ${unsendBtn}
-                    </div>
+        const li = document.createElement('li');
+        li.className = 'list-group-item px-0';
+        li.innerHTML = `
+            <div>
+                <div>
+                    <div class="fw-semibold" style="font-size:0.86rem;">${step.actor_name || 'Unknown User'}</div>
+                    <div class="text-muted" style="font-size:0.8rem;">${trailText(step)}</div>
+                    <div class="text-muted" style="font-size:0.74rem;">${step.department || 'N/A'} · ${step.campus || 'N/A'}</div>
                 </div>
-                ${step.remarks ? `<div class="tl-remark">"${step.remarks}"</div>` : ''}
+                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                    <span class="badge ${trailBadgeClass(step.type)}" style="font-size:0.68rem;">${(step.type || 'pending').toUpperCase()}</span>
+                    <span class="text-muted" style="font-size:0.72rem;">${formatTrailDate(step.action_at)}</span>
+                    ${unsendBtn}
+                </div>
             </div>`;
-
-        container.appendChild(row);
+        container.appendChild(li);
     });
 }
 
-// ── Render ────────────────────────────────────────────────────────────────
 function renderTrail(pane, data, unsendMap) {
-    buildTrailLog(pane.querySelector('.trail-log-body'), data.trail || [], unsendMap);
+    buildTrailList(pane.querySelector('.sent-trail-list'), data.trail || [], unsendMap);
     pane.querySelector('.trail-loading').classList.add('d-none');
     pane.querySelector('.trail-data').classList.remove('d-none');
 }

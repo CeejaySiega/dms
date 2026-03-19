@@ -7,6 +7,7 @@ use App\Mail\DocumentNotification;
 use App\Models\Document;
 use App\Models\DocumentRoute;
 use App\Models\Recipient;
+use App\Models\ReceivedDocument;
 use App\Models\SentDocument;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -17,9 +18,21 @@ class SentDocumentController extends Controller
 {
     public function trailData(Document $document): JsonResponse
     {
-        $canView = SentDocument::where('document_id', $document->document_id)
+        $isSenderSide = SentDocument::where('document_id', $document->document_id)
             ->where('user_id', Auth::id())
             ->exists();
+
+        $isRecipientSide = Recipient::where('user_id', Auth::id())
+            ->whereHas('route', function ($query) use ($document) {
+                $query->where('document_id', $document->document_id);
+            })
+            ->exists();
+
+        $isReceivedSide = ReceivedDocument::where('document_id', $document->document_id)
+            ->where('user_id', Auth::id())
+            ->exists();
+
+        $canView = $isSenderSide || $isRecipientSide || $isReceivedSide;
 
         if (!$canView) {
             return response()->json([
@@ -112,6 +125,8 @@ class SentDocumentController extends Controller
             ->sortByDesc(fn ($r) => optional($r->forward_at)->timestamp ?? 0)
             ->first();
 
+        $activeUserId = null;
+
         if ($latestRoute) {
             $latestReceiver = $latestRoute->receiverUser;
 
@@ -134,6 +149,7 @@ class SentDocumentController extends Controller
                 : false;
 
             if ($latestReceiver && !$receiverActed) {
+                $activeUserId = $latestReceiver->user_id;
                 $trail[] = [
                     'type' => 'active',
                     'user_id' => $latestReceiver->user_id,
@@ -145,6 +161,32 @@ class SentDocumentController extends Controller
                     'remarks' => null,
                 ];
             }
+        }
+
+        // Other pending recipients (not yet acted), excluding current active holder.
+        foreach ($recipients as $recipient) {
+            $action = strtolower(trim((string) ($recipient->action ?? '')));
+            $hasActed = in_array($action, ['receive', 'received', 'approved', 'rejected'], true)
+                || !is_null($recipient->receive_at);
+
+            if ($hasActed) {
+                continue;
+            }
+
+            if (!is_null($activeUserId) && (int) $recipient->user_id === (int) $activeUserId) {
+                continue;
+            }
+
+            $trail[] = [
+                'type' => 'pending',
+                'user_id' => $recipient->user_id,
+                'actor_name' => $this->trailUserName($recipient->user),
+                'department' => $this->trailDepartment($recipient->user),
+                'campus' => $this->trailCampus($recipient->user),
+                'action_at' => optional($recipient->sent_at)->toIso8601String(),
+                'forwarded_to' => null,
+                'remarks' => null,
+            ];
         }
 
         $typeOrder = [

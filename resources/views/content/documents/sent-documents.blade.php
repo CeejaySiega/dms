@@ -14,7 +14,7 @@
                 <i class="bx bx-send text-primary fs-4"></i>
             </div>
             <div>
-                <h4 class="fw-bold mb-1">Sent</h4>
+                <h4 class="fw-bold mb-1">Sent Documents</h4>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0" style="font-size: 0.8rem;">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard-analytics') }}">Home</a></li>
@@ -33,7 +33,7 @@
 
     <div class="hint-bar">
         <i class="bx bx-info-circle"></i>
-        Click a row to view document details, actions and current status.
+        Documents you sent. Click a row to view details, trail, and recipient actions.
     </div>
 
     <div class="card mail-card">
@@ -58,12 +58,12 @@
         </div>
 
         <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom flex-shrink-0">
-            <div class="col-header" style="width: 200px;">Sent To</div>
-            <div class="col-header flex-grow-1">Document Type - Purpose</div>
+            <div class="col-header" style="width: 200px;">Current Recipient</div>
+               <div class="col-header" style="flex: 0 0 22%; max-width: 22%;">Document Type and Purpose</div>
             <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
             <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 90px; text-align: center;">Sent Date</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Latest Status</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 110px; text-align: right; margin-left: auto;">Date Sent</div>
         </div>
 
         <div class="mail-list">
@@ -126,7 +126,7 @@
                         {{ $recipientLabel }}
                     </span>
                 </div>
-                <div class="flex-grow-1 text-truncate" style="font-size:.875rem;">
+                   <div class="text-truncate" style="font-size:.875rem; flex: 0 0 22%; max-width: 22%;">
                     <span class="fw-semibold text-body">{{ $document->documentType?->type_name ?? 'Document' }}</span>
                     <span class="text-muted"> - {{ $document->purpose ?? 'N/A' }}</span>
                 </div>
@@ -139,8 +139,8 @@
                 <div class="d-none d-lg-block" style="min-width:80px;">
                     <span class="badge {{ $statusClass }}" style="font-size:.7rem;">{{ ucfirst($statusValue) }}</span>
                 </div>
-                <div class="text-muted d-none d-lg-flex flex-shrink-0"
-                     style="font-size:.8rem;min-width:90px;justify-content:center;">
+                 <div class="text-muted d-none d-lg-flex flex-shrink-0"
+                     style="font-size:.8rem;min-width:110px;justify-content:flex-end;margin-left:auto;text-align:right;">
                     {{ $document->created_at?->format('M d, Y') ?? 'N/A' }}
                 </div>
             </div>
@@ -234,10 +234,27 @@
             'receive','received' => 'bg-info',    default     => 'bg-secondary',
         };
 
-        // Build unsend map: user_id => { url, name } for pending recipients only.
+        $senderEmployee = optional($document->user)->employee;
+        $senderName = $senderEmployee
+            ? ($senderEmployee->firstname . ' ' . $senderEmployee->lastname)
+            : (optional($document->user)->name ?? optional($document->user)->email ?? 'N/A');
+        $senderEmail = optional($document->user)->email ?? 'N/A';
+
+        // Build unsend map from ALL document routes: user_id => { url, name }
+        // for pending recipients only.
         $unsendMap = [];
         if (Auth::id() === $document->user_id) {
-            foreach ($recipients as $r) {
+            $allRouteIds = \App\Models\DocumentRoute::where('document_id', $document->document_id)
+                ->pluck('route_id');
+
+            $allPendingRecipients = \App\Models\Recipient::with('user.employee')
+                ->whereIn('route_id', $allRouteIds)
+                ->where(function ($q) {
+                    $q->whereNull('action')->orWhere('action', 'pending');
+                })
+                ->get();
+
+            foreach ($allPendingRecipients as $r) {
                 if (is_null($r->action) || $r->action === 'pending') {
                     $emp  = $r->user->employee;
                     $name = $emp
@@ -261,13 +278,11 @@
 
                 {{-- Header --}}
                 <div class="modal-header border-bottom-0 pb-1">
-                    <h5 class="modal-title d-flex flex-column gap-1">
-                        <span class="d-flex align-items-center gap-2">
-                            <i class="bx bx-file text-muted"></i>
-                            <span class="fw-semibold">{{ $document->documentType?->type_name ?? 'Document' }}</span>
-                            <span style="color:#e74c3c;font-weight:600;font-size:.9rem;">
-                                {{ $document->tracking_code ?? 'N/A' }}
-                            </span>
+                    <h5 class="modal-title d-flex align-items-center gap-2">
+                        <i class="bx bx-file text-muted"></i>
+                        <span class="fw-semibold">Sent Document</span>
+                        <span style="color: #e74c3c; font-weight: 600; font-size: 0.9rem;">
+                            {{ $document->tracking_code ?? 'N/A' }}
                         </span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -275,17 +290,23 @@
 
                 {{-- Body --}}
                 <div class="modal-body pt-2">
-                    <div class="mb-3 pb-2 border-bottom">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <i class="bx bx-info-circle text-primary"></i>
-                            <h6 class="mb-0 fw-semibold">Details</h6>
+                    <div class="mx-auto" style="max-width: 760px;">
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bx bx-info-circle text-muted" style="font-size: 0.8rem;"></i>
+                            <span class="text-uppercase fw-bold text-muted"
+                                  style="font-size: 0.7rem; letter-spacing: 0.08em;">Document Details</span>
                         </div>
                         <div class="row g-3">
+                            <div class="col-6">
+                                <div class="text-muted mb-1" style="font-size:.78rem;">Document Type</div>
+                                <div class="fw-semibold" style="font-size:.9rem;">{{ $document->documentType?->type_name ?? 'Document' }}</div>
+                            </div>
                             <div class="col-6">
                                 <div class="text-muted mb-1" style="font-size:.78rem;">File Name</div>
                                 <div class="fw-semibold" style="font-size:.9rem;">{{ $document->file_name ?? 'N/A' }}</div>
                             </div>
-                            <div class="col-6">
+                            <div class="col-12">
                                 <div class="text-muted mb-1" style="font-size:.78rem;">Tracking Code</div>
                                 <div class="fw-semibold" style="color:#e74c3c;font-size:.9rem;">{{ $document->tracking_code ?? 'N/A' }}</div>
                             </div>
@@ -308,22 +329,49 @@
                         </div>
                     </div>
 
+                    <hr class="my-3">
+
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bx bx-user text-muted" style="font-size: 0.8rem;"></i>
+                            <span class="text-uppercase fw-bold text-muted"
+                                  style="font-size: 0.7rem; letter-spacing: 0.08em;">Sender</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 py-2 px-1">
+                            <div class="avatar avatar-sm flex-shrink-0">
+                                <span class="avatar-initial rounded-circle bg-label-primary fw-bold"
+                                      style="width: 36px; height: 36px; font-size: 0.85rem;">
+                                    {{ strtoupper(substr($senderName, 0, 1)) }}
+                                </span>
+                            </div>
+                            <div>
+                                <div class="fw-semibold" style="font-size: 0.875rem;">
+                                    {{ strtoupper($senderName) }}
+                                </div>
+                                <small class="text-muted">{{ $senderEmail }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
                     <div class="trail-section"
                          id="trail-section-{{ $document->document_id }}"
                          data-document-id="{{ $document->document_id }}"
                          data-unsend='@json($unsendMap)'>
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <i class="bx bx-transfer-alt text-primary"></i>
-                            <h6 class="mb-0 fw-semibold">Trail</h6>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bx bx-transfer-alt text-muted" style="font-size: 0.8rem;"></i>
+                            <span class="text-uppercase fw-bold text-muted"
+                                  style="font-size: 0.7rem; letter-spacing: 0.08em;">Document Trail</span>
                         </div>
 
                         {{-- Loading --}}
-                        <div class="trail-loading text-center py-5">
+                        <div class="trail-loading text-center py-3">
                             <div class="spinner-border text-primary"
-                                 style="width:1.6rem;height:1.6rem;" role="status">
+                                 style="width:1.4rem;height:1.4rem;" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
-                            <div class="text-muted mt-2" style="font-size:.8rem;">Loading trail…</div>
+                            <div class="text-muted mt-2" style="font-size:.8rem;">Loading trail...</div>
                         </div>
 
                         {{-- Error --}}
@@ -336,24 +384,15 @@
 
                         {{-- Trail content --}}
                         <div class="trail-data d-none">
-                            <div class="trail-log-wrap">
-                                <div class="trail-log-title">Detailed Trail Log</div>
-                                <div class="trail-log-body"></div>
-                                <div class="trail-legend">
-                                    <div class="tleg"><div class="tleg-dot" style="background:#7F77DD;"></div> Sender</div>
-                                    <div class="tleg"><div class="tleg-dot" style="background:#1D9E75;"></div> Received</div>
-                                    <div class="tleg"><div class="tleg-dot" style="background:#BA7517;"></div> Forwarded</div>
-                                    <div class="tleg"><div class="tleg-dot" style="background:#3B82F6;animation:pulseBlue 2s infinite;"></div> Currently with</div>
-                                    <div class="tleg"><div class="tleg-dot" style="background:#9ca3af;"></div> Pending</div>
-                                </div>
-                            </div>
+                            <ul class="list-group list-group-flush sent-trail-list"></ul>
                         </div>
+                    </div>
                     </div>
                 </div>{{-- /modal-body --}}
 
                 {{-- Footer --}}
-                <div class="modal-footer border-top-0 justify-content-between pt-1">
-                    <div class="d-flex align-items-center gap-2">
+                <div class="modal-footer border-top-0 justify-content-center pt-1">
+                    <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">
                         <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
                            class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
                             <i class="bx bx-download me-1"></i> Download

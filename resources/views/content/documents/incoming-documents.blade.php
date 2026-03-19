@@ -1,6 +1,6 @@
 @extends('layouts.contentNavbarLayout')
 
-@section('title', 'Mail - Inbox')
+@section('title', 'Pending Documents')
 
 @section('content')
 
@@ -15,12 +15,12 @@
                 <i class="bx bxs-inbox text-primary fs-4"></i>
             </div>
             <div>
-                <h4 class="fw-bold mb-1">Inbox</h4>
+                <h4 class="fw-bold mb-1">Pending Documents</h4>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0" style="font-size: 0.8rem;">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard-analytics') }}">Home</a></li>
                         <li class="breadcrumb-item inactive">Mail</li>
-                        <li class="breadcrumb-item active">Inbox</li>
+                        <li class="breadcrumb-item active">Pending Documents</li>
                     </ol>
                 </nav>
             </div>
@@ -48,7 +48,7 @@
     {{-- ── Hint bar (above card, like the redesign) ── --}}
     <div class="hint-bar">
         <i class="bx bx-info-circle"></i>
-        Click a row to view document details and actions.
+        Documents waiting for your action. Click a row to review, receive, approve, or reject.
     </div>
 
     {{-- ── Mail card — full width ── --}}
@@ -76,12 +76,12 @@
 
         {{-- Column Headers ── --}}
         <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom flex-shrink-0">
-            <div class="col-header" style="width: 200px;">Sender</div>
-            <div class="col-header flex-grow-1">Document Type — Purpose</div>
+            <div class="col-header" style="width: 200px;">From</div>
+            <div class="col-header flex-grow-1">Document Type and Purpose</div>
             <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
             <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Status</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Date</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Your Status</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Sent On</div>
         </div>
 
         {{-- Mail list ── --}}

@@ -7,7 +7,9 @@ $(document).ready(function () {
     $('.archive-form').on('submit', function (e) {
         e.preventDefault();
         const form = this;
-        const code = $(this).closest('tr').find('.badge.bg-label-primary').text().trim();
+        const rowCode = $(this).closest('tr').find('.badge.bg-label-primary').text().trim();
+        const dataCode = $(this).data('tracking');
+        const code = rowCode || dataCode || 'Document';
 
         Swal.fire({
             title: 'Archive Document?',
@@ -76,5 +78,6 @@ $(document).ready(function () {
             }
         });
     }
+
 });
 </script>

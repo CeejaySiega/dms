@@ -1,7 +1,7 @@
 @extends('layouts/commonMaster')
 
 @php
-$containerNav = 'container-fluid';
+$containerNav = 'container-xxl';
 $navbarDetached = 'navbar-detached';
 @endphp
 
@@ -14,7 +14,7 @@ $navbarDetached = 'navbar-detached';
             @include('layouts/sections/navbar/navbar')
 
             <div class="content-wrapper">
-                <div class="container-fluid flex-grow-1 container-p-y">
+                <div class="container-xxl flex-grow-1 container-p-y">
                     @yield('content')
                 </div>
 

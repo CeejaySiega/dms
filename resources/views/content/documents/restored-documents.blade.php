@@ -141,7 +141,8 @@
                                             @if($isSender)
                                             <form action="{{ route('documents.archive', encryptId($document->document_id)) }}"
                                                   method="POST"
-                                                  class="d-inline archive-form">
+                                                  class="d-inline archive-form"
+                                                  data-tracking="{{ $doc->tracking_code ?? 'Document' }}">
                                                 @csrf
                                                 <button type="submit"
                                                         class="btn btn-outline-secondary"
@@ -152,7 +153,8 @@
                                             @else
                                             <form action="{{ route('documents.archive-receiver', encryptId($document->document_id)) }}"
                                                   method="POST"
-                                                  class="d-inline archive-form">
+                                                  class="d-inline archive-form"
+                                                  data-tracking="{{ $doc->tracking_code ?? 'Document' }}">
                                                 @csrf
                                                 <button type="submit"
                                                         class="btn btn-outline-secondary"

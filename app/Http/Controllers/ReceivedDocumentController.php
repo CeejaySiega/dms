@@ -125,7 +125,8 @@ class ReceivedDocumentController extends Controller
 
         $received = ReceivedDocument::with([
                 'document.documentType',
-                'document.user.employee'
+            'document.user.employee',
+            'route.sender.employee',
             ])
             ->whereIn('received_id', $latestReceivedIds)
             ->orderBy('receive_at', 'desc')

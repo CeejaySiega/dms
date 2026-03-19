@@ -15,7 +15,7 @@
                 <i class="bx bxs-download text-primary fs-4"></i>
             </div>
             <div>
-                <h4 class="fw-bold mb-1">Received</h4>
+                <h4 class="fw-bold mb-1">Received Documents</h4>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0" style="font-size: 0.8rem;">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard-analytics') }}">Home</a></li>
@@ -34,7 +34,7 @@
     {{-- ── Hint bar ── --}}
     <div class="hint-bar">
         <i class="bx bx-info-circle"></i>
-        Click a row to view document details and actions.
+        Documents you have already received. Click a row to view details and full trail.
     </div>
 
     {{-- ── Mail card — full width ── --}}
@@ -62,11 +62,11 @@
 
         {{-- Column Headers ── --}}
         <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom flex-shrink-0">
-            <div class="col-header" style="width: 200px;">Sender</div>
+            <div class="col-header" style="width: 200px;">Last Sender</div>
             <div class="col-header flex-grow-1">Document Type</div>
             <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 70px;">Status</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Date</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 70px;">Result</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Received On</div>
         </div>
 
         {{-- Mail list ── --}}
@@ -77,10 +77,11 @@
                 @endphp
                 @if($document)
                 @php
-                    $sender     = optional($document->user)->employee;
-                    $senderName = $sender
+                    $latestSenderUser = optional($receivedDocument->route)->sender ?? optional($document->user);
+                    $sender           = optional($latestSenderUser)->employee;
+                    $senderName       = $sender
                         ? ($sender->firstname . ' ' . $sender->lastname)
-                        : (optional($document->user)->name ?? 'N/A');
+                        : (optional($latestSenderUser)->name ?? optional($latestSenderUser)->email ?? 'N/A');
                     $modalId = 'receivedDocModal-' . $receivedDocument->recipient_id;
                 @endphp
 
@@ -185,11 +186,12 @@
         $document = $receivedDocument->document;
         if (!$document) continue;
 
-        $sender      = optional($document->user)->employee;
-        $senderName  = $sender
+        $latestSenderUser = optional($receivedDocument->route)->sender ?? optional($document->user);
+        $sender           = optional($latestSenderUser)->employee;
+        $senderName       = $sender
             ? ($sender->firstname . ' ' . $sender->lastname)
-            : (optional($document->user)->name ?? 'N/A');
-        $senderEmail = optional($document->user)->email ?? 'N/A';
+            : (optional($latestSenderUser)->name ?? optional($latestSenderUser)->email ?? 'N/A');
+        $senderEmail      = optional($latestSenderUser)->email ?? 'N/A';
         $modalId     = 'receivedDocModal-' . $receivedDocument->recipient_id;
     @endphp
 
@@ -270,6 +272,34 @@
                                 </div>
                                 <small class="text-muted">{{ $senderEmail }}</small>
                             </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="received-trail-section"
+                         id="received-trail-section-{{ $document->document_id }}"
+                         data-document-id="{{ $document->document_id }}">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bx bx-transfer-alt text-muted" style="font-size: 0.8rem;"></i>
+                            <span class="text-uppercase fw-bold text-muted"
+                                  style="font-size: 0.7rem; letter-spacing: 0.08em;">Document Trail</span>
+                        </div>
+
+                        <div class="received-trail-loading text-center py-3">
+                            <div class="spinner-border text-primary" style="width:1.4rem;height:1.4rem;" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="text-muted mt-2" style="font-size:0.8rem;">Loading trail...</div>
+                        </div>
+
+                        <div class="received-trail-error alert alert-danger py-2 d-none" style="font-size:0.82rem;">
+                            <i class="bx bx-error me-1"></i>
+                            Failed to load trail.
+                        </div>
+
+                        <div class="received-trail-data d-none">
+                            <ul class="list-group list-group-flush received-trail-list"></ul>
                         </div>
                     </div>
                 </div>
