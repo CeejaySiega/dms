@@ -3,48 +3,7 @@
 @section('title', 'Archived Documents')
 
 @section('content')
-<style>
-    @media (max-width: 768px) {
-        .card-body {
-            padding: 1rem !important;
-        }
-        .btn-group {
-            flex-wrap: wrap;
-            gap: 0.25rem;
-        }
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        .table {
-            font-size: 0.75rem;
-        }
-        .table th, .table td {
-            padding: 0.5rem !important;
-        }
-        .badge {
-            font-size: 0.65rem;
-        }
-        .btn-sm {
-            padding: 0.25rem 0.4rem;
-            font-size: 0.65rem;
-        }
-    }
-    @media (max-width: 576px) {
-        .d-flex {
-            flex-direction: column !important;
-        }
-        .align-items-md-center {
-            align-items: flex-start !important;
-        }
-        .mt-md-0 {
-            margin-top: 1rem !important;
-        }
-        .gap-4 {
-            gap: 1rem !important;
-        }
-    }
-</style>
+@include('content.documents.styles.archived-documents-style')
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row">
         <div class="col-md-12">
@@ -183,50 +142,4 @@
 </div>
 @endsection
 
-@section('page-script')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-$(document).ready(function() {
-    $('.restore-form').on('submit', function(e) {
-        e.preventDefault();
-        const form = this;
-
-        Swal.fire({
-            title: 'Restore Document?',
-            text: 'This will move the document back to your active list.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, restore it',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
-    });
-
-    $('.delete-form').on('submit', function(e) {
-        e.preventDefault();
-        const form = this;
-
-        Swal.fire({
-            title: 'Delete Archive?',
-            text: 'Remove this archived record?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
-    });
-});
-</script>
-@endsection
+@include('content.documents.scripts.archived-documents-script')

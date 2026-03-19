@@ -1,0 +1,80 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function () {
+
+    // Archive confirmation
+    $('.archive-form').on('submit', function (e) {
+        e.preventDefault();
+        const form = this;
+        const code = $(this).closest('tr').find('.badge.bg-label-primary').text().trim();
+
+        Swal.fire({
+            title: 'Archive Document?',
+            text: `Move "${code}" back to archive?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#696cff',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, archive it',
+            cancelButtonText: 'Cancel'
+        }).then(result => {
+            if (result.isConfirmed) form.submit();
+        });
+    });
+
+    // Auto-close alerts after 5s
+    document.querySelectorAll('.alert').forEach(function (alert) {
+        setTimeout(() => new bootstrap.Alert(alert).close(), 5000);
+    });
+
+    // Live search/filter functionality
+    const searchInput = document.getElementById('liveSearchInput');
+    const tableRows = document.querySelectorAll('.dt-table tbody tr');
+    
+    if (searchInput && tableRows.length > 0) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+            
+            tableRows.forEach(function(row) {
+                // Get all text content from the row
+                const trackingCode = row.querySelector('.badge.bg-label-primary')?.textContent.toLowerCase() || '';
+                const docType = row.cells[1]?.textContent.toLowerCase() || '';
+                const purpose = row.cells[2]?.textContent.toLowerCase() || '';
+                const fileName = row.cells[3]?.textContent.toLowerCase() || '';
+                const restoredAt = row.cells[4]?.textContent.toLowerCase() || '';
+                
+                // Check if search term matches any column
+                const matchFound = trackingCode.includes(searchTerm) ||
+                                 docType.includes(searchTerm) ||
+                                 purpose.includes(searchTerm) ||
+                                 fileName.includes(searchTerm) ||
+                                 restoredAt.includes(searchTerm);
+                
+                // Show or hide row
+                if (matchFound) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show "no results" message if no rows visible
+            const noResultsRow = document.getElementById('noResultsRow');
+            if (visibleCount === 0 && searchTerm !== '') {
+                if (!noResultsRow) {
+                    const tbody = document.querySelector('.dt-table tbody');
+                    const newRow = document.createElement('tr');
+                    newRow.id = 'noResultsRow';
+                    newRow.innerHTML = '<td colspan="7" class="text-center text-muted py-4">No documents found matching your search.</td>';
+                    tbody.appendChild(newRow);
+                }
+            } else if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        });
+    }
+});
+</script>

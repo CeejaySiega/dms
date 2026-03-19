@@ -1,0 +1,243 @@
+<style>
+    /* ── Top controls ── */
+    .dt-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    @media (max-width: 768px) {
+        .dt-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+    .dt-left-controls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    @media (max-width: 768px) {
+        .dt-left-controls {
+            flex-direction: column;
+            width: 100%;
+        }
+    }
+    .dt-length-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .dt-length-select {
+        display: inline-block;
+        padding: 0.25rem 1.75rem 0.25rem 0.6rem;
+        font-size: 0.875rem;
+        border: 1px solid #d9dee3;
+        border-radius: 0.375rem;
+        background-color: #fff;
+        appearance: auto;
+        cursor: pointer;
+        color: #4a5568;
+    }
+    .dt-length-select:focus {
+        outline: none;
+        border-color: #696cff;
+        box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.15);
+    }
+    .dt-filter-select {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border: 1px solid #d9dee3;
+        border-radius: 0.375rem;
+        background-color: #fff;
+        cursor: pointer;
+        color: #4a5568;
+        min-width: 140px;
+    }
+    @media (max-width: 576px) {
+        .dt-filter-select {
+            min-width: 100%;
+            width: 100%;
+        }
+    }
+    .dt-filter-select:focus {
+        outline: none;
+        border-color: #696cff;
+        box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.15);
+    }
+    .dt-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    @media (max-width: 768px) {
+        .dt-search-wrap {
+            flex-direction: column;
+            width: 100%;
+            align-items: stretch;
+        }
+    }
+    .dt-search-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    @media (max-width: 768px) {
+        .dt-search-label {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+    .dt-search-input {
+        border: 1px solid #d9dee3;
+        border-radius: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        min-width: 360px;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    @media (max-width: 768px) {
+        .dt-search-input {
+            min-width: 100%;
+            width: 100%;
+        }
+    }
+    .dt-search-input:focus {
+        outline: none;
+        border-color: #696cff;
+        box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.15);
+    }
+
+    /* ── Table ── */
+    .dt-table thead th {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6c757d;
+        border-top: none;
+        border-bottom: 1px solid #e9ecef !important;
+        padding: 0.85rem 1rem;
+        white-space: nowrap;
+        background: #fff;
+    }
+    @media (max-width: 576px) {
+        .dt-table thead th {
+            font-size: 0.65rem;
+            padding: 0.5rem 0.5rem;
+            white-space: normal;
+        }
+    }
+    .dt-table tbody td {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f1f3;
+        color: #4a5568;
+    }
+    @media (max-width: 576px) {
+        .dt-table tbody td {
+            padding: 0.5rem 0.5rem;
+            font-size: 0.75rem;
+        }
+    }
+    .dt-table tbody tr:last-child td { border-bottom: none; }
+    .dt-table tbody tr:hover { background-color: #f8f8ff; }
+
+    /* ── Bottom controls ── */
+    .dt-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.25rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    @media (max-width: 576px) {
+        .dt-bottom {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+    .dt-info {
+        font-size: 0.8125rem;
+        color: #6c757d;
+    }
+
+    /* ── Pagination ── */
+    .dt-pagination {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    @media (max-width: 576px) {
+        .dt-pagination {
+            justify-content: center;
+        }
+    }
+    .dt-pagination .page-item .page-link {
+        border: 1px solid transparent;
+        border-radius: 0.375rem !important;
+        padding: 0.3rem 0.65rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+        background: transparent;
+        min-width: 34px;
+        text-align: center;
+        line-height: 1.5;
+        transition: background 0.15s, color 0.15s;
+    }
+    @media (max-width: 576px) {
+        .dt-pagination .page-item .page-link {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            min-width: 28px;
+        }
+    }
+    .dt-pagination .page-item .page-link:hover {
+        background: #f0f1ff;
+        color: #696cff;
+    }
+    .dt-pagination .page-item.active .page-link {
+        background: #696cff;
+        color: #fff;
+        border-color: #696cff;
+    }
+    .dt-pagination .page-item.disabled .page-link {
+        color: #c4c6d0;
+        pointer-events: none;
+    }
+
+    /* ── Action Icons ── */
+    .btn-icon {
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.375rem;
+        transition: all 0.15s ease-in-out;
+    }
+    .btn-icon:hover {
+        background-color: rgba(105, 108, 255, 0.1);
+        color: #696cff !important;
+    }
+    .btn-icon i {
+        font-size: 1.125rem;
+    }
+
+    /* ── Empty state ── */
+    .dt-empty { padding: 3rem 1rem; text-align: center; }
+</style>

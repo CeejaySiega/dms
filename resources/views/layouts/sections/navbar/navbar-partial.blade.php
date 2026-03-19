@@ -541,7 +541,7 @@ function renderNotifications(incomingDocs, receivedDocs) {
     // ── SENT/RECEIVED section ─────────────────────────────────────────────
     if (receivedDocs && receivedDocs.length > 0) {
         html += `<div class="notif-section-label">
-                    <i class="bx bx-send me-1"></i> Your Sent Documents
+                    <i class="bx bx-send me-1"></i> Notifications
                  </div>`;
 
         receivedDocs.forEach(doc => {

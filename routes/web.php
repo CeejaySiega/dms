@@ -211,6 +211,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{document}/archive-receiver', [ArchiveDocumentController::class, 'archiveAsReceiver'])->name('archive-receiver');
         Route::post('/archives/{archive}/restore', [ArchiveDocumentController::class, 'restore'])->name('restore');
         Route::post('/archives/{archive}/soft-delete', [ArchiveDocumentController::class, 'softDeleteArchive'])->name('soft-delete-archive');
+        Route::get('/{document}/trail/data', [SentDocumentController::class, 'trailData'])->name('trail.data');
         Route::delete('/{document}', [SentDocumentController::class, 'delete'])->name('delete');
         Route::delete('/archives/{archive}/permanent', [ArchiveDocumentController::class, 'destroy'])->name('permanent-delete');
     });

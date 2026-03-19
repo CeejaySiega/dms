@@ -323,25 +323,4 @@
         }
     });
 </script>
-
-<style>
-    .form-label {
-        font-weight: 500;
-        color: #495057;
-    }
-
-    .text-danger {
-        color: #dc3545 !important;
-    }
-
-    .card {
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .card-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #e0e0e0;
-    }
-</style>
 @endsection
