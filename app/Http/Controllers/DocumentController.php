@@ -14,6 +14,7 @@ use App\Models\DocumentRoute;
 use App\Models\Recipient;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DocumentNotification;
+use App\Mail\DocumentForwardedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -494,6 +495,36 @@ class DocumentController extends Controller
                     $link = $recipientUser->getInboxLink();
                     Mail::to($recipientUser->email)->send(
                         new DocumentNotification($document, $recipientUser->name ?? 'User', $link)
+                    );
+                }
+
+                // Notify original sender when someone else forwards their document.
+                $originalSender = $document->user;
+                if ($originalSender && $originalSender->email && (int) $originalSender->user_id !== (int) Auth::id()) {
+                    $senderEmployee = optional($originalSender->employee);
+                    $senderName = $senderEmployee->firstname
+                        ? $senderEmployee->firstname . ' ' . $senderEmployee->lastname
+                        : ($originalSender->name ?? $originalSender->email);
+
+                    $forwarder = Auth::user();
+                    $forwarderEmployee = optional($forwarder->employee);
+                    $forwarderName = $forwarderEmployee->firstname
+                        ? $forwarderEmployee->firstname . ' ' . $forwarderEmployee->lastname
+                        : ($forwarder->name ?? $forwarder->email);
+
+                    $newRecipientEmployee = optional($recipientUser)->employee;
+                    $newRecipientName = $newRecipientEmployee && $newRecipientEmployee->firstname
+                        ? $newRecipientEmployee->firstname . ' ' . $newRecipientEmployee->lastname
+                        : (optional($recipientUser)->name ?? optional($recipientUser)->email ?? 'Recipient');
+
+                    Mail::to($originalSender->email)->send(
+                        new DocumentForwardedNotification(
+                            $document,
+                            $senderName,
+                            $forwarderName,
+                            $newRecipientName,
+                            route('documents.sent')
+                        )
                     );
                 }
             }

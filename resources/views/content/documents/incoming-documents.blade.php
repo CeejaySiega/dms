@@ -16,6 +16,7 @@
             </div>
             <div>
                 <h4 class="fw-bold mb-1">Pending Documents</h4>
+                {{-- <p class="text-muted mb-1" style="font-size: 0.82rem;">Review documents awaiting your response.</p> --}}
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0" style="font-size: 0.8rem;">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard-analytics') }}">Home</a></li>
@@ -48,7 +49,7 @@
     {{-- ── Hint bar (above card, like the redesign) ── --}}
     <div class="hint-bar">
         <i class="bx bx-info-circle"></i>
-        Documents waiting for your action. Click a row to review, receive, approve, or reject.
+        <strong>What this page shows:</strong> Documents waiting for your action. <strong>Action:</strong> Click a row to review and process.
     </div>
 
     {{-- ── Mail card — full width ── --}}
@@ -77,11 +78,11 @@
         {{-- Column Headers ── --}}
         <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom flex-shrink-0">
             <div class="col-header" style="width: 200px;">From</div>
-            <div class="col-header flex-grow-1">Document Type and Purpose</div>
+            <div class="col-header" style="flex: 0 0 22%; max-width: 22%;">Document Type and Purpose</div>
             <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
             <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Your Status</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Sent On</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Latest Status</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 110px; text-align: right; margin-left: auto;">Date Sent</div>
         </div>
 
         {{-- Mail list ── --}}
@@ -137,11 +138,11 @@
                     </div>
 
                     {{-- Subject / preview --}}
-                    <div class="flex-grow-1 text-truncate" style="font-size: 0.875rem;">
-                        <span class="{{ $isUnread ? 'fw-semibold text-body' : 'text-muted' }}">
-                            {{ $document->documentType->type_name ?? 'Document' }} —
+                    <div class="text-truncate" style="font-size:.875rem; flex: 0 0 22%; max-width: 22%;">
+                        <span class="{{ $isUnread ? 'fw-semibold text-body' : 'text-body' }}">
+                            {{ $document->documentType->type_name ?? 'Document' }}
                         </span>
-                        <span class="text-muted">{{ $document->purpose }}</span>
+                        <span class="text-muted"> - {{ $document->purpose }}</span>
                     </div>
 
                     {{-- Tracking code --}}
@@ -167,7 +168,7 @@
 
                     {{-- Date --}}
                     <div class="text-muted d-none d-lg-flex flex-shrink-0"
-                         style="font-size: 0.8rem; min-width: 80px; justify-content: center;">
+                         style="font-size:.8rem;min-width:110px;justify-content:flex-end;margin-left:auto;text-align:right;">
                         {{ optional($recipient->sent_at)->format('M d, Y') ?? '' }}
                     </div>
                 </div>
@@ -228,7 +229,7 @@
     </div>{{-- /mail-card --}}
 </div>
 
-{{-- ── MODALS (unchanged) ── --}}
+{{-- ── MODALS ── --}}
 @foreach($inbox as $recipient)
     @php
         $document = optional($recipient->route)->document;
@@ -348,25 +349,29 @@
                     </div>
                 </div>
 
+                {{-- ── Modal Footer: View left, actions right ── --}}
                 <div class="modal-footer border-top-0 justify-content-between pt-1">
                     <a href="{{ route('documents.show', encryptId($document->document_id)) }}"
-                       class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+                       class="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-center gap-1 modal-action-btn">
                         <i class="bx bx-show me-1"></i> View Document
                     </a>
-                    <div class="d-flex gap-2">
+
+                    <div class="d-flex align-items-center gap-2">
                         @if(!$isFinal)
                             <form action="{{ route('documents.receive', encryptId($document->document_id)) }}"
                                   method="POST"
-                                  class="receive-form">
+                                  class="receive-form m-0">
                                 @csrf
                                 <button type="submit"
-                                        class="btn btn-primary btn-sm d-flex align-items-center gap-1">
+                                        class="btn btn-primary btn-sm d-flex align-items-center justify-content-center gap-1 modal-action-btn">
                                     <i class="bx bx-envelope-open me-1"></i> Receive
                                 </button>
                             </form>
                         @endif
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
-                            Close
+
+                        <button class="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1 modal-action-btn"
+                                data-bs-dismiss="modal">
+                            <i class="bx bx-x" style="font-size: 0.9rem;"></i> Close
                         </button>
                     </div>
                 </div>

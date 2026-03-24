@@ -58,9 +58,6 @@
 .mail-card {
     min-height: clamp(600px, 75vh, 900px);
     width: 100%;
-    max-width: 1320px;
-    margin-left: auto;
-    margin-right: auto;
     display: flex; flex-direction: column; overflow: hidden;
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(26,29,58,0.07), 0 4px 16px rgba(26,29,58,0.05);

@@ -37,7 +37,7 @@ function buildTrailList(container, trail, unsendMap) {
         const unsendData = unsendMap[step.user_id];
         if ((step.type === 'active' || step.type === 'pending') && unsendData) {
             unsendBtn = `
-                <div class="mt-1">
+                <div class="mt-1 text-end">
                     <button type="button"
                             class="btn btn-sm btn-outline-danger"
                             style="font-size:.72rem;padding:2px 9px;"
@@ -50,15 +50,15 @@ function buildTrailList(container, trail, unsendMap) {
         const li = document.createElement('li');
         li.className = 'list-group-item px-0';
         li.innerHTML = `
-            <div>
+            <div class="d-flex justify-content-between align-items-start gap-2">
                 <div>
                     <div class="fw-semibold" style="font-size:0.86rem;">${step.actor_name || 'Unknown User'}</div>
                     <div class="text-muted" style="font-size:0.8rem;">${trailText(step)}</div>
                     <div class="text-muted" style="font-size:0.74rem;">${step.department || 'N/A'} · ${step.campus || 'N/A'}</div>
                 </div>
-                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                <div class="text-end">
                     <span class="badge ${trailBadgeClass(step.type)}" style="font-size:0.68rem;">${(step.type || 'pending').toUpperCase()}</span>
-                    <span class="text-muted" style="font-size:0.72rem;">${formatTrailDate(step.action_at)}</span>
+                    <div class="text-muted mt-1" style="font-size:0.72rem;">${formatTrailDate(step.action_at)}</div>
                     ${unsendBtn}
                 </div>
             </div>`;

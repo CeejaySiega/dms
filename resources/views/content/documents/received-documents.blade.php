@@ -16,6 +16,7 @@
             </div>
             <div>
                 <h4 class="fw-bold mb-1">Received Documents</h4>
+                {{-- <p class="text-muted mb-1" style="font-size: 0.82rem;">View documents you already processed.</p> --}}
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0" style="font-size: 0.8rem;">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard-analytics') }}">Home</a></li>
@@ -34,7 +35,7 @@
     {{-- ── Hint bar ── --}}
     <div class="hint-bar">
         <i class="bx bx-info-circle"></i>
-        Documents you have already received. Click a row to view details and full trail.
+        <strong>What this page shows:</strong> Documents you already processed with final status. <strong>Action:</strong> Click a row to view details and trail.
     </div>
 
     {{-- ── Mail card — full width ── --}}
@@ -62,11 +63,12 @@
 
         {{-- Column Headers ── --}}
         <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom flex-shrink-0">
-            <div class="col-header" style="width: 200px;">Last Sender</div>
-            <div class="col-header flex-grow-1">Document Type</div>
+            <div class="col-header" style="width: 200px;">Sender</div>
+            <div class="col-header" style="flex: 0 0 22%; max-width: 22%;">Document Type and Purpose</div>
             <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 70px;">Result</div>
-            <div class="col-header d-none d-lg-block" style="min-width: 80px; text-align: center;">Received On</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 80px;">Latest Status</div>
+            <div class="col-header d-none d-lg-block" style="min-width: 110px; text-align: right; margin-left: auto;">Date Received</div>
         </div>
 
         {{-- Mail list ── --}}
@@ -82,6 +84,18 @@
                     $senderName       = $sender
                         ? ($sender->firstname . ' ' . $sender->lastname)
                         : (optional($latestSenderUser)->name ?? optional($latestSenderUser)->email ?? 'N/A');
+                    $priorityValue = optional($receivedDocument->route)->priority ?? 'normal';
+                    $priorityClass = match($priorityValue) {
+                        'urgent' => 'bg-danger', 'high' => 'bg-warning',
+                        'low'    => 'bg-secondary', default => 'bg-primary',
+                    };
+                    $statusValue = $receivedDocument->action ?? (optional($receivedDocument->receive_at) ? 'received' : 'pending');
+                    $statusValue = strtolower((string) $statusValue);
+                    $statusClass = match($statusValue) {
+                        'pending'            => 'bg-warning', 'forwarded' => 'bg-primary',
+                        'approved'           => 'bg-success', 'rejected'  => 'bg-danger',
+                        'receive', 'received'=> 'bg-info',    default     => 'bg-secondary',
+                    };
                     $modalId = 'receivedDocModal-' . $receivedDocument->recipient_id;
                 @endphp
 
@@ -99,10 +113,11 @@
                     </div>
 
                     {{-- Subject / preview --}}
-                    <div class="flex-grow-1 text-truncate" style="font-size: 0.875rem;">
+                    <div class="text-truncate" style="font-size:.875rem; flex: 0 0 22%; max-width: 22%;">
                         <span class="fw-semibold text-body">
                             {{ $document->documentType->type_name ?? 'Document' }}
                         </span>
+                        <span class="text-muted"> - {{ $document->purpose ?? 'N/A' }}</span>
                     </div>
 
                     {{-- Tracking Code --}}
@@ -113,13 +128,18 @@
                     </div>
 
                     {{-- Status --}}
-                    <div class="d-none d-lg-block" style="min-width: 70px;">
-                        <span class="badge bg-info" style="font-size: 0.7rem;">Received</span>
+                    <div class="d-none d-lg-block" style="min-width:80px;">
+                        <span class="badge {{ $priorityClass }}" style="font-size:.7rem;">{{ ucfirst($priorityValue) }}</span>
+                    </div>
+
+                    {{-- Status --}}
+                    <div class="d-none d-lg-block" style="min-width:80px;">
+                        <span class="badge {{ $statusClass }}" style="font-size:.7rem;">{{ ucfirst($statusValue) }}</span>
                     </div>
 
                     {{-- Received Date --}}
                     <div class="text-muted d-none d-lg-flex flex-shrink-0"
-                         style="font-size: 0.8rem; min-width: 80px; justify-content: center;">
+                         style="font-size:.8rem;min-width:110px;justify-content:flex-end;margin-left:auto;text-align:right;">
                         {{ optional($receivedDocument->receive_at)->format('M d, Y') ?? 'N/A' }}
                     </div>
                 </div>

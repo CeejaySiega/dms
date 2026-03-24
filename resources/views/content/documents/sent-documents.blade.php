@@ -15,6 +15,7 @@
             </div>
             <div>
                 <h4 class="fw-bold mb-1">Sent Documents</h4>
+                {{-- <p class="text-muted mb-1" style="font-size: 0.82rem;">Track documents you sent and recipient progress.</p> --}}
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0" style="font-size: 0.8rem;">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard-analytics') }}">Home</a></li>
@@ -33,7 +34,7 @@
 
     <div class="hint-bar">
         <i class="bx bx-info-circle"></i>
-        Documents you sent. Click a row to view details, trail, and recipient actions.
+        <strong>What this page shows:</strong> Documents you sent and their latest status. <strong>Action:</strong> Click a row to view details and trail.
     </div>
 
     <div class="card mail-card">
@@ -58,7 +59,7 @@
         </div>
 
         <div class="mail-header d-flex align-items-center gap-3 px-4 py-2 border-bottom flex-shrink-0">
-            <div class="col-header" style="width: 200px;">Current Recipient</div>
+            <div class="col-header" style="width: 200px;">Recipient</div>
                <div class="col-header" style="flex: 0 0 22%; max-width: 22%;">Document Type and Purpose</div>
             <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
             <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>

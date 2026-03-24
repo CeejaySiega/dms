@@ -186,6 +186,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pending-count', [ReceivedDocumentController::class, 'getPendingCount'])->name('pending-count');
         Route::get('/pending-documents', [ReceivedDocumentController::class, 'getPendingDocuments'])->name('pending-documents');
         Route::get('/received-by-others', [ReceivedDocumentController::class, 'getReceivedByOthersNotifications'])->name('received-by-others');
+        Route::get('/forwarded-by-others', [ReceivedDocumentController::class, 'getForwardedByOthersNotifications'])->name('forwarded-by-others');
         Route::post('/{document}/approve', [ReceivedDocumentController::class, 'approve'])->name('approve');
         Route::post('/{document}/receive', [ReceivedDocumentController::class, 'receive'])->name('receive');
         Route::post('/{document}/disapprove', [ReceivedDocumentController::class, 'disapprove'])->name('disapprove');

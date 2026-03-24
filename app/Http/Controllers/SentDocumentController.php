@@ -646,6 +646,6 @@ class SentDocumentController extends Controller
 
     private function trailCampus(?User $user): string
     {
-        return $user?->employee?->campus ?? 'N/A';
+        return getCampusName($user?->employee?->campus);
     }
 }

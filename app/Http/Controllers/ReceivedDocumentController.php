@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\DocumentReceivedNotification;
 use App\Models\Document;
+use App\Models\DocumentRoute;
 use App\Models\Recipient;
 use App\Models\ReceivedDocument;
 use App\Models\SentDocument;
@@ -340,6 +341,74 @@ class ReceivedDocumentController extends Controller
                 'new_count' => 0,
                 'documents' => [],
                 'message'   => 'Failed to get received notifications: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get documents originally sent by current user but forwarded by other users.
+     */
+    public function getForwardedByOthersNotifications()
+    {
+        try {
+            $forwarded = DocumentRoute::with([
+                    'document.documentType',
+                    'sender.employee',
+                    'receiverUser.employee',
+                ])
+                ->whereHas('document', function ($q) {
+                    $q->where('user_id', Auth::id());
+                })
+                ->whereNotNull('forward_at')
+                ->where('sender_id', '!=', Auth::id())
+                ->orderBy('forward_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            $newCount = DocumentRoute::whereHas('document', function ($q) {
+                    $q->where('user_id', Auth::id());
+                })
+                ->whereNotNull('forward_at')
+                ->where('sender_id', '!=', Auth::id())
+                ->where('forward_at', '>=', now()->subHours(24))
+                ->count();
+
+            $documents = $forwarded->map(function ($route) {
+                $document = $route->document;
+                if (!$document) return null;
+
+                $forwarderEmp  = optional($route->sender)->employee;
+                $forwarderName = $forwarderEmp && $forwarderEmp->firstname
+                    ? $forwarderEmp->firstname . ' ' . $forwarderEmp->lastname
+                    : (optional($route->sender)->name ?? 'Unknown');
+
+                $receiverEmp  = optional($route->receiverUser)->employee;
+                $receiverName = $receiverEmp && $receiverEmp->firstname
+                    ? $receiverEmp->firstname . ' ' . $receiverEmp->lastname
+                    : (optional($route->receiverUser)->name ?? 'Unknown');
+
+                return [
+                    'route_id'        => $route->route_id,
+                    'forwarder_name'  => $forwarderName,
+                    'receiver_name'   => $receiverName,
+                    'document_type'   => optional($document->documentType)->type_name ?? 'Document',
+                    'tracking_code'   => $document->tracking_code,
+                    'forward_at'      => optional($route->forward_at)->format('M d, Y g:i A'),
+                    'forward_at_raw'  => optional($route->forward_at)->toIso8601String(),
+                ];
+            })->filter()->values();
+
+            return response()->json([
+                'success'   => true,
+                'new_count' => $newCount,
+                'documents' => $documents,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success'   => false,
+                'new_count' => 0,
+                'documents' => [],
+                'message'   => 'Failed to get forwarded notifications: ' . $e->getMessage(),
             ], 500);
         }
     }

@@ -100,14 +100,6 @@ use Illuminate\Support\Facades\Route;
                     </div>
                 </li>
 
-                {{-- Footer --}}
-                <li class="notif-footer">
-                    <a href="{{ route('documents.incoming') }}"
-                       class="btn btn-primary w-100 fw-semibold"
-                       style="border-radius:0; padding:11px; font-size:0.875rem;">
-                        <i class="bx bx-show me-1"></i> View all notifications
-                    </a>
-                </li>
             </ul>
         </li>
 
@@ -282,10 +274,6 @@ use Illuminate\Support\Facades\Route;
     border-bottom: 1px solid #f0f2f7;
     background: #fff;
 }
-.notif-footer {
-    border-top: 1px solid #f0f2f7;
-}
-
 /* ── Header action icon buttons ── */
 .notif-action-btn {
     width: 30px; height: 30px;
@@ -450,9 +438,10 @@ function markSeen(type, id) {
 function isSeen(type, id) {
     return !!getSeenIds()[type + '_' + id];
 }
-function markAllVisible(incomingDocs, receivedDocs) {
+function markAllVisible(incomingDocs, receivedDocs, forwardedDocs) {
     (incomingDocs || []).forEach(d => markSeen('in', d.recipient_id));
     (receivedDocs  || []).forEach(d => markSeen('rc', d.received_id));
+    (forwardedDocs || []).forEach(d => markSeen('fw', d.route_id));
 }
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -475,15 +464,17 @@ function priorityClass(priority) {
 
 let _lastIncoming = [];
 let _lastReceived = [];
+let _lastForwarded = [];
 
-function renderNotifications(incomingDocs, receivedDocs) {
+function renderNotifications(incomingDocs, receivedDocs, forwardedDocs) {
     const badge = document.getElementById('pendingBadge');
     const count = document.getElementById('docCount');
     const list  = document.getElementById('notificationsList');
 
     const unseenIncoming = (incomingDocs || []).filter(d => !isSeen('in', d.recipient_id));
     const unseenReceived = (receivedDocs  || []).filter(d => !isSeen('rc', d.received_id));
-    const totalUnseen    = unseenIncoming.length + unseenReceived.length;
+    const unseenForwarded = (forwardedDocs || []).filter(d => !isSeen('fw', d.route_id));
+    const totalUnseen    = unseenIncoming.length + unseenReceived.length + unseenForwarded.length;
 
     // Bell badge
     if (totalUnseen > 0) {
@@ -502,79 +493,80 @@ function renderNotifications(incomingDocs, receivedDocs) {
 
     let html = '';
 
-    // ── INCOMING section ──────────────────────────────────────────────────
-    if (incomingDocs && incomingDocs.length > 0) {
-        html += `<div class="notif-section-label">
-                    <i class="bx bx-envelope me-1"></i> Incoming
-                 </div>`;
+    // Build one combined newest-first timeline so the most recent appears on top.
+    const timeline = [];
 
-        incomingDocs.forEach(doc => {
-            const seen   = isSeen('in', doc.recipient_id);
-            const initial = doc.sender_name.charAt(0).toUpperCase();
-            const pClass  = priorityClass(doc.priority || 'normal');
-            const ago     = timeAgo(doc.sent_at_raw || doc.sent_at);
-
-            html += `
-            <a href="{{ route('documents.incoming') }}"
-               class="notif-item${seen ? '' : ' unread'}"
-               data-notif-type="in"
-               data-notif-id="${doc.recipient_id}">
-                <div class="notif-avatar ${pClass}">${initial}</div>
-                <div style="flex:1; min-width:0;">
-                    <div class="notif-title">
-                        ${doc.document_type}
-                        ${!seen ? '<span class="notif-new-chip">New</span>' : ''}
-                    </div>
-                    <div class="notif-sub">
-                        <i class="bx bx-user" style="font-size:0.72rem; vertical-align:middle;"></i>
-                        From ${doc.sender_name}
-                    </div>
-                    <div class="notif-time">
-                        <i class="bx bx-time-five" style="font-size:0.7rem; vertical-align:middle;"></i>
-                        ${ago}
-                    </div>
-                </div>
-            </a>`;
+    (incomingDocs || []).forEach(doc => {
+        timeline.push({
+            type: 'in',
+            id: doc.recipient_id,
+            rawTime: doc.sent_at_raw || doc.sent_at,
+            href: '{{ route("documents.incoming") }}',
+            avatarClass: priorityClass(doc.priority || 'normal'),
+            avatarInitial: (doc.sender_name || 'U').charAt(0).toUpperCase(),
+            title: doc.document_type,
+            chipHtml: '<span class="notif-received-chip"><i class="bx bx-envelope" style="vertical-align:middle;"></i> Incoming</span>',
+            sub: `From ${doc.sender_name}`,
         });
-    }
+    });
 
-    // ── SENT/RECEIVED section ─────────────────────────────────────────────
-    if (receivedDocs && receivedDocs.length > 0) {
-        html += `<div class="notif-section-label">
-                    <i class="bx bx-send me-1"></i> Notifications
-                 </div>`;
-
-        receivedDocs.forEach(doc => {
-            const seen    = isSeen('rc', doc.received_id);
-            const initial = doc.receiver_name.charAt(0).toUpperCase();
-            const ago     = timeAgo(doc.receive_at_raw || doc.receive_at);
-
-            html += `
-            <a href="{{ route('documents.sent') }}"
-               class="notif-item${seen ? '' : ' unread'}"
-               data-notif-type="rc"
-               data-notif-id="${doc.received_id}">
-                <div class="notif-avatar received">${initial}</div>
-                <div style="flex:1; min-width:0;">
-                    <div class="notif-title">
-                        ${doc.document_type}
-                        <span class="notif-received-chip">
-                            <i class="bx bx-check-double" style="vertical-align:middle;"></i> Received
-                        </span>
-                        ${!seen ? '<span class="notif-new-chip">New</span>' : ''}
-                    </div>
-                    <div class="notif-sub">
-                        <i class="bx bx-user" style="font-size:0.72rem; vertical-align:middle;"></i>
-                        By ${doc.receiver_name}
-                    </div>
-                    <div class="notif-time">
-                        <i class="bx bx-time-five" style="font-size:0.7rem; vertical-align:middle;"></i>
-                        ${ago}
-                    </div>
-                </div>
-            </a>`;
+    (receivedDocs || []).forEach(doc => {
+        timeline.push({
+            type: 'rc',
+            id: doc.received_id,
+            rawTime: doc.receive_at_raw || doc.receive_at,
+            href: '{{ route("documents.sent") }}',
+            avatarClass: 'received',
+            avatarInitial: (doc.receiver_name || 'U').charAt(0).toUpperCase(),
+            title: doc.document_type,
+            chipHtml: '<span class="notif-received-chip"><i class="bx bx-check-double" style="vertical-align:middle;"></i> Received</span>',
+            sub: `By ${doc.receiver_name}`,
         });
-    }
+    });
+
+    (forwardedDocs || []).forEach(doc => {
+        timeline.push({
+            type: 'fw',
+            id: doc.route_id,
+            rawTime: doc.forward_at_raw || doc.forward_at,
+            href: '{{ route("documents.sent") }}',
+            avatarClass: 'normal',
+            avatarInitial: (doc.forwarder_name || 'U').charAt(0).toUpperCase(),
+            title: doc.document_type,
+            chipHtml: '<span class="notif-received-chip"><i class="bx bx-share-alt" style="vertical-align:middle;"></i> Forwarded</span>',
+            sub: `${doc.forwarder_name} → ${doc.receiver_name}`,
+        });
+    });
+
+    timeline.sort((a, b) => new Date(b.rawTime).getTime() - new Date(a.rawTime).getTime());
+
+    timeline.forEach(item => {
+        const seen = isSeen(item.type, item.id);
+        const ago = timeAgo(item.rawTime);
+
+        html += `
+        <a href="${item.href}"
+           class="notif-item${seen ? '' : ' unread'}"
+           data-notif-type="${item.type}"
+           data-notif-id="${item.id}">
+            <div class="notif-avatar ${item.avatarClass}">${item.avatarInitial}</div>
+            <div style="flex:1; min-width:0;">
+                <div class="notif-title">
+                    ${item.title}
+                    ${item.chipHtml}
+                    ${!seen ? '<span class="notif-new-chip">New</span>' : ''}
+                </div>
+                <div class="notif-sub">
+                    <i class="bx bx-user" style="font-size:0.72rem; vertical-align:middle;"></i>
+                    ${item.sub}
+                </div>
+                <div class="notif-time">
+                    <i class="bx bx-time-five" style="font-size:0.7rem; vertical-align:middle;"></i>
+                    ${ago}
+                </div>
+            </div>
+        </a>`;
+    });
 
     // ── Empty state ──────────────────────────────────────────────────────
     if (html === '') {
@@ -593,19 +585,21 @@ function updateNotifications() {
     Promise.all([
         fetch('{{ route("documents.pending-documents") }}').then(r => r.json()),
         fetch('{{ route("documents.received-by-others") }}').then(r => r.json()),
+        fetch('{{ route("documents.forwarded-by-others") }}').then(r => r.json()),
     ])
-    .then(([incomingData, receivedData]) => {
+    .then(([incomingData, receivedData, forwardedData]) => {
         _lastIncoming = (incomingData.success && incomingData.documents) ? incomingData.documents : [];
         _lastReceived = (receivedData.success  && receivedData.documents) ? receivedData.documents : [];
-        renderNotifications(_lastIncoming, _lastReceived);
+        _lastForwarded = (forwardedData.success && forwardedData.documents) ? forwardedData.documents : [];
+        renderNotifications(_lastIncoming, _lastReceived, _lastForwarded);
     })
     .catch(err => console.error('Notification error:', err));
 }
 
 // Mark all as read — called by the ✓✓ button
 function markAllRead() {
-    markAllVisible(_lastIncoming, _lastReceived);
-    renderNotifications(_lastIncoming, _lastReceived);
+    markAllVisible(_lastIncoming, _lastReceived, _lastForwarded);
+    renderNotifications(_lastIncoming, _lastReceived, _lastForwarded);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -620,7 +614,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const id   = item.dataset.notifId;
             if (type && id) {
                 markSeen(type, id);
-                renderNotifications(_lastIncoming, _lastReceived);
+                renderNotifications(_lastIncoming, _lastReceived, _lastForwarded);
             }
         }
     });

@@ -119,4 +119,13 @@
     justify-content: center;
     flex-shrink: 0;
 }
+
+/* Match Receive and Close button dimensions in modal footer */
+.modal-action-btn {
+    min-width: 110px;
+    height: 32px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
 </style>
