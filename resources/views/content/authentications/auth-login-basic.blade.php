@@ -24,12 +24,12 @@
 
   .auth-card {
     display: flex;
-    width: 100%;
-    max-width: 1100px;
-    min-height: 520px;
+    width: 90%;
+    max-width: 950px;
+    min-height: 560px;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 40px rgba(58, 53, 65, .12);
+    box-shadow: 0 9px 45px rgba(58, 53, 65, .12);
     background: #fff;
   }
 
@@ -49,7 +49,6 @@
     position: absolute;
     width: 300px; height: 300px;
     border-radius: 50%;
-    background: #696cff;
     opacity: .07;
     bottom: -100px; left: -80px;
   }
@@ -58,16 +57,15 @@
     position: absolute;
     width: 180px; height: 180px;
     border-radius: 50%;
-    background: #03c3ec;
     opacity: .09;
     top: -50px; right: -40px;
   }
   .auth-illustration {
-    position: relative;
+    position: absolute;
     z-index: 1;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: 98%;
+    height: 98%;
+    object-fit: contain;
     display: block;
   }
 
@@ -83,7 +81,7 @@
 
   .auth-form-inner {
     width: 100%;
-    max-width: 340px;
+    max-width: 300px;
     display: flex;
     flex-direction: column;
     align-items: center; /* center everything horizontally */
@@ -234,7 +232,7 @@
   @media (max-width: 720px) {
     .auth-card { flex-direction: column; max-width: 440px; }
     .auth-left { flex: none; height: 200px; }
-    .auth-illustration { width: 100%; height: 100%; object-fit: cover; }
+    .auth-illustration { width: 100%; height: 100%; object-fit: contain; }
     .auth-right { padding: 2rem 1.5rem; }
   }
 </style>
@@ -248,7 +246,7 @@
 <div class="auth-left">
   <img
     class="auth-illustration"
-    src="{{ asset('assets/img/illustrations/Kingfisher-dms.png') }}"
+    src="{{ asset('assets/img/illustrations/help_us_king_fisher.png') }}"
     alt="DMS illustration"
   />
 </div>
@@ -271,58 +269,8 @@
         <form action="{{ route('login.post') }}" method="POST">
           @csrf
 
-          {{-- Email --}}
-          <div class="mb-4">
-            <label class="auth-label" for="email">Email or Username</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              class="auth-input @error('email') is-invalid @enderror"
-              placeholder="Enter your email or username"
-              value="{{ old('email') }}"
-              required
-              autofocus
-            />
-            @error('email')
-              <span class="invalid-feedback">{{ $message }}</span>
-            @enderror
-          </div>
-
-          {{-- Password --}}
-          <div class="mb-4">
-            <label class="auth-label" for="password">Password</label>
-            <div class="auth-input-wrap">
-              <input
-                type="password"
-                id="password"
-                name="password"
-                class="auth-input @error('password') is-invalid @enderror"
-                placeholder="············"
-                required
-              />
-              <button type="button" class="auth-eye-btn" onclick="togglePassword()" aria-label="Toggle password">
-                <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9-4-9-7s4-7 9-7a9.95 9.95 0 016.35 2.28"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <line stroke-linecap="round" id="eye-slash" x1="3" y1="3" x2="21" y2="21"/>
-                </svg>
-              </button>
-            </div>
-            @error('password')
-              <span class="invalid-feedback">{{ $message }}</span>
-            @enderror
-          </div>
-
-          {{-- Submit --}}
-          <button type="submit" class="auth-btn-primary">Sign in</button>
-        </form>
-
-        {{-- Divider --}}
-        <div class="auth-divider">or</div>
-
         {{-- Google login --}}
-        <a href="{{ route('auth.google') }}" class="auth-btn-google">
+        <button type="button" id="googlePopupBtn" class="auth-btn-google">
           <svg viewBox="0 0 24 24" width="18" height="18" style="flex-shrink:0">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -330,7 +278,8 @@
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
           Sign in with Google
-        </a>
+        </button>
+        <small id="googleAuthError" class="invalid-feedback" style="display:none;text-align:center;"></small>
 
       </div>{{-- /.auth-form-inner --}}
     </div>{{-- /.auth-right --}}
@@ -338,6 +287,7 @@
   </div>{{-- /.auth-card --}}
 </div>{{-- /.auth-page --}}
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
   function togglePassword() {
     const input = document.getElementById('password');
@@ -350,5 +300,125 @@
       slash.style.display = '';
     }
   }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const button = document.getElementById('googlePopupBtn');
+    const errorBox = document.getElementById('googleAuthError');
+    const clientId = @json(config('services.google.client_id'));
+    const popupEndpoint = @json(route('auth.google.popup'));
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    if (!button) {
+      return;
+    }
+
+    const showError = (message) => {
+      if (!errorBox) {
+        return;
+      }
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+    };
+
+    if (!clientId) {
+      showError('Google sign-in is not configured.');
+      button.disabled = true;
+      return;
+    }
+
+    let tokenClient;
+    let popupInProgress = false;
+    let popupSafetyTimer;
+
+    const resetGoogleButton = () => {
+      popupInProgress = false;
+      button.disabled = false;
+      if (popupSafetyTimer) {
+        clearTimeout(popupSafetyTimer);
+        popupSafetyTimer = null;
+      }
+    };
+
+    const initClient = () => {
+      if (!window.google || !google.accounts || !google.accounts.oauth2) {
+        return false;
+      }
+
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'openid email profile',
+        error_callback: (error) => {
+          const reason = error?.type === 'popup_closed'
+            ? 'Google sign-in was cancelled.'
+            : 'Google sign-in failed. Please try again.';
+          showError(reason);
+          resetGoogleButton();
+        },
+        callback: async (tokenResponse) => {
+          if (tokenResponse.error || !tokenResponse.access_token) {
+            resetGoogleButton();
+            return;
+          }
+
+          try {
+            const response = await fetch(popupEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken,
+              },
+              body: JSON.stringify({
+                access_token: tokenResponse.access_token,
+              }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.message || 'Google sign-in failed.');
+            }
+
+            window.location.href = data.redirect || '/dashboard';
+          } catch (error) {
+            showError(error.message || 'Google sign-in failed. Please try again.');
+            resetGoogleButton();
+          }
+        },
+      });
+
+      return true;
+    };
+
+    button.addEventListener('click', function () {
+      if (popupInProgress) {
+        return;
+      }
+
+      if (errorBox) {
+        errorBox.style.display = 'none';
+      }
+
+      popupInProgress = true;
+      button.disabled = true;
+
+      const ready = tokenClient || initClient();
+      if (!ready) {
+        showError('Google SDK is still loading. Please try again.');
+        resetGoogleButton();
+        return;
+      }
+
+      popupSafetyTimer = setTimeout(() => {
+        if (popupInProgress) {
+          showError('Google sign-in timed out or was closed. Please try again.');
+          resetGoogleButton();
+        }
+      }, 15000);
+
+      tokenClient.requestAccessToken({ prompt: 'select_account' });
+    });
+  });
 </script>
 @endsection

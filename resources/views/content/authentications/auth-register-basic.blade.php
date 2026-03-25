@@ -26,12 +26,8 @@
 
                     <form id="formAuthentication" class="mb-6" action="{{ url('/') }}" method="GET">
                         <div class="mb-6">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" autofocus />
-                        </div>
-                        <div class="mb-6">
                             <label for="email" class="form-label">Email</label>
-                            <input type="text" class="form-control" id="email" name="email" placeholder="Enter your email" />
+                            <input type="text" class="form-control" id="email" name="email" placeholder="Enter your email" autofocus />
                         </div>
                         <div class="form-password-toggle">
                             <label class="form-label" for="password">Password</label>

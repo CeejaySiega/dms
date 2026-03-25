@@ -58,6 +58,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/', [LoginBasic::class, 'index'])->name('auth-login-basic');
     Route::get('/login', [LoginBasic::class, 'index'])->name('login');
     Route::post('/login', [LoginBasic::class, 'login'])->name('login.post');
+    Route::post('/auth/google/popup', [GoogleAuthController::class, 'popupLogin'])->name('auth.google.popup');
     Route::get('/auth/register-basic', [RegisterBasic::class, 'index'])->name('auth-register-basic');
     Route::get('/auth/forgot-password-basic', [ForgotPasswordBasic::class, 'index'])->name('auth-reset-password-basic');
 });
@@ -219,6 +220,6 @@ Route::middleware('auth')->group(function () {
 
     // workflow
     Route::prefix('workflow')->name('workflow.')->group(function () {
-        Route::view('/document-trail', 'content.workflow.document-trail')->name('document-trail');
+        Route::get('/document-trail', [SentDocumentController::class, 'documentTrail'])->name('document-trail');
     });
 });

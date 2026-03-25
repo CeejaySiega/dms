@@ -16,6 +16,36 @@ use Illuminate\Support\Facades\Storage;
 
 class SentDocumentController extends Controller
 {
+    public function documentTrail()
+    {
+        $userId = Auth::id();
+
+        $documents = Document::query()
+            ->whereNull('unsend_at')
+            ->where(function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->orWhereHas('routes', function ($routeQuery) use ($userId) {
+                        $routeQuery->whereNull('unsend_at')
+                            ->where(function ($routeUserQuery) use ($userId) {
+                                $routeUserQuery->where('sender_id', $userId)
+                                    ->orWhere('receiver_id', $userId);
+                            });
+                    })
+                    ->orWhereHas('recipients', function ($recipientQuery) use ($userId) {
+                        $recipientQuery->where('user_id', $userId)
+                            ->whereNull('deleted_at');
+                    });
+            })
+            ->with([
+                'documentType',
+                'user.employee',
+            ])
+            ->orderByDesc('created_at')
+            ->paginate(15);
+
+        return view('content.workflow.document-trail', compact('documents'));
+    }
+
     public function trailData(Document $document): JsonResponse
     {
         $isSenderSide = SentDocument::where('document_id', $document->document_id)
@@ -46,6 +76,7 @@ class SentDocumentController extends Controller
                 'sender.employee.department',
                 'receiverUser.employee.department',
             ])
+            ->orderBy('route_id')
             ->get();
 
         $routeIds = $routes->pluck('route_id');
@@ -54,145 +85,129 @@ class SentDocumentController extends Controller
             ->whereNull('deleted_at')
             ->with(['user.employee.department'])
             ->get();
-
-        $documentOwner = User::with(['employee.department'])
-            ->find($document->user_id);
-
-        $firstSentAt = SentDocument::where('document_id', $document->document_id)
+        $sentDocs = SentDocument::whereIn('route_id', $routeIds)
             ->whereNull('unsend_at')
-            ->min('sent_at') ?? $document->created_at;
+            ->get()
+            ->groupBy('route_id');
+
+        $toIso = static function ($value): ?string {
+            if (is_null($value)) {
+                return null;
+            }
+
+            if ($value instanceof \Carbon\CarbonInterface) {
+                return $value->toIso8601String();
+            }
+
+            $ts = strtotime((string) $value);
+
+            return $ts !== false ? date(DATE_ATOM, $ts) : null;
+        };
 
         $trail = [];
+        $pendingCandidates = [];
 
-        // Initial sender step.
-        $trail[] = [
-            'type' => 'sent',
-            'user_id' => $documentOwner?->user_id,
-            'actor_name' => $this->trailUserName($documentOwner),
-            'department' => $this->trailDepartment($documentOwner),
-            'campus' => $this->trailCampus($documentOwner),
-            'action_at' => optional($firstSentAt)->toIso8601String(),
-            'forwarded_to' => null,
-            'remarks' => null,
-        ];
-
-        // Received/acted steps from recipients.
-        foreach ($recipients as $recipient) {
-            $action = strtolower(trim((string) ($recipient->action ?? '')));
-            $hasActed = in_array($action, ['receive', 'received', 'approved', 'rejected'], true)
-                || !is_null($recipient->receive_at);
-
-            if (!$hasActed) {
-                continue;
-            }
-
-            $trail[] = [
-                'type' => 'received',
-                'user_id' => $recipient->user_id,
-                'actor_name' => $this->trailUserName($recipient->user),
-                'department' => $this->trailDepartment($recipient->user),
-                'campus' => $this->trailCampus($recipient->user),
-                'action_at' => optional($recipient->receive_at ?? $recipient->sent_at)->toIso8601String(),
-                'forwarded_to' => null,
-                'remarks' => in_array($action, ['approved', 'rejected'], true) ? ucfirst($action) : null,
-            ];
-        }
-
-        // Forwarded steps: determine by forward_at.
-        // Forwarder = sender_id, next receiver = receiver_id.
         foreach ($routes as $route) {
-            if (is_null($route->forward_at)) {
-                continue;
+            $sender = $route->sender;
+            $receiver = $route->receiverUser;
+
+            $routeRecipients = $recipients->where('route_id', $route->route_id);
+            $receiverRecipient = $routeRecipients
+                ->first(fn ($r) => (int) $r->user_id === (int) ($route->receiver_id ?? 0))
+                ?? $routeRecipients->first();
+
+            if (!$receiver && $receiverRecipient) {
+                $receiver = $receiverRecipient->user;
             }
 
-            $forwarder = $route->sender;
-            $nextReceiver = $route->receiverUser;
+            $routeSentAt = $receiverRecipient?->sent_at
+                ?? optional($sentDocs->get($route->route_id))->min('sent_at')
+                ?? $document->created_at;
+
+            $isInitialSend = is_null($route->forward_at) && (int) ($route->sender_id ?? 0) === (int) $document->user_id;
 
             $trail[] = [
-                'type' => 'forwarded',
-                'user_id' => $forwarder?->user_id,
-                'actor_name' => $this->trailUserName($forwarder),
-                'department' => $this->trailDepartment($forwarder),
-                'campus' => $this->trailCampus($forwarder),
-                'action_at' => optional($route->forward_at)->toIso8601String(),
-                'forwarded_to' => $this->trailUserName($nextReceiver),
+                'type' => $isInitialSend ? 'sent' : 'forwarded',
+                'user_id' => $sender?->user_id,
+                'actor_name' => $this->trailUserName($sender),
+                'department' => $this->trailDepartment($sender),
+                'campus' => $this->trailCampus($sender),
+                'action_at' => $toIso($route->forward_at ?? $routeSentAt),
+                'forwarded_to' => $this->trailUserName($receiver),
                 'remarks' => null,
+                '_route_id' => $route->route_id,
             ];
-        }
 
-        // Current holder (pending): latest route's receiver_id if still pending.
-        $latestRoute = $routes
-            ->sortByDesc(fn ($r) => optional($r->forward_at)->timestamp ?? 0)
-            ->first();
+            $action = strtolower(trim((string) ($receiverRecipient?->action ?? '')));
+            $hasActed = in_array($action, ['receive', 'received', 'approved', 'rejected'], true)
+                || !is_null($receiverRecipient?->receive_at);
 
-        $activeUserId = null;
-
-        if ($latestRoute) {
-            $latestReceiver = $latestRoute->receiverUser;
-
-            if (!$latestReceiver) {
-                $fallbackRecipient = $recipients
-                    ->where('route_id', $latestRoute->route_id)
-                    ->first();
-                $latestReceiver = $fallbackRecipient?->user;
-            }
-
-            $receiverRecipient = $recipients
-                ->where('route_id', $latestRoute->route_id)
-                ->first(fn ($r) => (int) $r->user_id === (int) ($latestReceiver->user_id ?? 0));
-
-            $receiverActed = $receiverRecipient
-                ? (
-                    (!is_null($receiverRecipient->action) && strtolower((string) $receiverRecipient->action) !== 'pending')
-                    || !is_null($receiverRecipient->receive_at)
-                )
-                : false;
-
-            if ($latestReceiver && !$receiverActed) {
-                $activeUserId = $latestReceiver->user_id;
+            if ($hasActed) {
                 $trail[] = [
-                    'type' => 'active',
-                    'user_id' => $latestReceiver->user_id,
-                    'actor_name' => $this->trailUserName($latestReceiver),
-                    'department' => $this->trailDepartment($latestReceiver),
-                    'campus' => $this->trailCampus($latestReceiver),
-                    'action_at' => optional($latestRoute->forward_at ?? $receiverRecipient?->sent_at)->toIso8601String(),
+                    'type' => 'received',
+                    'user_id' => $receiver?->user_id,
+                    'actor_name' => $this->trailUserName($receiver),
+                    'department' => $this->trailDepartment($receiver),
+                    'campus' => $this->trailCampus($receiver),
+                    'action_at' => $toIso($receiverRecipient?->receive_at ?? $routeSentAt),
                     'forwarded_to' => null,
-                    'remarks' => null,
+                    'remarks' => in_array($action, ['approved', 'rejected'], true) ? ucfirst($action) : null,
+                    '_route_id' => $route->route_id,
+                ];
+            } elseif ($receiver) {
+                $pendingCandidates[] = [
+                    'route_id' => $route->route_id,
+                    'user' => $receiver,
+                    'at' => $route->forward_at ?? $routeSentAt,
                 ];
             }
         }
 
-        // Other pending recipients (not yet acted), excluding current active holder.
-        foreach ($recipients as $recipient) {
-            $action = strtolower(trim((string) ($recipient->action ?? '')));
-            $hasActed = in_array($action, ['receive', 'received', 'approved', 'rejected'], true)
-                || !is_null($recipient->receive_at);
+        if (!empty($pendingCandidates)) {
+            usort($pendingCandidates, function (array $a, array $b) {
+                $ta = $a['at'] ? strtotime((string) $a['at']) : 0;
+                $tb = $b['at'] ? strtotime((string) $b['at']) : 0;
 
-            if ($hasActed) {
-                continue;
-            }
+                if ($ta === $tb) {
+                    return ($a['route_id'] ?? 0) <=> ($b['route_id'] ?? 0);
+                }
 
-            if (!is_null($activeUserId) && (int) $recipient->user_id === (int) $activeUserId) {
-                continue;
-            }
+                return $ta <=> $tb;
+            });
+
+            $activeCandidate = array_pop($pendingCandidates);
 
             $trail[] = [
-                'type' => 'pending',
-                'user_id' => $recipient->user_id,
-                'actor_name' => $this->trailUserName($recipient->user),
-                'department' => $this->trailDepartment($recipient->user),
-                'campus' => $this->trailCampus($recipient->user),
-                'action_at' => optional($recipient->sent_at)->toIso8601String(),
+                'type' => 'active',
+                'user_id' => $activeCandidate['user']->user_id,
+                'actor_name' => $this->trailUserName($activeCandidate['user']),
+                'department' => $this->trailDepartment($activeCandidate['user']),
+                'campus' => $this->trailCampus($activeCandidate['user']),
+                'action_at' => $toIso($activeCandidate['at']),
                 'forwarded_to' => null,
                 'remarks' => null,
+                '_route_id' => $activeCandidate['route_id'],
             ];
+
+            foreach ($pendingCandidates as $candidate) {
+                $trail[] = [
+                    'type' => 'pending',
+                    'user_id' => $candidate['user']->user_id,
+                    'actor_name' => $this->trailUserName($candidate['user']),
+                    'department' => $this->trailDepartment($candidate['user']),
+                    'campus' => $this->trailCampus($candidate['user']),
+                    'action_at' => $toIso($candidate['at']),
+                    'forwarded_to' => null,
+                    'remarks' => null,
+                    '_route_id' => $candidate['route_id'],
+                ];
+            }
         }
 
         $typeOrder = [
             'sent' => 1,
-            'received' => 2,
-            'forwarded' => 3,
+            'forwarded' => 2,
+            'received' => 3,
             'active' => 4,
             'pending' => 5,
         ];
@@ -202,11 +217,22 @@ class SentDocumentController extends Controller
             $tb = $b['action_at'] ? strtotime((string) $b['action_at']) : 0;
 
             if ($ta === $tb) {
-                return ($typeOrder[$a['type']] ?? 99) <=> ($typeOrder[$b['type']] ?? 99);
+                $typeCmp = ($typeOrder[$a['type']] ?? 99) <=> ($typeOrder[$b['type']] ?? 99);
+                if ($typeCmp !== 0) {
+                    return $typeCmp;
+                }
+
+                return ($a['_route_id'] ?? 0) <=> ($b['_route_id'] ?? 0);
             }
 
             return $ta <=> $tb;
         });
+
+        $trail = array_map(function (array $step) {
+            unset($step['_route_id']);
+
+            return $step;
+        }, $trail);
 
         return response()->json([
             'document_id' => $document->document_id,

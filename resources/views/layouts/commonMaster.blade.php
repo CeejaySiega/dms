@@ -8,7 +8,6 @@
     <title>
         @yield('title') | {{ config('variables.templateSuffix') ? config('variables.templateSuffix') : 'TemplateSuffix' }}
     </title>
-    <title>{{ config('variables.templateSuffix') ? config('variables.templateSuffix') : 'TemplateSuffix' }}</title>
     <meta name="description" content="{{ config('variables.templateDescription') ? config('variables.templateDescription') : '' }}" />
     <meta name="keywords" content="{{ config('variables.templateKeyword') ? config('variables.templateKeyword') : '' }}" />
     <meta property="og:title" content="{{ config('variables.ogTitle') ? config('variables.ogTitle') : '' }}" />
