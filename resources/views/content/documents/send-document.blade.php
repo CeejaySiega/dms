@@ -283,7 +283,7 @@
             }
 
             Swal.fire({
-                title: 'Continue to Review?'
+                title: 'Continue Process?'
                 ,text: 'Proceed to review and send this document?'
                 ,icon: 'question'
                 ,showCancelButton: true

@@ -152,6 +152,13 @@
                                         <option value="normal" selected>Normal</option>
                                         <option value="urgent">Urgent</option>
                                     </select>
+                                    <small class="text-muted">Due Date is required only when Priority is set to Urgent.</small>
+                                </div>
+
+                                <div class="mb-3 d-none" id="dueDateWrap">
+                                    <label class="form-label fw-semibold">Due Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="dueDate" name="due_date" min="{{ now()->toDateString() }}">
+                                    <small class="text-muted">Due date is required for urgent documents.</small>
                                 </div>
                                 <!-- Action Buttons -->
                                 <div class="d-grid gap-2 mt-4">
@@ -181,7 +188,22 @@ $(document).ready(function() {
     const $recipientList = $('#recipientList');
     const $recipientInputs = $('#recipientInputs');
     const $addRecipientBtn = $('#addRecipientBtn');
+    const $priority = $('#priority');
+    const $dueDateWrap = $('#dueDateWrap');
+    const $dueDate = $('#dueDate');
     const recipients = [];
+
+    const syncDueDateVisibility = () => {
+        const urgent = $priority.val() === 'urgent';
+        $dueDateWrap.toggleClass('d-none', !urgent);
+        $dueDate.prop('required', urgent);
+        if (!urgent) {
+            $dueDate.val('');
+        }
+    };
+
+    $priority.on('change', syncDueDateVisibility);
+    syncDueDateVisibility();
 
     $userSearch.on('input', function() {
         const inputVal = $(this).val();
@@ -271,7 +293,17 @@ $(document).ready(function() {
         const userIds = recipients.map((r) => r.id);
         const priority = $('#priority').val();
         const notes = $('#notes').val();
-        const dueDate = $('#dueDate').val();
+        const dueDate = $priority.val() === 'urgent' ? $dueDate.val() : '';
+
+        if ($priority.val() === 'urgent' && !dueDate) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Due Date Required',
+                text: 'Please set a due date for urgent documents.',
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
 
         // Validate selection
         if (!userIds.length) {

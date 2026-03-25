@@ -139,6 +139,12 @@
                                         <option value="urgent">Urgent</option>
                                     </select>
                                 </div>
+                                
+                                <div class="mb-3 d-none" id="dueDateWrap">
+                                    <label class="form-label fw-semibold">Due Date</label>
+                                    <input type="date" class="form-control" id="dueDate" name="due_date" min="{{ now()->toDateString() }}">
+                                    <small class="text-muted">Due date is required for urgent documents.</small>
+                                </div>
 
                                 <!-- Action Buttons -->
                                 <div class="d-grid gap-2 mt-4">
@@ -165,6 +171,22 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    const $priority = $('#priority');
+    const $dueDateWrap = $('#dueDateWrap');
+    const $dueDate = $('#dueDate');
+
+    const syncDueDateVisibility = () => {
+        const urgent = $priority.val() === 'urgent';
+        $dueDateWrap.toggleClass('d-none', !urgent);
+        $dueDate.prop('required', urgent);
+        if (!urgent) {
+            $dueDate.val('');
+        }
+    };
+
+    $priority.on('change', syncDueDateVisibility);
+    syncDueDateVisibility();
+
     $('#groupSelect').on('change', function() {
         const members = $(this).find(':selected').data('members');
         if (members !== undefined) {
@@ -179,12 +201,23 @@ $(document).ready(function() {
 
         const groupId = $('#groupSelect').val();
         const priority = $('#priority').val();
+        const dueDate = priority === 'urgent' ? $dueDate.val() : '';
 
         if (!groupId) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Missing Selection',
                 text: 'Please select a group to send the document to.',
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
+
+        if (priority === 'urgent' && !dueDate) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Due Date Required',
+                text: 'Please set a due date for urgent documents.',
                 confirmButtonColor: '#3085d6'
             });
             return;
@@ -217,6 +250,7 @@ $(document).ready(function() {
                 const formData = {
                     group_id: groupId,
                     priority: priority,
+                    due_date: dueDate,
                     _token: '{{ csrf_token() }}'
                 };
 

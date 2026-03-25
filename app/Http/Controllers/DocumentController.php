@@ -176,8 +176,12 @@ class DocumentController extends Controller
             'user_ids.*' => 'exists:users,user_id',
             'notes' => 'nullable|string|max:500',
             'priority' => 'required|in:low,normal,high,urgent',
-            'due_date' => 'nullable|date|after_or_equal:today',
+            'due_date' => 'nullable|date|after_or_equal:today|required_if:priority,urgent',
         ]);
+
+        $dueDate = ($validated['priority'] ?? null) === 'urgent'
+            ? ($validated['due_date'] ?? null)
+            : null;
 
         // Get document data from session
         $documentData = session('document_data');
@@ -207,6 +211,7 @@ class DocumentController extends Controller
             'file_path' => $newPath,
             'purpose' => $purpose,
             'status' => 'pending',
+            'due_date' => $dueDate,
         ]);
         logActivity(auth()->id(), 'add', 'Created and sent document');
 
@@ -279,11 +284,17 @@ class DocumentController extends Controller
             'group_id' => 'required|exists:groups,group_id',
             'notes' => 'nullable|string|max:500',
             'priority' => 'required|in:low,normal,high,urgent',
-            'due_date' => 'nullable|date|after_or_equal:today',
+            'due_date' => 'nullable|date|after_or_equal:today|required_if:priority,urgent',
         ]);
 
-        $userIds = Group_user::where('group_id', $validated['group_id'])
-            ->pluck('user_id')
+        $dueDate = ($validated['priority'] ?? null) === 'urgent'
+            ? ($validated['due_date'] ?? null)
+            : null;
+
+        $userIds = Group_user::query()
+            ->join('users', 'users.user_id', '=', 'group_users.user_id')
+            ->where('group_users.group_id', $validated['group_id'])
+            ->pluck('group_users.user_id')
             ->filter(fn ($id) => $id !== Auth::id())
             ->unique()
             ->values()
@@ -320,19 +331,22 @@ class DocumentController extends Controller
             'file_path' => $newPath,
             'purpose' => $purpose,
             'status' => 'pending',
+            'due_date' => $dueDate,
         ]);
         logActivity(auth()->id(), 'add', 'Created and sent document to group');
 
-        // Create document route for the group
-        $route = \App\Models\DocumentRoute::create([
-            'sender_id' => Auth::id(),
-            'document_id' => $document->document_id,
-            'receiver_id' => $validated['group_id'],
-            'action' => 'pending',
-            'priority' => $validated['priority'],
-        ]);
+        // Create one route per user in the group.
+        // receiver_id must reference users.user_id (foreign key).
+        foreach ($userIds as $userId) {
+            $route = \App\Models\DocumentRoute::create([
+                'sender_id' => Auth::id(),
+                'document_id' => $document->document_id,
+                'group_id' => $validated['group_id'],
+                'receiver_id' => $userId,
+                'action' => 'pending',
+                'priority' => $validated['priority'],
+            ]);
 
-       foreach ($userIds as $userId) {
             $recipient = \App\Models\Recipient::create([
                 'route_id' => $route->route_id,
                 'user_id' => $userId,
@@ -380,6 +394,10 @@ class DocumentController extends Controller
     {
         $documentId = decryptId($documentId);
         $document = Document::with(['user.employee', 'documentType'])->findOrFail($documentId);
+
+        if (!$this->canAccessDocument($document)) {
+            abort(403, 'Unauthorized to view this receipt');
+        }
         
         // Get the route for this document
         $route = \App\Models\DocumentRoute::where('document_id', $documentId)->first();
@@ -599,7 +617,11 @@ class DocumentController extends Controller
         $documents = Document::where(function ($query) use ($userId) {
                 $query->where('documents.user_id', $userId)
                       ->orWhereHas('recipients', function ($q2) use ($userId) {
-                          $q2->where('recipients.user_id', $userId);
+                          $q2->where('recipients.user_id', $userId)
+                             ->whereNull('recipients.deleted_at')
+                             ->whereHas('route', function ($q3) {
+                                 $q3->whereNull('unsend_at');
+                             });
                       });
             })
             ->where(function ($query) use ($q) {
@@ -682,6 +704,12 @@ class DocumentController extends Controller
             return true;
         }
 
-        return $document->recipients()->where('recipients.user_id', Auth::id())->exists();
+        return $document->recipients()
+            ->where('recipients.user_id', Auth::id())
+            ->whereNull('recipients.deleted_at')
+            ->whereHas('route', function ($query) {
+                $query->whereNull('unsend_at');
+            })
+            ->exists();
     }
 }

@@ -356,6 +356,7 @@
         },
         callback: async (tokenResponse) => {
           if (tokenResponse.error || !tokenResponse.access_token) {
+            showError('Google sign-in was cancelled or failed.');
             resetGoogleButton();
             return;
           }

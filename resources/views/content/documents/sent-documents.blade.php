@@ -64,6 +64,7 @@
             <div class="col-header d-none d-xl-block" style="min-width: 160px;">Tracking Code</div>
             <div class="col-header d-none d-lg-block" style="min-width: 80px;">Priority</div>
             <div class="col-header d-none d-lg-block" style="min-width: 80px;">Latest Status</div>
+            <div class="col-header d-none d-lg-block" style="width: 150px; padding-left: 50px;">Due Date</div>
             <div class="col-header d-none d-lg-block" style="min-width: 110px; text-align: right; margin-left: auto;">Date Sent</div>
         </div>
 
@@ -108,6 +109,20 @@
 
                 $singleRecipient = $recipients->count() === 1 ? $recipients->first() : null;
                 $recipientLabel  = 'No recipients';
+                $today = now()->startOfDay();
+                $dueState = null;
+                if ($document->due_date) {
+                    $due = $document->due_date instanceof \Carbon\CarbonInterface
+                        ? $document->due_date->copy()->startOfDay()
+                        : \Carbon\Carbon::parse($document->due_date)->startOfDay();
+                    if ($due->lt($today)) {
+                        $dueState = 'overdue';
+                    } elseif ($due->equalTo($today)) {
+                        $dueState = 'today';
+                    } else {
+                        $dueState = 'upcoming';
+                    }
+                }
                 if ($groupName)                   $recipientLabel = $groupName;
                 elseif ($recipients->count() > 1) $recipientLabel = $recipients->count() . ' Recipients';
                 elseif ($singleRecipient) {
@@ -139,6 +154,15 @@
                 </div>
                 <div class="d-none d-lg-block" style="min-width:80px;">
                     <span class="badge {{ $statusClass }}" style="font-size:.7rem;">{{ ucfirst($statusValue) }}</span>
+                </div>
+                <div class="d-none d-lg-block" style="width: 150px; padding-left: 70px;">
+                    @if($dueState)
+                        <span class="badge {{ $dueState === 'overdue' ? 'bg-danger' : ($dueState === 'today' ? 'bg-warning text-dark' : 'bg-label-secondary') }}" style="font-size:.68rem;">
+                            {{ $dueState === 'today' ? 'Due Today' : ($dueState === 'overdue' ? 'Overdue' : optional($document->due_date)->format('M d, Y')) }}
+                        </span>
+                    @else
+                        <span class="text-muted" style="font-size:0.78rem;">No due date</span>
+                    @endif
                 </div>
                  <div class="text-muted d-none d-lg-flex flex-shrink-0"
                      style="font-size:.8rem;min-width:110px;justify-content:flex-end;margin-left:auto;text-align:right;">

@@ -48,13 +48,13 @@ class SentDocumentController extends Controller
 
     public function trailData(Document $document): JsonResponse
     {
-        $isSenderSide = SentDocument::where('document_id', $document->document_id)
-            ->where('user_id', Auth::id())
-            ->exists();
+        $isOwner = (int) Auth::id() === (int) $document->user_id;
 
         $isRecipientSide = Recipient::where('user_id', Auth::id())
+            ->whereNull('deleted_at')
             ->whereHas('route', function ($query) use ($document) {
-                $query->where('document_id', $document->document_id);
+                $query->where('document_id', $document->document_id)
+                    ->whereNull('unsend_at');
             })
             ->exists();
 
@@ -62,7 +62,7 @@ class SentDocumentController extends Controller
             ->where('user_id', Auth::id())
             ->exists();
 
-        $canView = $isSenderSide || $isRecipientSide || $isReceivedSide;
+        $canView = $isOwner || $isRecipientSide || $isReceivedSide;
 
         if (!$canView) {
             return response()->json([

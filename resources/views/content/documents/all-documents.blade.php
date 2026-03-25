@@ -160,6 +160,20 @@
                                 'restored'           => 'bg-success',
                                 default              => 'bg-secondary',
                             };
+                            $today = now()->startOfDay();
+                            $dueState = null;
+                            if ($document->due_date) {
+                                $due = $document->due_date instanceof \Carbon\CarbonInterface
+                                    ? $document->due_date->copy()->startOfDay()
+                                    : \Carbon\Carbon::parse($document->due_date)->startOfDay();
+                                if ($due->lt($today)) {
+                                    $dueState = 'overdue';
+                                } elseif ($due->equalTo($today)) {
+                                    $dueState = 'today';
+                                } else {
+                                    $dueState = 'upcoming';
+                                }
+                            }
                         @endphp
                         <tr>
                             <td>
@@ -198,6 +212,13 @@
                             </td>
                             <td>
                                 <span class="badge {{ $statusClass }}">{{ ucfirst($statusValue) }}</span>
+                                @if($dueState)
+                                    <div class="mt-1">
+                                        <span class="badge {{ $dueState === 'overdue' ? 'bg-danger' : ($dueState === 'today' ? 'bg-warning text-dark' : 'bg-label-secondary') }}" style="font-size:.65rem;">
+                                            {{ $dueState === 'today' ? 'Due Today' : ($dueState === 'overdue' ? 'Overdue' : 'Due ' . optional($document->due_date)->format('M d')) }}
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td>
                                 <small class="text-muted">{{ $document->created_at->format('M d, Y h:i A') }}</small>

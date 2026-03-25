@@ -29,6 +29,7 @@ class Document extends Model
         'purpose',
         'priority',
         'status',
+        'due_date',
         'restored_at',
         'unsend_at',
     ];
@@ -39,6 +40,7 @@ class Document extends Model
         'deleted_at' => 'datetime',
         'restored_at' => 'datetime',
         'unsend_at' => 'datetime',
+        'due_date' => 'date',
     ];
 
     /**
