@@ -75,13 +75,29 @@
                     ->where('document_id', $document->document_id)
                     ->where('sender_id', Auth::id())
                     ->first();
-                $recipients = $route
-                    ? \App\Models\Recipient::with('user.employee')
-                        ->where('route_id', $route->route_id)
-                        ->get()
-                    : collect();
-
+                $isGroupSend   = !is_null($route?->group_id);
                 $groupName     = $route?->group ? $route->group->position : null;
+                $recipients = collect();
+                if ($route) {
+                    if (!is_null($route->group_id)) {
+                        $groupRouteIds = \App\Models\DocumentRoute::query()
+                            ->where('document_id', $document->document_id)
+                            ->where('sender_id', Auth::id())
+                            ->where('group_id', $route->group_id)
+                            ->pluck('route_id');
+
+                        $recipients = \App\Models\Recipient::with('user.employee')
+                            ->whereIn('route_id', $groupRouteIds)
+                            ->get()
+                            ->unique('user_id')
+                            ->values();
+                    } else {
+                        $recipients = \App\Models\Recipient::with('user.employee')
+                            ->where('route_id', $route->route_id)
+                            ->get();
+                    }
+                }
+
                 $priorityValue = $route?->priority ?? 'normal';
                 $priorityClass = match($priorityValue) {
                     'urgent' => 'bg-danger', 'high' => 'bg-warning',
@@ -91,10 +107,11 @@
                 $statusValue = $document->status;
                 if ($recipients->isNotEmpty()) {
                     $actions     = $recipients->pluck('action')->filter()->map(fn($a) => strtolower(trim((string)$a)))->unique();
-                    $hasPending  = $recipients->contains(fn($r) => is_null($r->action) || $r->action === 'pending');
+                    $hasPending  = $recipients->contains(fn($r) => is_null($r->action)) || $actions->contains('pending');
                     $hasReceive  = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
                     $isForwarded = !is_null($route?->forward_at);
-                    if ($hasPending && $isForwarded)        $statusValue = 'forwarded';
+                    if ($isGroupSend && $hasPending)        $statusValue = 'pending';
+                    elseif ($hasPending && $isForwarded)    $statusValue = 'forwarded';
                     elseif ($hasPending)                    $statusValue = 'pending';
                     elseif ($hasReceive)                    $statusValue = 'receive';
                     elseif ($actions->contains('approved')) $statusValue = 'approved';
@@ -228,13 +245,39 @@
             ->where('document_id', $document->document_id)
             ->where('sender_id', Auth::id())
             ->first();
-        $recipients = $route
-            ? \App\Models\Recipient::with('user.employee')
-                ->where('route_id', $route->route_id)
-                ->get()
-            : collect();
-
         $priorityVal   = $route?->priority ?? 'normal';
+        $groupName     = $route?->group ? $route->group->position : null;
+        $isGroupSend   = !is_null($groupName);
+        $recipients    = collect();
+        if ($route) {
+            if ($isGroupSend) {
+                $groupRouteIds = \App\Models\DocumentRoute::query()
+                    ->where('document_id', $document->document_id)
+                    ->where('sender_id', Auth::id())
+                    ->where('group_id', $route->group_id)
+                    ->pluck('route_id');
+
+                $recipients = \App\Models\Recipient::with('user.employee')
+                    ->whereIn('route_id', $groupRouteIds)
+                    ->get()
+                    ->unique('user_id')
+                    ->values();
+            } else {
+                $recipients = \App\Models\Recipient::with('user.employee')
+                    ->where('route_id', $route->route_id)
+                    ->get();
+            }
+        }
+
+        $groupMembers  = $recipients
+            ->map(function ($recipient) {
+                $emp = optional($recipient->user)->employee;
+                return $emp
+                    ? trim(($emp->firstname ?? '') . ' ' . ($emp->lastname ?? ''))
+                    : (optional($recipient->user)->name ?? optional($recipient->user)->email ?? 'N/A');
+            })
+            ->filter()
+            ->values();
         $priorityBadge = match($priorityVal) {
             'urgent' => 'bg-danger', 'high' => 'bg-warning',
             'low'    => 'bg-secondary', default => 'bg-primary',
@@ -356,11 +399,48 @@
 
                     <hr class="my-3">
 
+                    @if($isGroupSend)
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bx bx-group text-muted" style="font-size: 0.8rem;"></i>
+                            <span class="text-uppercase fw-bold text-muted"
+                                  style="font-size: 0.7rem; letter-spacing: 0.08em;">Group Composition</span>
+                        </div>
+                        <div class="rounded border" style="background:#f8f9ff;border-color:#e8e9ff !important;">
+                            <div class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color:#eceef7 !important;">
+                                <div>
+                                    <div class="fw-semibold" style="font-size:.92rem;">{{ $groupName }}</div>
+                                    <small class="text-muted">Target group for this document route</small>
+                                </div>
+                                <span class="badge bg-label-primary" style="font-size:.72rem;">
+                                    {{ $groupMembers->count() }} Member{{ $groupMembers->count() === 1 ? '' : 's' }}
+                                </span>
+                            </div>
+
+                            <div class="p-3">
+                                @if($groupMembers->isNotEmpty())
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach($groupMembers as $member)
+                                            <span class="badge bg-label-secondary" style="font-size:.72rem;">
+                                                {{ $member }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <small class="text-muted">No resolved group members found for this route.</small>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+                    @endif
+
                     <div>
                         <div class="d-flex align-items-center gap-2 mb-3">
                             <i class="bx bx-user text-muted" style="font-size: 0.8rem;"></i>
                             <span class="text-uppercase fw-bold text-muted"
-                                  style="font-size: 0.7rem; letter-spacing: 0.08em;">Sender</span>
+                                  style="font-size: 0.7rem; letter-spacing: 0.08em;">{{ $isGroupSend ? 'Group Sender' : 'Sender' }}</span>
                         </div>
                         <div class="d-flex align-items-center gap-3 py-2 px-1">
                             <div class="avatar avatar-sm flex-shrink-0">

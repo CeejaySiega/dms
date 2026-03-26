@@ -56,6 +56,7 @@ use Illuminate\Support\Facades\Route;
             <a class="nav-link dropdown-toggle hide-arrow p-0"
                href="javascript:void(0);"
                data-bs-toggle="dropdown"
+                    data-bs-display="static"
                data-bs-auto-close="outside"
                aria-expanded="false"
                style="position: relative;">
@@ -67,7 +68,7 @@ use Illuminate\Support\Facades\Route;
                 </span>
             </a>
 
-            <ul class="dropdown-menu dropdown-menu-end p-0"
+            <ul class="dropdown-menu dropdown-menu-end p-0 notif-dropdown-menu"
                 style="min-width:400px; max-width:400px; border-radius:0.85rem; overflow:hidden; box-shadow:0 8px 32px rgba(26,29,58,0.16);">
 
                 {{-- Header --}}
@@ -273,6 +274,84 @@ use Illuminate\Support\Facades\Route;
 .notif-header {
     border-bottom: 1px solid #f0f2f7;
     background: #fff;
+}
+
+/* Keep notifications dropdown pinned below the bell icon */
+.dropdown-notifications {
+    position: relative;
+}
+
+.dropdown-notifications .notif-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    left: auto;
+    transform: none !important;
+}
+
+@media (max-width: 767.98px) {
+    .navbar-brand .app-brand-text {
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 52vw;
+        display: inline-block;
+    }
+
+    #searchOverlay {
+        padding-top: 56px;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    #searchBox {
+        max-width: 100%;
+        border-radius: 12px;
+    }
+
+    #searchInputWrap {
+        padding: 12px 12px;
+    }
+
+    #navbarSearchResults {
+        max-height: 58vh;
+    }
+
+    .dropdown-notifications .notif-dropdown-menu {
+        width: min(92vw, 400px);
+        min-width: min(92vw, 400px) !important;
+        max-width: min(92vw, 400px) !important;
+        right: -0.25rem;
+        left: auto;
+    }
+
+    #notificationsList {
+        max-height: 52vh !important;
+    }
+
+    .notif-sub {
+        max-width: 56vw;
+    }
+}
+
+@media (max-width: 420px) {
+    .navbar-brand .app-brand-text {
+        max-width: 45vw;
+        font-size: 0.92rem;
+    }
+
+    .dropdown-notifications .notif-dropdown-menu {
+        width: calc(100vw - 1rem);
+        min-width: calc(100vw - 1rem) !important;
+        max-width: calc(100vw - 1rem) !important;
+        right: -0.5rem;
+    }
+
+    .notif-header {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
 }
 /* ── Header action icon buttons ── */
 .notif-action-btn {
