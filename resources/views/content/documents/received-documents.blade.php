@@ -250,6 +250,12 @@
                                     {{ $document->tracking_code ?? 'N/A' }}
                                 </div>
                             </div>
+                            <div class="col-12">
+                                <div class="text-muted mb-1" style="font-size: 0.78rem;">Purpose</div>
+                                <div class="fw-semibold" style="font-size: 0.9rem; word-break: break-word;">
+                                    {{ $document->purpose ?? 'N/A' }}
+                                </div>
+                            </div>
                             <div class="col-4">
                                 <div class="text-muted mb-1" style="font-size: 0.78rem;">Status</div>
                                 <span class="badge bg-info" style="font-size: 0.75rem;">Received</span>
