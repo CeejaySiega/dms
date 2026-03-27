@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title')
+<title>Document Management System</title>
 
 @section('vendor-style')
 @vite('resources/assets/vendor/libs/apex-charts/apex-charts.scss')

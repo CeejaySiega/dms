@@ -47,6 +47,7 @@
                             Show
                             <form method="GET" action="{{ route('documents.restored') }}" id="perPageForm">
                                 <input type="hidden" name="search" value="{{ request('search') }}">
+                                <input type="hidden" name="document_type" value="{{ request('document_type') }}">
                                 <select name="per_page"
                                         class="dt-length-select"
                                         onchange="document.getElementById('perPageForm').submit()">
@@ -63,6 +64,7 @@
 
                         <form method="GET" action="{{ route('documents.restored') }}">
                             <input type="hidden" name="per_page" value="{{ request('per_page', 10) }}">
+                            <input type="hidden" name="document_type" value="{{ request('document_type') }}">
                             <label class="dt-search-label">
                                 Search:
                                 <input type="text"

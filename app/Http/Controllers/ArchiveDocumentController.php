@@ -14,20 +14,44 @@ class ArchiveDocumentController extends Controller
     /**
      * Display archived documents
      */
-    public function index()
+    public function index(Request $request)
     {
         $currentUserId = Auth::user()->user_id;
+        $search = trim((string) $request->input('search', ''));
+        $documentType = trim((string) $request->input('document_type', ''));
+        $perPage = (int) $request->input('per_page', 15);
+
+        if (!in_array($perPage, [10, 15, 25, 50, 100], true)) {
+            $perPage = 15;
+        }
+
         $documents = Archive::where(function($query) use ($currentUserId) {
                 $query->where('user_id', $currentUserId)
                       ->orWhereHas('document', function($q) use ($currentUserId) {
                           $q->where('user_id', $currentUserId);
                       });
             })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($archiveQuery) use ($search) {
+                    $archiveQuery->where('file_name', 'like', "%{$search}%")
+                        ->orWhereHas('document', function ($docQuery) use ($search) {
+                            $docQuery->where('tracking_code', 'like', "%{$search}%")
+                                ->orWhere('purpose', 'like', "%{$search}%")
+                                ->orWhere('file_name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($documentType !== '', function ($query) use ($documentType) {
+                $query->whereHas('document.documentType', function ($docTypeQuery) use ($documentType) {
+                    $docTypeQuery->where('type_name', $documentType);
+                });
+            })
             ->whereNull('deleted_at')
             ->whereNull('restored_at')
             ->with('document', 'document.documentType')
             ->orderBy('archive_at', 'desc')
-            ->paginate(15);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('content.documents.archived-documents', compact('documents'));
     }

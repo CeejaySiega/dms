@@ -40,10 +40,28 @@
     <div class="card mail-card">
 
         <div class="d-flex align-items-center gap-3 px-4 py-3 border-bottom flex-shrink-0">
-            <div class="mail-search-wrap">
-                <i class="bx bx-search text-muted" style="font-size: 0.95rem; flex-shrink:0;"></i>
-                <input type="text" placeholder="Search documents…" />
-            </div>
+            <form method="GET" action="{{ route('documents.sent') }}" class="d-flex align-items-center gap-2 flex-grow-1">
+                <div class="mail-search-wrap">
+                    <i class="bx bx-search text-muted" style="font-size: 0.95rem; flex-shrink:0;"></i>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search tracking code, file, purpose..." />
+                </div>
+                <select name="status" class="form-select form-select-sm" style="max-width: 130px;" onchange="this.form.submit()">
+                    <option value="">Status</option>
+                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="forwarded" {{ request('status') === 'forwarded' ? 'selected' : '' }}>Forwarded</option>
+                    <option value="receive" {{ request('status') === 'receive' ? 'selected' : '' }}>Received</option>
+                    <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                </select>
+                <select name="per_page" class="form-select form-select-sm" style="max-width: 95px;" onchange="this.form.submit()">
+                    @foreach([10, 15, 25, 50] as $len)
+                        <option value="{{ $len }}" {{ (int) request('per_page', 15) === $len ? 'selected' : '' }}>{{ $len }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                @if(request('search') || request('status') || request('per_page'))
+                    <a href="{{ route('documents.sent') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                @endif
+            </form>
             <div class="ms-auto d-flex align-items-center gap-1 text-muted" style="font-size: 0.85rem; white-space: nowrap;">
                 {{ $documents->firstItem() ?? 0 }}&ndash;{{ $documents->lastItem() ?? 0 }}
                 of {{ $documents->total() ?? 0 }}
@@ -114,13 +132,12 @@
                     elseif ($hasPending && $isForwarded)    $statusValue = 'forwarded';
                     elseif ($hasPending)                    $statusValue = 'pending';
                     elseif ($hasReceive)                    $statusValue = 'receive';
-                    elseif ($actions->contains('approved')) $statusValue = 'approved';
                     elseif ($actions->contains('rejected')) $statusValue = 'rejected';
                     else                                    $statusValue = 'pending';
                 }
                 $statusClass = match($statusValue) {
                     'pending'            => 'bg-warning', 'forwarded' => 'bg-primary',
-                    'approved'           => 'bg-success', 'rejected'  => 'bg-danger',
+                    'rejected'           => 'bg-danger',
                     'receive','received' => 'bg-info',    default     => 'bg-secondary',
                 };
 
@@ -292,13 +309,12 @@
             if ($hasPending && $isForwarded)        $statusVal = 'forwarded';
             elseif ($hasPending)                    $statusVal = 'pending';
             elseif ($hasReceive)                    $statusVal = 'receive';
-            elseif ($actions->contains('approved')) $statusVal = 'approved';
             elseif ($actions->contains('rejected')) $statusVal = 'rejected';
             else                                    $statusVal = 'pending';
         }
         $statusBadge = match($statusVal) {
             'pending'            => 'bg-warning', 'forwarded' => 'bg-primary',
-            'approved'           => 'bg-success', 'rejected'  => 'bg-danger',
+            'rejected'           => 'bg-danger',
             'receive','received' => 'bg-info',    default     => 'bg-secondary',
         };
 

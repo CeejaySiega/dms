@@ -188,7 +188,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/pending-documents', [ReceivedDocumentController::class, 'getPendingDocuments'])->name('pending-documents');
         Route::get('/received-by-others', [ReceivedDocumentController::class, 'getReceivedByOthersNotifications'])->name('received-by-others');
         Route::get('/forwarded-by-others', [ReceivedDocumentController::class, 'getForwardedByOthersNotifications'])->name('forwarded-by-others');
-        Route::post('/{document}/approve', [ReceivedDocumentController::class, 'approve'])->name('approve');
         Route::post('/{document}/receive', [ReceivedDocumentController::class, 'receive'])->name('receive');
         Route::post('/{document}/disapprove', [ReceivedDocumentController::class, 'disapprove'])->name('disapprove');
         Route::post('/mark-as-read/{recipientId}', [ReceivedDocumentController::class, 'markAsRead'])->name('mark-as-read');
@@ -218,8 +217,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/archives/{archive}/permanent', [ArchiveDocumentController::class, 'destroy'])->name('permanent-delete');
     });
 
-    // workflow
-    Route::prefix('workflow')->name('workflow.')->group(function () {
+    // trail
+    Route::prefix('trail')->name('trail.')->group(function () {
         Route::get('/document-trail', [SentDocumentController::class, 'documentTrail'])->name('document-trail');
     });
 });

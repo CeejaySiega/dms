@@ -11,17 +11,42 @@ use App\Models\ReceivedDocument;
 use App\Models\SentDocument;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class SentDocumentController extends Controller
 {
-    public function documentTrail()
+    public function documentTrail(Request $request)
     {
         $userId = Auth::id();
+        $search = trim((string) $request->input('search', ''));
+        $sendMode = trim((string) $request->input('send_mode', ''));
+        $perPage = (int) $request->input('per_page', 15);
+
+        if (!in_array($perPage, [10, 15, 25, 50, 100], true)) {
+            $perPage = 15;
+        }
 
         $documents = Document::query()
             ->whereNull('unsend_at')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($docQuery) use ($search) {
+                    $docQuery->where('tracking_code', 'like', "%{$search}%")
+                        ->orWhere('purpose', 'like', "%{$search}%")
+                        ->orWhere('file_name', 'like', "%{$search}%");
+                });
+            })
+            ->when($sendMode === 'group', function ($query) {
+                $query->whereHas('routes', function ($routeQuery) {
+                    $routeQuery->whereNull('unsend_at')->whereNotNull('group_id');
+                });
+            })
+            ->when($sendMode === 'individual', function ($query) {
+                $query->whereHas('routes', function ($routeQuery) {
+                    $routeQuery->whereNull('unsend_at')->whereNull('group_id');
+                });
+            })
             ->where(function ($query) use ($userId) {
                 $query->where('user_id', $userId)
                     ->orWhereHas('routes', function ($routeQuery) use ($userId) {
@@ -53,9 +78,10 @@ class SentDocumentController extends Controller
                 },
             ])
             ->orderByDesc('created_at')
-            ->paginate(15);
+            ->paginate($perPage)
+            ->withQueryString();
 
-        return view('content.workflow.document-trail', compact('documents'));
+        return view('content.trail.document-trail', compact('documents'));
     }
 
     public function trailData(Document $document): JsonResponse
@@ -156,7 +182,7 @@ class SentDocumentController extends Controller
             ];
 
             $action = strtolower(trim((string) ($receiverRecipient?->action ?? '')));
-            $hasActed = in_array($action, ['receive', 'received', 'approved', 'rejected'], true)
+            $hasActed = in_array($action, ['receive', 'received', 'rejected'], true)
                 || !is_null($receiverRecipient?->receive_at);
 
             if ($hasActed) {
@@ -168,7 +194,7 @@ class SentDocumentController extends Controller
                     'campus' => $this->trailCampus($receiver),
                     'action_at' => $toIso($receiverRecipient?->receive_at ?? $routeSentAt),
                     'forwarded_to' => null,
-                    'remarks' => in_array($action, ['approved', 'rejected'], true) ? ucfirst($action) : null,
+                    'remarks' => in_array($action, ['rejected'], true) ? ucfirst($action) : null,
                     '_route_id' => $route->route_id,
                 ];
             } elseif ($receiver) {
@@ -282,14 +308,32 @@ class SentDocumentController extends Controller
         ]);
     }
 
-    public function sent()
+    public function sent(Request $request)
     {
+        $search = trim((string) $request->input('search', ''));
+        $status = trim((string) $request->input('status', ''));
+        $perPage = (int) $request->input('per_page', 15);
+
+        if (!in_array($perPage, [10, 15, 25, 50, 100], true)) {
+            $perPage = 15;
+        }
+
         // Get documents sent/forwarded by current user that are NOT archived for this user
         $documents = Document::whereIn('document_id', function ($query) {
                 $query->select('document_id')
                     ->from('sent_documents')
                     ->where('user_id', Auth::id())
                     ->whereNull('unsend_at');
+            })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($docQuery) use ($search) {
+                    $docQuery->where('tracking_code', 'like', "%{$search}%")
+                        ->orWhere('file_name', 'like', "%{$search}%")
+                        ->orWhere('purpose', 'like', "%{$search}%");
+                });
+            })
+            ->when($status !== '', function ($query) use ($status) {
+                $query->where('status', $status);
             })
             ->whereNotIn('document_id', function($query) {
                 $query->select('document_id')
@@ -304,7 +348,8 @@ class SentDocumentController extends Controller
                 $query->whereNull('unsend_at');
             }])
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('content.documents.sent-documents', compact('documents'));
     }
@@ -343,7 +388,7 @@ class SentDocumentController extends Controller
 
             $hasReceived = Recipient::withTrashed()
                 ->whereIn('route_id', $routeIds)
-                ->whereIn('action', ['receive', 'approved', 'rejected'])
+                ->whereIn('action', ['receive', 'rejected'])
                 ->exists();
 
             if (!$hasReceived && \App\Models\ReceivedDocument::whereIn('route_id', $routeIds)->exists()) {
@@ -457,7 +502,7 @@ class SentDocumentController extends Controller
         }
 
         // Cannot remove a recipient who already acted on the document
-        if (in_array($recipientModel->action, ['approved', 'rejected', 'receive', 'received'], true)) {
+        if (in_array($recipientModel->action, ['rejected', 'receive', 'received'], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'You cannot remove a recipient who already acted on this document.'
@@ -557,10 +602,10 @@ class SentDocumentController extends Controller
             ], 403);
         }
 
-        if (in_array($recipientModel->action, ['approved', 'rejected'], true)) {
+        if (in_array($recipientModel->action, ['rejected'], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'You cannot unsend after approval or rejection.'
+                'message' => 'You cannot unsend after rejection.'
             ], 400);
         }
 
@@ -666,7 +711,6 @@ class SentDocumentController extends Controller
                 ->exists();
 
         if ($hasReceive)                    return 'receive';
-        if ($actions->contains('approved')) return 'approved';
         if ($actions->contains('rejected')) return 'rejected';
         if ($hasForwarded)                  return 'forwarded';
 

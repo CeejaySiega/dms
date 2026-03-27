@@ -10,39 +10,29 @@ $(document).ready(function () {
         }
     });
 
-    // Live search filter
-    $('#liveSearchInput').on('keyup', function() {
-        const searchTerm = $(this).val().toLowerCase();
-        const tableBody = $('.dt-table tbody');
-        let visibleCount = 0;
+    // Live search to backend filter (debounced)
+    let searchDebounce = null;
+    $('#liveSearchInput').on('input', function() {
+        const value = $(this).val();
+        $('#searchQuery').val(value);
 
-        tableBody.find('tr').each(function() {
-            // Skip empty state row
-            if ($(this).find('td').length === 1 && $(this).find('.dt-empty').length) {
-                return;
+        if (searchDebounce) {
+            clearTimeout(searchDebounce);
+        }
+
+        searchDebounce = setTimeout(function () {
+            $('#filterForm').submit();
+        }, 400);
+    });
+
+    $('#liveSearchInput').on('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (searchDebounce) {
+                clearTimeout(searchDebounce);
             }
-
-            // Get value from tracking code column only
-            const trackingCode = $(this).find('td:eq(0)').text().toLowerCase();
-
-            // Check if search term matches tracking code
-            const matches = trackingCode.includes(searchTerm);
-
-            if (matches) {
-                $(this).show();
-                visibleCount++;
-            } else {
-                $(this).hide();
-            }
-        });
-
-        // Show/hide empty state
-        if (visibleCount === 0 && searchTerm.length > 0) {
-            tableBody.find('tr:has(.dt-empty)').show();
-        } else if (searchTerm.length === 0) {
-            tableBody.find('tr').show();
-        } else {
-            tableBody.find('tr:has(.dt-empty)').hide();
+            $('#searchQuery').val($(this).val());
+            $('#filterForm').submit();
         }
     });
 

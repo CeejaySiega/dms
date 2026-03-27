@@ -76,7 +76,6 @@ if (!function_exists('getStatusBadgeColor')) {
             'active' => 'success',
             'inactive' => 'secondary',
             'pending' => 'warning',
-            'approved' => 'success',
             'rejected' => 'danger',
             'completed' => 'primary',
         ];

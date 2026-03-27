@@ -1,6 +1,6 @@
 @extends('layouts.contentNavbarLayout')
 
-@section('title', 'Workflow - Document Trail')
+@section('title', 'Document Trail')
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -16,6 +16,32 @@
                 </div>
 
                 <div class="card-body">
+                    <form method="GET" action="{{ route('trail.document-trail') }}" class="row g-2 mb-3 align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" name="search" class="form-control form-control-sm" value="{{ request('search') }}" placeholder="Search tracking code, file, purpose...">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="send_mode" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Modes</option>
+                                <option value="individual" {{ request('send_mode') === 'individual' ? 'selected' : '' }}>Individual</option>
+                                <option value="group" {{ request('send_mode') === 'group' ? 'selected' : '' }}>Group</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                                @foreach([10, 15, 25, 50] as $len)
+                                    <option value="{{ $len }}" {{ (int) request('per_page', 15) === $len ? 'selected' : '' }}>{{ $len }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                            @if(request('search') || request('send_mode') || request('per_page'))
+                                <a href="{{ route('trail.document-trail') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                            @endif
+                        </div>
+                    </form>
+
                     @php
                         $trailDocs = collect($documents?->items() ?? []);
                         $groupCount = $trailDocs->filter(function ($doc) {

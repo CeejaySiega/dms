@@ -559,6 +559,11 @@ class DocumentController extends Controller
      */
     public function all(Request $request)
     {
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
         $query = Document::where('user_id', Auth::id())
             ->whereNull('unsend_at')
             ->where('status', '!=', 'restored')  // Exclude restored documents
@@ -576,7 +581,7 @@ class DocumentController extends Controller
 
         // Search by tracking code or file name
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim((string) $request->input('search'));
             $query->where(function($q) use ($search) {
                 $q->where('tracking_code', 'like', '%' . $search . '%')
                   ->orWhere('file_name', 'like', '%' . $search . '%')
@@ -596,7 +601,7 @@ class DocumentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $documents = $query->orderBy('created_at', 'desc')->paginate(15);
+        $documents = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return view('content.documents.all-documents', compact('documents'));
     }

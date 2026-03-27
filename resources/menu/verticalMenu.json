@@ -71,16 +71,16 @@
       "slug": "documents.archived"
     },
     {
-      "name": "Workflow",
-      "icon": "menu-icon icon-base bx bx-cog",
+      "name": "Route",
+      "icon": "menu-icon icon-base bx bx-git-branch",
       "slug": [
-        "workflow.document-trail"
+        "trail.document-trail"
       ],
       "submenu": [
         {
-          "url": "/workflow/document-trail",
+          "url": "/trail/document-trail",
           "name": "Document Trail",
-          "slug": "workflow.document-trail"
+          "slug": "trail.document-trail"
         }
       ]
     },

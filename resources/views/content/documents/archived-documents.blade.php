@@ -55,6 +55,33 @@
             <!-- Archived List -->
             <div class="card">
                 <div class="card-body">
+                    <form method="GET" action="{{ route('documents.archived') }}" class="row g-2 mb-3 align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" name="search" class="form-control form-control-sm" value="{{ request('search') }}" placeholder="Search tracking code, file, purpose...">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="document_type" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">All Types</option>
+                                @foreach(['Memorandum','Request Letter','Office Order','Endorsement','Circular','Report','Communication Letter','Travel Order','Purchase Request'] as $type)
+                                    <option value="{{ $type }}" {{ request('document_type') === $type ? 'selected' : '' }}>{{ $type }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                                @foreach([10, 15, 25, 50] as $len)
+                                    <option value="{{ $len }}" {{ (int) request('per_page', 15) === $len ? 'selected' : '' }}>{{ $len }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                            @if(request('search') || request('document_type') || request('per_page'))
+                                <a href="{{ route('documents.archived') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                            @endif
+                        </div>
+                    </form>
+
                     @if($documents->count() > 0)
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">

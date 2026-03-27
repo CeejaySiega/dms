@@ -43,10 +43,27 @@
 
         {{-- Toolbar ── --}}
         <div class="d-flex align-items-center gap-3 px-4 py-3 border-bottom flex-shrink-0">
-            <div class="mail-search-wrap">
-                <i class="bx bx-search text-muted" style="font-size: 0.95rem; flex-shrink:0;"></i>
-                <input type="text" placeholder="Search documents…" />
-            </div>
+            <form method="GET" action="{{ route('documents.received') }}" class="d-flex align-items-center gap-2 flex-grow-1">
+                <div class="mail-search-wrap">
+                    <i class="bx bx-search text-muted" style="font-size: 0.95rem; flex-shrink:0;"></i>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search tracking code, file, purpose..." />
+                </div>
+                <select name="status" class="form-select form-select-sm" style="max-width: 120px;" onchange="this.form.submit()">
+                    <option value="">Status</option>
+                    <option value="receive" {{ request('status') === 'receive' ? 'selected' : '' }}>Received</option>
+                    <option value="read" {{ request('status') === 'read' ? 'selected' : '' }}>Read</option>
+                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                </select>
+                <select name="per_page" class="form-select form-select-sm" style="max-width: 95px;" onchange="this.form.submit()">
+                    @foreach([10, 15, 25, 50] as $len)
+                        <option value="{{ $len }}" {{ (int) request('per_page', 15) === $len ? 'selected' : '' }}>{{ $len }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                @if(request('search') || request('status') || request('per_page'))
+                    <a href="{{ route('documents.received') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                @endif
+            </form>
             <div class="ms-auto d-flex align-items-center gap-1 text-muted" style="font-size: 0.85rem; white-space: nowrap;">
                 {{ $received->firstItem() ?? 0 }}&ndash;{{ $received->lastItem() ?? 0 }}
                 of {{ $received->total() ?? 0 }}
@@ -93,7 +110,7 @@
                     $statusValue = strtolower((string) $statusValue);
                     $statusClass = match($statusValue) {
                         'pending'            => 'bg-warning', 'forwarded' => 'bg-primary',
-                        'approved'           => 'bg-success', 'rejected'  => 'bg-danger',
+                        'rejected'           => 'bg-danger',
                         'receive', 'received'=> 'bg-info',    default     => 'bg-secondary',
                     };
                     $modalId = 'receivedDocModal-' . $receivedDocument->recipient_id;

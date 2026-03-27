@@ -8,6 +8,7 @@ use App\Models\DocumentRoute;
 use App\Models\Recipient;
 use App\Models\ReceivedDocument;
 use App\Models\SentDocument;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -17,14 +18,32 @@ class ReceivedDocumentController extends Controller
     /**
      * Display incoming documents (inbox)
      */
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->input('search', ''));
+        $priority = trim((string) $request->input('priority', ''));
+        $perPage = (int) $request->input('per_page', 15);
+
+        if (!in_array($perPage, [10, 15, 25, 50, 100], true)) {
+            $perPage = 15;
+        }
+
         // Get direct individual recipients (for this user)
         $latestInboxRecipientIds = Recipient::query()
             ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
             ->where('recipients.user_id', Auth::id())
             ->whereNull('recipients.deleted_at')
             ->where('document_routes.receiver_id', Auth::id())
+            ->when($priority !== '', function ($query) use ($priority) {
+                $query->where('document_routes.priority', $priority);
+            })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereHas('route.document', function ($docQuery) use ($search) {
+                    $docQuery->where('tracking_code', 'like', "%{$search}%")
+                        ->orWhere('file_name', 'like', "%{$search}%")
+                        ->orWhere('purpose', 'like', "%{$search}%");
+                });
+            })
             ->where(function ($query) {
                 $query->whereNull('recipients.action')
                     ->orWhere('recipients.action', 'pending')
@@ -40,7 +59,8 @@ class ReceivedDocumentController extends Controller
             ->whereIn('recipient_id', $latestInboxRecipientIds)
             ->orderByRaw("CASE WHEN (SELECT priority FROM document_routes WHERE document_routes.route_id = recipients.route_id) = 'urgent' THEN 0 ELSE 1 END")
             ->orderBy('sent_at', 'desc')
-            ->paginate(15);
+            ->paginate($perPage)
+            ->withQueryString();
 
         $inboxCount = Recipient::query()
             ->join('document_routes', 'document_routes.route_id', '=', 'recipients.route_id')
@@ -54,23 +74,6 @@ class ReceivedDocumentController extends Controller
             ->count('document_routes.document_id');
 
         return view('content.documents.incoming-documents', compact('inbox', 'inboxCount'));
-    }
-
-    /**
-     * Approve a received document
-     */
-    public function approve(Document $document)
-    {
-        $recipient = $this->getRecipientOrFail($document);
-
-        $this->updateRouteAndDocument(
-            $document,
-            $recipient,
-            'approved',
-            null
-        );
-
-        return redirect()->back()->with('success', 'Document approved successfully.');
     }
 
     /**
@@ -116,11 +119,29 @@ class ReceivedDocumentController extends Controller
     /**
      * Display received documents
      */
-    public function received()
+    public function received(Request $request)
     {
+        $search = trim((string) $request->input('search', ''));
+        $status = trim((string) $request->input('status', ''));
+        $perPage = (int) $request->input('per_page', 15);
+
+        if (!in_array($perPage, [10, 15, 25, 50, 100], true)) {
+            $perPage = 15;
+        }
+
         $latestReceivedIds = ReceivedDocument::query()
             ->where('user_id', Auth::id())
             ->whereNull('archive_at')
+            ->when($status !== '', function ($query) use ($status) {
+                $query->where('action', $status);
+            })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereHas('document', function ($docQuery) use ($search) {
+                    $docQuery->where('tracking_code', 'like', "%{$search}%")
+                        ->orWhere('file_name', 'like', "%{$search}%")
+                        ->orWhere('purpose', 'like', "%{$search}%");
+                });
+            })
             ->selectRaw('MAX(received_id) as received_id')
             ->groupBy('document_id');
 
@@ -131,7 +152,8 @@ class ReceivedDocumentController extends Controller
             ])
             ->whereIn('received_id', $latestReceivedIds)
             ->orderBy('receive_at', 'desc')
-            ->paginate(15);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('content.documents.received-documents', compact('received'));
     }
@@ -513,14 +535,6 @@ class ReceivedDocumentController extends Controller
 
         if ($hasReceive) {
             return 'receive';
-        }
-
-        if ($actions->contains('approved')) {
-            return 'approved';
-        }
-
-        if ($actions->contains('rejected')) {
-            return 'rejected';
         }
 
         return 'pending';

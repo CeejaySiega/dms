@@ -116,14 +116,12 @@
                         @php
                             $receivedCount = $recipients->where('action', 'receive')->count();
                             $pendingCount = $recipients->whereNull('action')->count() + $recipients->where('action', 'pending')->count();
-                            $approvedCount = $recipients->where('action', 'approved')->count();
                             $rejectedCount = $recipients->where('action', 'rejected')->count();
                         @endphp
                         <div class="alert alert-info mb-3">
                             <strong>Summary:</strong>
                             {{ $receivedCount }} received,
                             {{ $pendingCount }} pending,
-                            {{ $approvedCount }} approved,
                             {{ $rejectedCount }} rejected
                         </div>
                         
@@ -167,7 +165,6 @@
                                         $status = $recipient->action ?: 'pending';
                                         $statusClass = match($status) {
                                             'receive' => 'bg-success',
-                                            'approved' => 'bg-primary',
                                             'rejected' => 'bg-danger',
                                             default => 'bg-warning'
                                         };
@@ -200,7 +197,6 @@
 
                         @php
                             $receivedCount = $recipients->where('action', 'receive')->count();
-                            $approvedCount = $recipients->where('action', 'approved')->count();
                             $rejectedCount = $recipients->where('action', 'rejected')->count();
                             $totalCount = $recipients->count();
                         @endphp
@@ -212,7 +208,6 @@
                                 <span class="badge bg-warning">In Progress</span>
                                 <span class="ms-2 text-muted">
                                     {{ $receivedCount }}/{{ $totalCount }} received,
-                                    {{ $approvedCount }} approved,
                                     {{ $rejectedCount }} rejected
                                 </span>
                             </div>

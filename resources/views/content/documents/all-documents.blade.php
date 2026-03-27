@@ -27,6 +27,7 @@
 
             <!-- Top Controls -->
             <form method="GET" action="{{ route('documents.all') }}" id="filterForm">
+                <input type="hidden" name="search" id="searchQuery" value="{{ request('search') }}">
                 <div class="dt-controls">
 
                     <!-- Left: show entries + filters -->
@@ -80,7 +81,8 @@
                             <input type="text"
                                    id="liveSearchInput"
                                    class="dt-search-input"
-                                   placeholder="Tracking code…"
+                                value="{{ request('search') }}"
+                                placeholder="Tracking code, file name, purpose..."
                                    autocomplete="off">
                         </label>
                         <a href="{{ route('documents.send') }}" class="btn btn-primary btn-sm ms-1" title="Send New Document">

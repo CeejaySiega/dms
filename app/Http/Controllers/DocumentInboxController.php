@@ -38,23 +38,6 @@ class DocumentInboxController extends Controller
     }
 
     /**
-     * Approve a received document
-     */
-    public function approve(Document $document)
-    {
-        $recipient = $this->getRecipientOrFail($document);
-
-        $this->updateRouteAndDocument(
-            $document,
-            $recipient,
-            'approved',
-            null
-        );
-
-        return redirect()->back()->with('success', 'Document approved successfully.');
-    }
-
-    /**
      * Mark document as received
      */
     public function receive(Document $document)
@@ -189,10 +172,6 @@ class DocumentInboxController extends Controller
 
         if ($hasReceive) {
             return 'receive';
-        }
-
-        if ($actions->contains('approved')) {
-            return 'approved';
         }
 
         if ($actions->contains('rejected')) {
