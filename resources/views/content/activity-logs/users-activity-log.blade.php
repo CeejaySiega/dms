@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title','Dashboard')
+@section('title','All Activity Logs')
 
 @section('vendor-style')
 @vite('resources/assets/vendor/libs/apex-charts/apex-charts.scss')
@@ -19,7 +19,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">My Activity Logs</h5>
+                <h5 class="mb-0">All Activity Logs</h5>
                     <form action="{{ route('user.activity-logs.delete') }}" method="POST" class="d-inline">
                         @csrf
                         @method('DELETE')

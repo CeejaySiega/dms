@@ -6,11 +6,22 @@
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row">
         <div class="col-12">
+            <div class="mb-4">
+                <h4 class="fw-bold mb-2"><i class="bx bx-transfer-alt me-2"></i>Document Trail</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1">
+                        <li class="breadcrumb-item">
+                            <a href="{{ route('dashboard-analytics') }}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item active">Document Trail</li>
+                    </ol>
+                </nav>
+            </div>
+
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                        <h4 class="mb-1">Document Trail</h4>
-                        <p class="text-muted mb-0">Track document movement and action history across recipients.</p>
+                       
                     </div>
                     <span class="badge bg-label-primary">Workflow</span>
                 </div>
@@ -35,32 +46,12 @@
                             </select>
                         </div>
                         <div class="col-md-3 d-flex gap-2">
-                            <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Search</button>
                             @if(request('search') || request('send_mode') || request('per_page'))
                                 <a href="{{ route('trail.document-trail') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
                             @endif
                         </div>
                     </form>
-
-                    @php
-                        $trailDocs = collect($documents?->items() ?? []);
-                        $groupCount = $trailDocs->filter(function ($doc) {
-                            return collect($doc->routes ?? [])->contains(fn ($route) => !is_null($route->group_id));
-                        })->count();
-                        $individualCount = $trailDocs->count() - $groupCount;
-                    @endphp
-
-                    <div class="d-flex align-items-center gap-2 flex-wrap mb-3" id="trailModeTabs">
-                        <button type="button" class="btn btn-sm btn-primary trail-mode-tab active" data-mode="all">
-                            All ({{ $trailDocs->count() }})
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary trail-mode-tab" data-mode="individual">
-                            Individual ({{ $individualCount }})
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary trail-mode-tab" data-mode="group">
-                            Group ({{ $groupCount }})
-                        </button>
-                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-hover align-middle" id="trailTable">
@@ -188,13 +179,6 @@
                                     </td>
                                 </tr>
                                 @endforelse
-                                <tr id="trailFilterEmptyRow" class="d-none">
-                                    <td colspan="8" class="text-center text-muted py-5">
-                                        <i class="bx bx-filter-alt" style="font-size:2rem;display:block;
-                                           margin-bottom:8px;color:#c4c6d0;"></i>
-                                        No documents match this tab.
-                                    </td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -643,39 +627,6 @@ function loadTrail(id) {
 
 document.addEventListener('DOMContentLoaded', function () {
     const modal = new bootstrap.Modal(document.getElementById('trailModal'));
-
-    const modeTabs = Array.from(document.querySelectorAll('.trail-mode-tab'));
-    const tableBody = document.querySelector('#trailTable tbody');
-    const emptyRow = document.getElementById('trailFilterEmptyRow');
-    const dataRows = tableBody ? Array.from(tableBody.querySelectorAll('tr[data-send-mode]')) : [];
-
-    function applyModeFilter(mode) {
-        let visible = 0;
-        dataRows.forEach(row => {
-            const matches = mode === 'all' || row.dataset.sendMode === mode;
-            row.classList.toggle('d-none', !matches);
-            if (matches) visible += 1;
-        });
-
-        if (emptyRow) {
-            emptyRow.classList.toggle('d-none', visible > 0);
-        }
-
-        modeTabs.forEach(tab => {
-            const active = tab.dataset.mode === mode;
-            tab.classList.toggle('active', active);
-            tab.classList.toggle('btn-primary', active);
-            tab.classList.toggle('btn-outline-primary', !active);
-        });
-    }
-
-    modeTabs.forEach(tab => {
-        tab.addEventListener('click', function () {
-            applyModeFilter(this.dataset.mode || 'all');
-        });
-    });
-
-    applyModeFilter('all');
 
     document.querySelectorAll('.view-trail-btn').forEach(btn => {
         btn.addEventListener('click', function () {

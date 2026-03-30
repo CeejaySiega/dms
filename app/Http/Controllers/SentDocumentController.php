@@ -360,6 +360,7 @@ class SentDocumentController extends Controller
     public function delete(Document $document)
     {
         if (Auth::id() !== $document->user_id) {
+            logActivity(Auth::id(), 'delete_attempt', 'Attempted to delete document without authorization');
             if (request()->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -376,6 +377,7 @@ class SentDocumentController extends Controller
     public function deleteDocument(Document $document)
     {
         if (Auth::id() !== $document->user_id) {
+            logActivity(Auth::id(), 'delete_attempt', 'Attempted to delete document without authorization');
             return response()->json([
                 'success' => false,
                 'message' => 'Only the owner can delete this document'
@@ -383,6 +385,7 @@ class SentDocumentController extends Controller
         }
 
         try {
+            logActivity(Auth::id(), 'delete', 'Deleted document: ' . $document->file_name);
             $routes   = DocumentRoute::where('document_id', $document->document_id)->get();
             $routeIds = $routes->pluck('route_id');
 
@@ -487,6 +490,7 @@ class SentDocumentController extends Controller
             ->first();
 
         if (!$recipientModel) {
+            logActivity(Auth::id(), 'unsend_attempt', 'Attempted to unsend to non-existent recipient');
             return response()->json([
                 'success' => false,
                 'message' => 'Recipient not found for this document.'
@@ -495,6 +499,7 @@ class SentDocumentController extends Controller
 
         // Only the document owner can remove a recipient
         if (Auth::id() !== $document->user_id) {
+            logActivity(Auth::id(), 'unsend_attempt', 'Attempted to unsend document without authorization');
             return response()->json([
                 'success' => false,
                 'message' => 'Only the owner can remove a recipient.'
@@ -522,6 +527,7 @@ class SentDocumentController extends Controller
         }
 
         try {
+            logActivity(Auth::id(), 'unsend', 'Unsent document: ' . $document->file_name);
             // Mark as unsent and keep the record for filtering/audit.
             SentDocument::where('route_id', $recipientModel->route_id)
                 ->where('recipient_id', $recipientModel->recipient_id)

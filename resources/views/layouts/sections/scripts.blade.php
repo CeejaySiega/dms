@@ -64,3 +64,34 @@
 	});
 </script>
 @endif
+
+@auth
+<form id="auto-logout-form" method="POST" action="{{ route('logout') }}" class="d-none">
+	@csrf
+</form>
+
+<script>
+	(function () {
+		const AUTO_LOGOUT_MS = 3000000;
+		let inactivityTimer;
+
+		function triggerAutoLogout() {
+			const logoutForm = document.getElementById('auto-logout-form');
+			if (logoutForm) {
+				logoutForm.submit();
+			}
+		}
+
+		function resetInactivityTimer() {
+			window.clearTimeout(inactivityTimer);
+			inactivityTimer = window.setTimeout(triggerAutoLogout, AUTO_LOGOUT_MS);
+		}
+
+		['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (eventName) {
+			document.addEventListener(eventName, resetInactivityTimer, { passive: true });
+		});
+
+		resetInactivityTimer();
+	})();
+</script>
+@endauth

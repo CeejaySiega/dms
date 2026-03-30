@@ -11,7 +11,7 @@
     <div class="mb-4 d-flex align-items-start justify-content-between flex-wrap gap-3">
         <div class="d-flex align-items-center gap-3">
             <div class="page-title-icon">
-                <i class="bx bx-send text-primary fs-4"></i>
+                <i class="bx bx-send fs-4"></i>
             </div>
             <div>
                 <h4 class="fw-bold mb-1">Sent Documents</h4>
@@ -57,7 +57,7 @@
                         <option value="{{ $len }}" {{ (int) request('per_page', 15) === $len ? 'selected' : '' }}>{{ $len }}</option>
                     @endforeach
                 </select>
-                <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Search</button>
                 @if(request('search') || request('status') || request('per_page'))
                     <a href="{{ route('documents.sent') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
                 @endif

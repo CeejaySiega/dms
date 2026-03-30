@@ -194,6 +194,7 @@ class ReceivedDocumentController extends Controller
                 ->first();
 
             if (!$recipient) {
+                logActivity(Auth::id(), 'read_attempt', 'Attempted to mark document as read without authorization');
                 return response()->json([
                     'success' => false,
                     'message' => 'Recipient not found or unauthorized.'

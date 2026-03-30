@@ -99,6 +99,7 @@ class ArchiveDocumentController extends Controller
         }
 
         try {
+            logActivity(Auth::id(), 'archive', 'Archived document: ' . $document->file_name);
             // Create archive record with current user (the person archiving)
             Archive::create([
                 'user_id' => Auth::user()->user_id,
@@ -153,6 +154,7 @@ class ArchiveDocumentController extends Controller
 
         if (!$isRecipient) {
             if (request()->wantsJson()) {
+                logActivity(Auth::id(), 'archive_attempt', 'Attempted to archive document without authorization');
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not a recipient of this document'

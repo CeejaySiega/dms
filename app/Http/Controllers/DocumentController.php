@@ -213,7 +213,7 @@ class DocumentController extends Controller
             'status' => 'pending',
             'due_date' => $dueDate,
         ]);
-        logActivity(auth()->id(), 'add', 'Created and sent document');
+        logActivity(auth()->id(), 'send', 'Created and sent document');
 
         // Create document route for each recipient
         foreach ($validated['user_ids'] as $userId) {
@@ -333,7 +333,7 @@ class DocumentController extends Controller
             'status' => 'pending',
             'due_date' => $dueDate,
         ]);
-        logActivity(auth()->id(), 'add', 'Created and sent document to group');
+        logActivity(auth()->id(), 'send', 'Created and sent document to group');
 
         // Create one route per user in the group.
         // receiver_id must reference users.user_id (foreign key).
@@ -548,7 +548,7 @@ class DocumentController extends Controller
             }
         });
 
-        logActivity(auth()->id(), 'add', 'Forwarded document to new recipient(s)');
+        logActivity(auth()->id(), 'send', 'Forwarded document to new recipient(s)');
 
         return redirect()->route('documents.sent')->with('success', 'Document forwarded successfully.');
     }
@@ -659,6 +659,7 @@ class DocumentController extends Controller
     {
         // Check authorization (sender or recipient)
         if (!$this->canAccessDocument($document)) {
+            logActivity(Auth::id(), 'download_attempt', 'Attempted to download document without authorization');
             abort(403, 'Unauthorized to download this document');
         }
 
@@ -668,6 +669,7 @@ class DocumentController extends Controller
         }
 
         try {
+            logActivity(Auth::id(), 'download', 'Downloaded document: ' . $document->file_name);
             $filePath = Storage::disk('public')->path($document->file_path);
             
             return response()->download($filePath, $document->file_name);

@@ -45,6 +45,8 @@ class DocumentInboxController extends Controller
         $recipient = $this->getRecipientOrFail($document);
         $receiveAt = now();
 
+        logActivity(Auth::id(), 'receive', 'Received document: ' . $document->file_name);
+        
         $this->updateRouteAndDocument(
             $document,
             $recipient,
@@ -79,6 +81,7 @@ class DocumentInboxController extends Controller
     public function deleteReceived(ReceivedDocument $receivedDocument)
     {
         if ($receivedDocument->user_id !== Auth::id()) {
+            logActivity(Auth::id(), 'delete_attempt', 'Attempted to delete received document without authorization');
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to remove this received document'
@@ -86,6 +89,7 @@ class DocumentInboxController extends Controller
         }
 
         try {
+            logActivity(Auth::id(), 'delete', 'Deleted received document: ' . $receivedDocument->document->file_name);
             $receivedDocument->delete();
 
             return response()->json([
