@@ -355,7 +355,21 @@
         $initials = strtoupper(substr($fullName, 0, 1) . (strpos($fullName, ' ') !== false ? substr($fullName, strpos($fullName, ' ') + 1, 1) : ''));
         $position = $employee->position ?? 'Employee';
         $department = $employee && $employee->department ? $employee->department->department_name : '—';
-        $campus = $employee->campus ?? '—';
+        
+        // Get campus from Globalpreferrence service by ID
+        $campusData = null;
+        $campus = '—';
+        if ($employee && $employee->campus) {
+            $campuses = \App\Helpers\Globalpreferrence::Campuses();
+            foreach ($campuses as $campusItem) {
+                if ($campusItem['ID'] == $employee->campus) {
+                    $campusData = $campusItem;
+                    $campus = $campusItem['Campus'];
+                    break;
+                }
+            }
+        }
+        
         $joinedDate = Auth::user()->created_at ? Auth::user()->created_at->format('F Y') : 'N/A';
     @endphp
 
@@ -404,13 +418,13 @@
 
         <!-- Tabs -->
         <div class="profile-tabs">
-            <a href="#" class="profile-tab active">
+            <a href="profile/view-profile.blade.php" class="profile-tab active">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 Profile
             </a>
             <a href="#" class="profile-tab">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                Teams
+                Groups
             </a>
             <a href="#" class="profile-tab">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
@@ -430,7 +444,9 @@
         <div class="col-12 col-lg-4">
 
             <div class="info-card">
+                
                 <div class="info-section-label">About</div>
+                
 
                 <div class="info-row">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
@@ -493,11 +509,19 @@
                 <div class="info-row">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     <span class="info-row-label">Campus:</span>
-                    <span class="info-row-value">{{ $campus }}</span>
+                    <span class="info-row-value">
+                        @if($campusData)
+                            <span class="badge bg-label-{{ $campusData['Color'] }}">
+                                {{ $campusData['Campus'] }}
+                            </span>
+                        @else
+                            <span>—</span>
+                        @endif
+                    </span>
                 </div>
             </div>
 
-            <div class="info-card">
+            {{-- <div class="info-card">
                 <div class="info-section-label">Leave Balance</div>
                 <div class="leave-grid">
                     <div class="leave-tile">
@@ -517,7 +541,7 @@
                         <div class="leave-tile-value">—</div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
         </div>
 
@@ -531,38 +555,42 @@
                 </div>
 
                 <div class="timeline-list">
-                    <div class="timeline-item">
-                        <div class="timeline-dot dot-blue"></div>
-                        <div class="timeline-body">
-                            <div class="timeline-header">
-                                <div class="timeline-event-title">Account Created</div>
-                                <div class="timeline-ago">{{ Auth::user()->created_at ? Auth::user()->created_at->diffForHumans() : '' }}</div>
-                            </div>
-                            <p class="timeline-desc">Your GEMS account was successfully created.</p>
-                        </div>
-                    </div>
+                    @php
+                        $activityLogs = Auth::user()->activityLogs()->orderBy('created_at', 'desc')->limit(20)->get();
+                        $dotColorMap = [
+                            'login' => 'dot-blue',
+                            'logout' => 'dot-sky',
+                            'profile_update' => 'dot-green',
+                            'document_view' => 'dot-blue',
+                            'document_forward' => 'dot-green',
+                            'document_receive' => 'dot-sky',
+                            'archive' => 'dot-green',
+                        ];
+                    @endphp
 
-                    <div class="timeline-item">
-                        <div class="timeline-dot dot-green"></div>
-                        <div class="timeline-body">
-                            <div class="timeline-header">
-                                <div class="timeline-event-title">Profile Updated</div>
-                                <div class="timeline-ago">{{ Auth::user()->updated_at ? Auth::user()->updated_at->diffForHumans() : '' }}</div>
+                    @forelse($activityLogs as $log)
+                        <div class="timeline-item">
+                            <div class="timeline-dot {{ $dotColorMap[strtolower($log->action)] ?? 'dot-blue' }}"></div>
+                            <div class="timeline-body">
+                                <div class="timeline-header">
+                                    <div class="timeline-event-title">{{ ucwords(str_replace('_', ' ', $log->action)) }}</div>
+                                    <div class="timeline-ago">{{ $log->created_at ? $log->created_at->diffForHumans() : '' }}</div>
+                                </div>
+                                <p class="timeline-desc">{{ $log->description }}</p>
                             </div>
-                            <p class="timeline-desc">Personal information was last updated on {{ Auth::user()->updated_at ? Auth::user()->updated_at->format('M d, Y') : 'N/A' }}.</p>
                         </div>
-                    </div>
-
-                    <div class="timeline-item">
-                        <div class="timeline-dot dot-sky"></div>
-                        <div class="timeline-body">
-                            <div class="timeline-header">
-                                <div class="timeline-event-title">Department Assigned</div>
-                                <div class="timeline-ago">—</div>
+                    @empty
+                        <div class="timeline-item">
+                            <div class="timeline-dot dot-blue"></div>
+                            <div class="timeline-body">
+                                <div class="timeline-header">
+                                    <div class="timeline-event-title">Account Created</div>
+                                    <div class="timeline-ago">{{ Auth::user()->created_at ? Auth::user()->created_at->diffForHumans() : '' }}</div>
+                                </div>
+                                <p class="timeline-desc">Your GEMS account was successfully created.</p>
                             </div>
-                            <p class="timeline-desc">Assigned to {{ $department }} at {{ $campus }}.</p>
                         </div>
-                    </div>
+                    @endforelse
                 </div>
             </div>
 

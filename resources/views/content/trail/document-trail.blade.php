@@ -23,7 +23,7 @@
                     <div>
                        
                     </div>
-                    <span class="badge bg-label-primary">Workflow</span>
+                    {{-- <span class="badge bg-label-primary">Workflow</span> --}}
                 </div>
 
                 <div class="card-body">

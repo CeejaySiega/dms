@@ -32,14 +32,16 @@ $(document).ready(function () {
 
     // Live search/filter functionality
     const searchInput = document.getElementById('liveSearchInput');
-    const tableRows = document.querySelectorAll('.dt-table tbody tr');
-    
-    if (searchInput && tableRows.length > 0) {
+    const tableBody = document.querySelector('.dt-table tbody');
+    const tableRows = tableBody ? Array.from(tableBody.querySelectorAll('tr')) : [];
+    const dataRows = tableRows.filter(row => row.querySelector('.badge.bg-label-primary'));
+
+    if (searchInput && tableBody && dataRows.length > 0) {
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase().trim();
             let visibleCount = 0;
             
-            tableRows.forEach(function(row) {
+            dataRows.forEach(function(row) {
                 // Get all text content from the row
                 const trackingCode = row.querySelector('.badge.bg-label-primary')?.textContent.toLowerCase() || '';
                 const docType = row.cells[1]?.textContent.toLowerCase() || '';
@@ -67,11 +69,16 @@ $(document).ready(function () {
             const noResultsRow = document.getElementById('noResultsRow');
             if (visibleCount === 0 && searchTerm !== '') {
                 if (!noResultsRow) {
-                    const tbody = document.querySelector('.dt-table tbody');
                     const newRow = document.createElement('tr');
                     newRow.id = 'noResultsRow';
-                    newRow.innerHTML = '<td colspan="7" class="text-center text-muted py-4">No documents found matching your search.</td>';
-                    tbody.appendChild(newRow);
+                    newRow.innerHTML = `
+                        <td colspan="7" class="dt-empty-search">
+                            <i class="bx bx-search-alt-2 empty-icon"></i>
+                            <p class="empty-title">No matching restored documents</p>
+                            <p class="empty-subtitle">Try another keyword like tracking code or file name.</p>
+                        </td>
+                    `;
+                    tableBody.appendChild(newRow);
                 }
             } else if (noResultsRow) {
                 noResultsRow.remove();

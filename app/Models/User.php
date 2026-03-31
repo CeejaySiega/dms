@@ -83,4 +83,12 @@ class User extends Authenticatable
     {
         return $this->hasOne(Employee::class, 'user_id', 'user_id');
     }
+
+    /**
+     * Get the activity logs for this user.
+     */
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class, 'user_id', 'user_id');
+    }
 }

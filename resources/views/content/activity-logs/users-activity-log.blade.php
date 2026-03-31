@@ -17,9 +17,19 @@
 @section('content')
 <div class="row">
     <div class="col-12">
+        <div class="mb-4">
+                    <h4 class="fw-bold mb-2"><i class="bx bx-archive me-2"></i>All User Activity Logs</h4>
+                    <nav aria-label="breadcrumb">
+                         <ol class="breadcrumb breadcrumb-style1">
+                         <li class="breadcrumb-item">
+                            <a href="{{ route('dashboard-analytics') }}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item active">Activity Logs</li>
+                        </ol>
+                    </nav>
+                </div>
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">All Activity Logs</h5>
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <form action="{{ route('user.activity-logs.delete') }}" method="POST" class="d-inline">
                         @csrf
                         @method('DELETE')

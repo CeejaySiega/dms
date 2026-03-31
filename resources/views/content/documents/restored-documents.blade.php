@@ -136,7 +136,7 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             @if($doc)
                                             <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
-                                               class="btn btn-outline-success"
+                                                              class="btn btn-outline-success dt-action-btn"
                                                title="Download">
                                                 <i class="bx bx-download"></i>
                                             </a>
@@ -147,7 +147,7 @@
                                                   data-tracking="{{ $doc->tracking_code ?? 'Document' }}">
                                                 @csrf
                                                 <button type="submit"
-                                                        class="btn btn-outline-secondary"
+                                                        class="btn btn-outline-secondary dt-action-btn"
                                                         title="Archive Again">
                                                     <i class="bx bx-archive"></i>
                                                 </button>
@@ -159,7 +159,7 @@
                                                   data-tracking="{{ $doc->tracking_code ?? 'Document' }}">
                                                 @csrf
                                                 <button type="submit"
-                                                        class="btn btn-outline-secondary"
+                                                        class="btn btn-outline-secondary dt-action-btn"
                                                         title="Archive Again">
                                                     <i class="bx bx-archive"></i>
                                                 </button>

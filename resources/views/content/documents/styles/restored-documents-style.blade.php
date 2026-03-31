@@ -117,6 +117,30 @@
     .dt-table tbody tr:last-child td { border-bottom: none; }
     .dt-table tbody tr:hover { background-color: #f8f8ff; }
 
+    .dt-action-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .dt-action-btn i {
+        font-size: 1rem;
+    }
+
+    @media (max-width: 576px) {
+        .dt-action-btn {
+            width: 30px;
+            height: 30px;
+        }
+
+        .dt-action-btn i {
+            font-size: 0.9rem;
+        }
+    }
+
     /* ── Bottom controls ── */
     .dt-bottom {
         display: flex;
@@ -197,5 +221,47 @@
     .dt-empty {
         padding: 3rem 1rem;
         text-align: center;
+    }
+
+    .dt-empty-search {
+        padding: 2.5rem 1rem;
+        text-align: center;
+    }
+
+    .dt-empty-search .empty-icon {
+        font-size: 2.5rem;
+        color: #b8bfcc;
+        margin-bottom: 0.5rem;
+    }
+
+    .dt-empty-search .empty-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #5f6673;
+    }
+
+    .dt-empty-search .empty-subtitle {
+        margin: 0.35rem 0 0;
+        font-size: 0.8125rem;
+        color: #8a92a3;
+    }
+
+    @media (max-width: 576px) {
+        .dt-empty-search {
+            padding: 2rem 0.75rem;
+        }
+
+        .dt-empty-search .empty-icon {
+            font-size: 2rem;
+        }
+
+        .dt-empty-search .empty-title {
+            font-size: 0.92rem;
+        }
+
+        .dt-empty-search .empty-subtitle {
+            font-size: 0.75rem;
+        }
     }
 </style>

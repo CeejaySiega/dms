@@ -1,10 +1,10 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Groups Management')
+@section('title', 'Group Management')
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    <!-- Page Header with Breadcrumb -->
+    
     <div class="mb-4">
         <h4 class="fw-bold mb-2"><i class="bx bx-group me-2"></i>Group Management</h4>
         <nav aria-label="breadcrumb">
@@ -16,7 +16,7 @@
             </ol>
         </nav>
     </div>
-    <!-- Header -->
+
     <div class="card mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center gap-3">
@@ -45,7 +45,7 @@
                 </thead>
                 <tbody>
                     @forelse($groups as $group)
-                    <tr>
+                    <tr class="group-row">
                         <td><span class="fw-semibold">#{{ $group->group_id }}</span></td>
                         <td>{{ $group->position }}</td>
                         <td class="text-center">
@@ -77,18 +77,27 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5">
+                        <td colspan="5" class="text-center py-5">
                             <p class="text-muted">No groups found. Create your first group!</p>
                         </td>
                     </tr>
                     @endforelse
+                    <tr id="noSearchResultsRow" style="display: none;">
+                        <td colspan="5" class="text-center py-5">
+                            <div class="d-flex flex-column align-items-center gap-2">
+                                <i class="bx bx-search-alt-2 text-muted" style="font-size: 2rem;"></i>
+                                <p class="mb-0 fw-semibold">No matching groups found</p>
+                                <small class="text-muted">Try a different keyword.</small>
+                            </div>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Add Group Modal -->
+
 <div class="modal fade" id="addGroupModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -167,24 +176,28 @@
 $(document).ready(function() {
     let currentGroupId = null;
 
-    // Search filters (position + campus)
-    $('#positionSearch, #campusSearch').on('keyup', function() {
-        const positionValue = $('#positionSearch').val().toLowerCase();
-        const campusValue = $('#campusSearch').val().toLowerCase();
+    // Search groups by group name (2nd table column)
+    $('#positionSearch').on('input', function() {
+        const positionValue = ($(this).val() || '').toLowerCase();
+        let visibleRows = 0;
 
-        $('table tbody tr').each(function() {
+        $('table tbody tr.group-row').each(function() {
             const position = $(this).find('td:eq(1)').text().toLowerCase();
-            const campus = $(this).find('td:eq(2)').text().toLowerCase();
-
             const matchesPosition = !positionValue || position.includes(positionValue);
-            const matchesCampus = !campusValue || campus.includes(campusValue);
 
-            if (matchesPosition && matchesCampus) {
+            if (matchesPosition) {
                 $(this).show();
+                visibleRows++;
             } else {
                 $(this).hide();
             }
         });
+
+        if (positionValue && visibleRows === 0) {
+            $('#noSearchResultsRow').show();
+        } else {
+            $('#noSearchResultsRow').hide();
+        }
     });
 
     // Add Group

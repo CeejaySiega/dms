@@ -94,9 +94,18 @@
                     </td>
                     <td>
                         @if($user->employee)
-                            <span class="badge bg-label-{{ getCampusColor($user->employee->campus) }}">
-                                {{ getCampusName($user->employee->campus) }}
-                            </span>
+                            @php
+                                $campuses = \App\Helpers\Globalpreferrence::Campuses();
+                                $campusCode = $user->employee->campus;
+                                $campusData = $campuses[$campusCode] ?? null;
+                            @endphp
+                            @if($campusData)
+                                <span class="badge bg-label-{{ $campusData['Color'] }}">
+                                    {{ $campusData['Campus'] }}
+                                </span>
+                            @else
+                                <span class="badge bg-label-secondary">—</span>
+                            @endif
                         @else
                             <span class="badge bg-label-secondary">—</span>
                         @endif

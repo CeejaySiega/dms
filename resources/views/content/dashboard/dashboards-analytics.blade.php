@@ -46,6 +46,9 @@
     $sentLast = Document::where('user_id', $uid)
         ->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year)->count();
 
+    $totalNow  = $pendingNow + $receivedNow + $sentNow;
+    $totalLast = $pendingLast + $receivedLast + $sentLast;
+
     $archivedNow = Document::where('user_id', $uid)->where('status', 'archived')
         ->whereMonth('created_at', $month->month)->whereYear('created_at', $month->year)->count();
 
@@ -94,24 +97,24 @@
             'border' => '#ddd6fe',
         ],
         [
-            'count'  => $archivedNow,
-            'label'  => 'Archived documents',
-            'sub'    => 'Stored for reference',
-            'delta'  => $delta($archivedNow, $archivedLast),
-            'route'  => route('documents.archived'),
-            'icon'   => 'bx-archive',
-            'color'  => '#06b6d4',
-            'bg'     => '#cffafe',
-            'border' => '#a5f3fc',
+            'count'  => $totalNow,
+            'label'  => 'Total documents',
+            'sub'    => 'Pending + Received + Sent',
+            'delta'  => $delta($totalNow, $totalLast),
+            'route'  => route('documents.sent'),
+            'icon'   => 'bx-file',
+            'color'  => '#0ea5e9',
+            'bg'     => '#e0f2fe',
+            'border' => '#bae6fd',
         ],
     ];
 @endphp
 
 <div class="container-xxl flex-grow-1 container-p-y">
 
-<div class="row">
-    <div class="col-12 mb-3 order-0">
-        <div class="card">
+<div class="row g-3 mb-4 align-items-stretch">
+    <div class="col-12 order-0">
+        <div class="card h-100">
             <div class="d-flex align-items-start row">
                 <div class="col-sm-8">
                     <div class="card-body">
@@ -123,7 +126,7 @@
                         {{-- <a href="{{ route('documents.sent') }}" class="btn btn-sm btn-outline-primary">View Documents</a> --}}
                     </div>
                 </div>
-                <div class="col-sm-4 text-center text-sm-left">
+                <div class="col-sm-4 text-center text-sm-start">
                     <div class="card-body pb-0 px-0 px-md-6">
                         <img src="{{ asset('assets/img/illustrations/man-with-laptop.png') }}" height="175" alt="Document Management" />
                     </div>
@@ -131,15 +134,14 @@
             </div>
         </div>
     </div>
-{{-- ══════════════════════════════════════════
-     4 STAT CARDS  (matches screenshot layout)
-     ══════════════════════════════════════════ --}}
-<div class="row g-2 mb-4 w-100">
+</div>
+
+<div class="row g-3 mb-4">
     @foreach($miniStats as $s)
     @php $up = $s['delta'] >= 0; @endphp
-    <div class="col-sm-6 col-xl-3">
-        <a href="{{ $s['route'] }}" class="text-decoration-none">
-            <div class="dms-stat-card">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{{ $s['route'] }}" class="text-decoration-none d-block h-100">
+            <div class="dms-stat-card h-100">
 
                 {{-- Icon + Big Number (side by side, exactly like screenshot) --}}
                 <div class="dms-stat-top">
@@ -395,7 +397,7 @@
     </div>
 </div> --}}
 
-<div class="row d-flex align-items-center">
+<div class="row g-3 align-items-stretch">
     <div class="col-md-6 col-lg-4 col-xl-4 order-0 mb-6">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between">
@@ -556,6 +558,10 @@
 
 {{-- ══ STAT CARD CSS ══ --}}
 <style>
+.card {
+    box-shadow: none !important;
+}
+
 .dms-stat-card {
     background: #ffffff;
     border: 1px solid #eef0f6;
@@ -563,13 +569,11 @@
     padding: 20px 20px 0;
     position: relative;
     overflow: hidden;
-    transition: transform .18s ease, box-shadow .18s ease;
-    box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    transition: transform .18s ease;
     cursor: pointer;
 }
 .dms-stat-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 28px rgba(0,0,0,0.09);
 }
 
 /* top: icon + number side-by-side, exactly matching screenshot */
