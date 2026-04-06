@@ -3,6 +3,10 @@
 
 @section('title', 'Users List') 
 @section('content')
+@php
+    $currentRole = strtolower((string) optional(auth()->user()->employee)->role);
+    $canManageUsers = $currentRole === 'superadmin';
+@endphp
 <!-- Page Header with Breadcrumb -->
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="mb-4">
@@ -23,11 +27,13 @@
         <div class="d-flex align-items-center gap-2">
             <h5 class="m-0">Users List and Permissions</h5>
         </div>
-        <div>
-            <button class="btn btn-sm btn-info me-2" data-bs-toggle="modal" data-bs-target="#addTestUserModal">
-                <i class="bx bx-plus me-1"></i> Add User
-            </button>
-        </div>
+        @if($canManageUsers)
+            <div>
+                <button class="btn btn-sm btn-info me-2" data-bs-toggle="modal" data-bs-target="#addTestUserModal">
+                    <i class="bx bx-plus me-1"></i> Add User
+                </button>
+            </div>
+        @endif
     </div>
     
     <div class="card-body border-bottom">
@@ -94,18 +100,9 @@
                     </td>
                     <td>
                         @if($user->employee)
-                            @php
-                                $campuses = \App\Helpers\Globalpreferrence::Campuses();
-                                $campusCode = $user->employee->campus;
-                                $campusData = $campuses[$campusCode] ?? null;
-                            @endphp
-                            @if($campusData)
-                                <span class="badge bg-label-{{ $campusData['Color'] }}">
-                                    {{ $campusData['Campus'] }}
-                                </span>
-                            @else
-                                <span class="badge bg-label-secondary">—</span>
-                            @endif
+                            <span class="badge bg-label-{{ getCampusColor($user->employee->campus) }}">
+                                {{ getCampusName($user->employee->campus) }}
+                            </span>
                         @else
                             <span class="badge bg-label-secondary">—</span>
                         @endif
@@ -133,39 +130,43 @@
                         @endif
                     </td>
                     <td class="text-center">
-                        <div class="dropdown">
-                            <button type="button" class="btn btn-sm btn-icon btn-text-secondary rounded-pill" data-bs-toggle="dropdown">
-                                <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                            </button>
-                            <div class="dropdown-menu">
-                                <h6 class="dropdown-header">Change Permissions</h6>
-                                <a class="dropdown-item" href="javascript:void(0);" onclick="changeRole('{{ encryptId($user->user_id) }}', 'admin')">
-                                    <i class="icon-base bx bx-shield me-2 text-danger"></i> Admin
-                                </a>
-                                <a class="dropdown-item" href="javascript:void(0);" onclick="changeRole('{{ encryptId($user->user_id) }}', 'superadmin')">
-                                    <i class="icon-base bx bx-crown me-2 text-warning"></i> Super Admin
-                                </a>
-                                <a class="dropdown-item" href="javascript:void(0);" onclick="changeRole('{{ encryptId($user->user_id) }}', 'user')">
-                                    <i class="icon-base bx bx-user me-2 text-secondary"></i> User
-                                </a>
-                                @if(is_null($user->google_id))
-                                    <hr class="dropdown-divider">
-                                    <a class="dropdown-item edit-user" href="javascript:void(0);"
-                                       data-user-id="{{ encryptId($user->user_id) }}"
-                                       data-email="{{ $user->email }}"
-                                       data-firstname="{{ $user->employee->firstname ?? '' }}"
-                                       data-lastname="{{ $user->employee->lastname ?? '' }}"
-                                       data-campus="{{ $user->employee->campus ?? '' }}"
-                                       data-department-id="{{ $user->employee->department_id ?? '' }}"
+                        @if($canManageUsers)
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-sm btn-icon btn-text-secondary rounded-pill" data-bs-toggle="dropdown">
+                                    <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <h6 class="dropdown-header">Change Permissions</h6>
+                                    <a class="dropdown-item" href="javascript:void(0);" onclick="changeRole('{{ encryptId($user->user_id) }}', 'admin')">
+                                        <i class="icon-base bx bx-shield me-2 text-danger"></i> Admin
+                                    </a>
+                                    <a class="dropdown-item" href="javascript:void(0);" onclick="changeRole('{{ encryptId($user->user_id) }}', 'superadmin')">
+                                        <i class="icon-base bx bx-crown me-2 text-warning"></i> Super Admin
+                                    </a>
+                                    <a class="dropdown-item" href="javascript:void(0);" onclick="changeRole('{{ encryptId($user->user_id) }}', 'user')">
+                                        <i class="icon-base bx bx-user me-2 text-secondary"></i> User
+                                    </a>
+                                    @if(is_null($user->google_id))
+                                        <hr class="dropdown-divider">
+                                        <a class="dropdown-item edit-user" href="javascript:void(0);"
+                                           data-user-id="{{ encryptId($user->user_id) }}"
+                                           data-email="{{ $user->email }}"
+                                           data-firstname="{{ $user->employee->firstname ?? '' }}"
+                                           data-lastname="{{ $user->employee->lastname ?? '' }}"
+                                           data-campus="{{ $user->employee->campus ?? '' }}"
+                                           data-department-id="{{ $user->employee->department_id ?? '' }}"
 >
-                                        <i class="icon-base bx bx-edit me-2"></i> Edit
-                                    </a>
-                                    <a class="dropdown-item delete-user" href="javascript:void(0);" data-user-id="{{ encryptId($user->user_id) }}">
-                                        <i class="icon-base bx bx-trash me-2 text-danger"></i> Delete
-                                    </a>
-                                @endif
+                                            <i class="icon-base bx bx-edit me-2"></i> Edit
+                                        </a>
+                                        <a class="dropdown-item delete-user" href="javascript:void(0);" data-user-id="{{ encryptId($user->user_id) }}">
+                                            <i class="icon-base bx bx-trash me-2 text-danger"></i> Delete
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
-                        </div>
+                        @else
+                            <span class="text-muted small">View only</span>
+                        @endif
                     </td>
                 </tr>
                 @empty
@@ -185,6 +186,7 @@
 </div>
 @endsection
 
+@if($canManageUsers)
 <!-- Add Test User Modal -->
 <div class="modal fade" id="addTestUserModal" tabindex="-1" aria-labelledby="addTestUserLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -339,12 +341,15 @@
         </div>
     </div>
 </div>
+@endif
 
 @section('page-script')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    const canManageUsers = @json($canManageUsers);
+
     function filterTable() {
         var searchValue = $('#searchInput').val().toLowerCase();
         var campusValue = $('#campusFilter').val().toLowerCase();
@@ -383,6 +388,10 @@ $(document).ready(function() {
 
     $('#searchInput').on('keyup', filterTable);
     $('#campusFilter, #departmentFilter').on('change', filterTable);
+
+    if (!canManageUsers) {
+        return;
+    }
 
     $('#addTestUserForm').on('submit', function(e) {
         e.preventDefault();
@@ -537,6 +546,10 @@ $(document).ready(function() {
 });
 
 function changeRole(userId, role) {
+    if (!@json($canManageUsers)) {
+        return;
+    }
+
     Swal.fire({
         title: 'Change Role?',
         text: 'Change this user\'s role to ' + role.toUpperCase() + '?',

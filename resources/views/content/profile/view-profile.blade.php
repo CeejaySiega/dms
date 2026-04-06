@@ -151,6 +151,9 @@
     .profile-tab.active { color: #696cff; border-bottom-color: #696cff; font-weight: 600; }
     .profile-tab svg { width: 16px; height: 16px; }
 
+    .tab-pane-section { display: none; }
+    .tab-pane-section.active { display: block; }
+
     /* ── INFO CARDS ── */
     .info-card {
         background: #fff;
@@ -266,6 +269,8 @@
     .dot-blue  { background: #3b82f6; color: #3b82f6; }
     .dot-green { background: #22c55e; color: #22c55e; }
     .dot-sky   { background: #06b6d4; color: #06b6d4; }
+    .dot-amber { background: #f59e0b; color: #f59e0b; }
+    .dot-red   { background: #ef4444; color: #ef4444; }
 
     .timeline-body { flex: 1; }
 
@@ -292,6 +297,110 @@
         font-size: 0.82rem;
         color: #64748b;
         margin: 0.25rem 0 0;
+    }
+
+    .group-card {
+        border: 1px solid #e9ecef;
+        border-radius: 0.6rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #fff;
+    }
+
+    .group-card:last-child { margin-bottom: 0; }
+
+    .group-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        margin: -0.5rem -0.5rem 0 -0.5rem;
+        border-radius: 0.4rem;
+        transition: background-color 0.2s ease;
+    }
+
+    .group-title:hover {
+        background-color: #f8fafc;
+    }
+
+    .group-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        transition: transform 0.3s ease;
+        color: #64748b;
+    }
+
+    .group-card.expanded .group-toggle-btn {
+        transform: rotate(180deg);
+    }
+
+    .group-name {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .group-members-count {
+        background: #eef2ff;
+        color: #4f46e5;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.2rem 0.55rem;
+        border-radius: 99px;
+        white-space: nowrap;
+    }
+
+    .group-member-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        opacity: 0;
+    }
+
+    .group-card.expanded .group-member-list {
+        max-height: 500px;
+        opacity: 1;
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .group-member-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        border-top: 1px solid #f1f5f9;
+        padding: 0.6rem 0;
+        font-size: 0.84rem;
+        color: #475569;
+    }
+
+    .group-member-item:first-child {
+        border-top: none;
+        padding-top: 0;
+    }
+
+    .group-member-item:last-child { padding-bottom: 0; }
+
+    .group-member-name {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .group-member-meta {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-align: right;
     }
 
     /* ── LEAVE BALANCE ── */
@@ -410,29 +519,21 @@
                     </div>
                 </div>
             </div>
-            <a href="#" class="btn-connected">
+            {{-- <a href="#" class="btn-connected">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                 Connected
-            </a>
+            </a> --}}
         </div>
 
         <!-- Tabs -->
         <div class="profile-tabs">
-            <a href="profile/view-profile.blade.php" class="profile-tab active">
+            <a href="#" class="profile-tab active" data-tab="profile">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 Profile
             </a>
-            <a href="#" class="profile-tab">
+            <a href="#" class="profile-tab" data-tab="groups">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 Groups
-            </a>
-            <a href="#" class="profile-tab">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                Projects
-            </a>
-            <a href="#" class="profile-tab">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                Connections
             </a>
         </div>
 
@@ -440,7 +541,7 @@
 
     <div class="row">
 
-        <!-- LEFT: About + Contacts + Leave Balance -->
+ 
         <div class="col-12 col-lg-4">
 
             <div class="info-card">
@@ -487,6 +588,15 @@
                     <span class="info-row-value">{{ $employee->date_of_birth->format('M d, Y') }}</span>
                 </div>
                 @endif
+                @if($employee && $employee->role)
+                <div class="info-row">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span class="info-row-label">Role:</span>
+                    <span class="info-row-value"><span class="badge bg-label-{{ strtolower($employee->role) === 'superadmin' ? 'primary' : 'secondary' }}">
+                        {{ strtolower($employee->role) === 'superadmin' ? 'Super Admin' : ucwords(str_replace(['_', '-'], ' ', $employee->role)) }}
+                    </span></span>
+                </div>
+                @endif
             </div>
 
             <div class="info-card">
@@ -521,33 +631,10 @@
                 </div>
             </div>
 
-            {{-- <div class="info-card">
-                <div class="info-section-label">Leave Balance</div>
-                <div class="leave-grid">
-                    <div class="leave-tile">
-                        <div class="leave-tile-label">Vacation</div>
-                        <div class="leave-tile-value">—</div>
-                    </div>
-                    <div class="leave-tile">
-                        <div class="leave-tile-label">Sick</div>
-                        <div class="leave-tile-value">—</div>
-                    </div>
-                    <div class="leave-tile">
-                        <div class="leave-tile-label">Forced</div>
-                        <div class="leave-tile-value">—</div>
-                    </div>
-                    <div class="leave-tile">
-                        <div class="leave-tile-label">SPL</div>
-                        <div class="leave-tile-value">—</div>
-                    </div>
-                </div>
-            </div> --}}
-
         </div>
-
-        <!-- RIGHT: Activity Timeline + Announcements -->
         <div class="col-12 col-lg-8">
 
+            <div id="profileTabPane" class="tab-pane-section active">
             <div class="timeline-card">
                 <div class="timeline-card-title">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -556,15 +643,40 @@
 
                 <div class="timeline-list">
                     @php
-                        $activityLogs = Auth::user()->activityLogs()->orderBy('created_at', 'desc')->limit(20)->get();
                         $dotColorMap = [
                             'login' => 'dot-blue',
                             'logout' => 'dot-sky',
                             'profile_update' => 'dot-green',
-                            'document_view' => 'dot-blue',
-                            'document_forward' => 'dot-green',
-                            'document_receive' => 'dot-sky',
+                            'send' => 'dot-green',
+                            'receive' => 'dot-sky',
+                            'download' => 'dot-blue',
                             'archive' => 'dot-green',
+                            'delete' => 'dot-red',
+                            'unsend' => 'dot-amber',
+                            'forward' => 'dot-amber',
+                            'read_attempt' => 'dot-red',
+                            'delete_attempt' => 'dot-red',
+                            'download_attempt' => 'dot-red',
+                            'archive_attempt' => 'dot-red',
+                            'unsend_attempt' => 'dot-red',
+                        ];
+
+                        $actionLabelMap = [
+                            'login' => 'Logged in',
+                            'logout' => 'Logged out',
+                            'profile_update' => 'Updated profile',
+                            'send' => 'Sent document',
+                            'receive' => 'Received document',
+                            'download' => 'Downloaded document',
+                            'archive' => 'Archived document',
+                            'delete' => 'Deleted document',
+                            'unsend' => 'Unsent document',
+                            'forward' => 'Forwarded document',
+                            'read_attempt' => 'Read attempt blocked',
+                            'delete_attempt' => 'Delete attempt blocked',
+                            'download_attempt' => 'Download attempt blocked',
+                            'archive_attempt' => 'Archive attempt blocked',
+                            'unsend_attempt' => 'Unsend attempt blocked',
                         ];
                     @endphp
 
@@ -573,7 +685,8 @@
                             <div class="timeline-dot {{ $dotColorMap[strtolower($log->action)] ?? 'dot-blue' }}"></div>
                             <div class="timeline-body">
                                 <div class="timeline-header">
-                                    <div class="timeline-event-title">{{ ucwords(str_replace('_', ' ', $log->action)) }}</div>
+                                    @php $normalizedAction = strtolower($log->action ?? ''); @endphp
+                                    <div class="timeline-event-title">{{ $actionLabelMap[$normalizedAction] ?? ucwords(str_replace('_', ' ', $normalizedAction)) }}</div>
                                     <div class="timeline-ago">{{ $log->created_at ? $log->created_at->diffForHumans() : '' }}</div>
                                 </div>
                                 <p class="timeline-desc">{{ $log->description }}</p>
@@ -584,10 +697,10 @@
                             <div class="timeline-dot dot-blue"></div>
                             <div class="timeline-body">
                                 <div class="timeline-header">
-                                    <div class="timeline-event-title">Account Created</div>
+                                    <div class="timeline-event-title">No activity yet</div>
                                     <div class="timeline-ago">{{ Auth::user()->created_at ? Auth::user()->created_at->diffForHumans() : '' }}</div>
                                 </div>
-                                <p class="timeline-desc">Your GEMS account was successfully created.</p>
+                                <p class="timeline-desc">Your activity logs will appear here once you start using the system.</p>
                             </div>
                         </div>
                     @endforelse
@@ -604,10 +717,96 @@
                     <span>No announcements at this time.</span>
                 </div>
             </div>
+            </div>
+
+            <div id="groupsTabPane" class="tab-pane-section">
+                <div class="timeline-card">
+                    <div class="timeline-card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        My Groups
+                    </div>
+
+                    @forelse(($userGroups ?? collect()) as $group)
+                        <div class="group-card" data-group-id="{{ $group->id }}">
+                            <div class="group-title" onclick="toggleGroupMembers(this.parentElement)">
+                                <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                                    <svg class="group-toggle-btn" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                    </svg>
+                                    <div class="group-name">{{ $group->position ?? 'Unnamed Group' }}</div>
+                                </div>
+                                <span class="group-members-count">{{ $group->members ? $group->members->count() : 0 }} Members</span>
+                            </div>
+
+                            <ul class="group-member-list">
+                                @forelse(($group->members ?? collect()) as $member)
+                                    @php
+                                        $memberEmployee = $member->user->employee ?? null;
+                                        $memberName = $memberEmployee
+                                            ? trim(($memberEmployee->firstname ?? '') . ' ' . ($memberEmployee->lastname ?? ''))
+                                            : ($member->user->name ?? 'Unknown User');
+                                        $memberName = $memberName !== '' ? $memberName : 'Unknown User';
+                                    @endphp
+                                    <li class="group-member-item">
+                                        <span class="group-member-name">{{ $memberName }}</span>
+                                        <span class="group-member-meta">{{ $member->user->email ?? 'No email' }}</span>
+                                    </li>
+                                @empty
+                                    <li class="group-member-item">
+                                        <span class="group-member-name">No members yet</span>
+                                        <span class="group-member-meta"></span>
+                                    </li>
+                                @endforelse
+                            </ul>
+                        </div>
+                    @empty
+                        <div class="announce-empty" style="padding: 1rem 0;">
+                            <span>You are not a member of any group yet.</span>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
 
         </div>
     </div>
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('.profile-tab[data-tab]');
+    const panes = {
+        profile: document.getElementById('profileTabPane'),
+        groups: document.getElementById('groupsTabPane')
+    };
+
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function (event) {
+            event.preventDefault();
+            const target = tab.getAttribute('data-tab');
+
+            tabs.forEach(function (item) { item.classList.remove('active'); });
+            tab.classList.add('active');
+
+            Object.keys(panes).forEach(function (key) {
+                if (!panes[key]) {
+                    return;
+                }
+
+                if (key === target) {
+                    panes[key].classList.add('active');
+                } else {
+                    panes[key].classList.remove('active');
+                }
+            });
+        });
+    });
+});
+
+// Toggle group members dropdown
+function toggleGroupMembers(groupCard) {
+    groupCard.classList.toggle('expanded');
+}
+</script>
 
 @endsection

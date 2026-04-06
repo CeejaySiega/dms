@@ -4,6 +4,10 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
+    @php
+        $currentRole = strtolower((string) optional(auth()->user()->employee)->role);
+        $canManageGroups = in_array($currentRole, ['admin', 'superadmin'], true);
+    @endphp
     
     <div class="mb-4">
         <h4 class="fw-bold mb-2"><i class="bx bx-group me-2"></i>Group Management</h4>
@@ -24,9 +28,11 @@
                     <div class ="bx bx-search me-2"></div>
                     <input type="text" id="positionSearch" class="form-control" placeholder="Search Group" style="max-width: 200px;">
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
-                    <i class="bx bx-plus me-1"></i> Add New Group
-                </button>
+                @if($canManageGroups)
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                        <i class="bx bx-plus me-1"></i> Add New Group
+                    </button>
+                @endif
             </div>
         </div>
     </div>
@@ -60,17 +66,24 @@
                                     <i class="bx bx-dots-vertical-rounded"></i>
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-end">
-                                    <a class="dropdown-item" href="{{ route('groups.assign.show', encryptId($group->group_id)) }}">
-                                        <i class="bx bx-user-plus me-2"></i> Assign Users
-                                    </a>
-                                    <a class="dropdown-item edit-group" href="#" data-group-id="{{ encryptId($group->group_id) }}" 
-                                       data-position="{{ $group->position }}" 
-                                       data-campus="{{ $group->campus }}">
-                                        <i class="bx bx-edit me-2"></i> Edit
-                                    </a>
-                                    <a class="dropdown-item delete-group" href="#" data-group-id="{{ encryptId($group->group_id) }}">
-                                        <i class="bx bx-trash me-2 text-danger"></i> Delete
-                                    </a>
+                                    @if(!$canManageGroups)
+                                        <a class="dropdown-item" href="{{ route('groups.assign.show', encryptId($group->group_id)) }}">
+                                            <i class="bx bx-group me-2"></i> View Members
+                                        </a>
+                                    @endif
+                                    @if($canManageGroups)
+                                        <a class="dropdown-item" href="{{ route('groups.assign.show', encryptId($group->group_id)) }}">
+                                            <i class="bx bx-user-plus me-2"></i> Assign Users
+                                        </a>
+                                        <a class="dropdown-item edit-group" href="#" data-group-id="{{ encryptId($group->group_id) }}" 
+                                           data-position="{{ $group->position }}" 
+                                           data-campus="{{ $group->campus }}">
+                                            <i class="bx bx-edit me-2"></i> Edit
+                                        </a>
+                                        <a class="dropdown-item delete-group" href="#" data-group-id="{{ encryptId($group->group_id) }}">
+                                            <i class="bx bx-trash me-2 text-danger"></i> Delete
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -98,6 +111,7 @@
 </div>
 
 
+@if($canManageGroups)
 <div class="modal fade" id="addGroupModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -169,11 +183,13 @@
         </div>
     </div>
 </div>
+@endif
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    const canManageGroups = @json($canManageGroups);
     let currentGroupId = null;
 
     // Search groups by group name (2nd table column)
@@ -199,6 +215,10 @@ $(document).ready(function() {
             $('#noSearchResultsRow').hide();
         }
     });
+
+    if (!canManageGroups) {
+        return;
+    }
 
     // Add Group
     $('#addGroupForm').on('submit', function(e) {

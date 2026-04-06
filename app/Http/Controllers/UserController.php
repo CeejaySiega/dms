@@ -1,7 +1,9 @@
 <?php
 namespace App\Http\Controllers;
+use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Group_user;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,7 +17,25 @@ class UserController extends Controller
      */
     public function viewProfile()
     {
-        return view('content.profile.view-profile');
+        $user = auth()->user();
+
+        $activityLogs = ActivityLog::where('user_id', $user->user_id)
+            ->latest('created_at')
+            ->limit(20)
+            ->get();
+
+        $userGroups = Group_user::with([
+                'group.members.user.employee',
+                'group.members.user',
+            ])
+            ->where('user_id', $user->user_id)
+            ->get()
+            ->pluck('group')
+            ->filter()
+            ->unique('group_id')
+            ->values();
+
+        return view('content.profile.view-profile', compact('activityLogs', 'userGroups'));
     }
 
     /**

@@ -138,11 +138,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/tables/basic', [TablesBasic::class, 'index'])->name('tables-basic');
 
     // user management
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::post('/users/{user}/change-role', [UserController::class, 'changeRole'])->name('users.changeRole');
-    Route::post('/users/create-test-user', [UserController::class, 'createTestUser'])->name('users.create-test-user');
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::get('/users', [UserController::class, 'index'])
+        ->middleware('role:admin,superadmin')
+        ->name('users.index');
+    Route::post('/users/{user}/change-role', [UserController::class, 'changeRole'])
+        ->middleware('role:superadmin')
+        ->name('users.changeRole');
+    Route::post('/users/create-test-user', [UserController::class, 'createTestUser'])
+        ->middleware('role:superadmin')
+        ->name('users.create-test-user');
+    Route::put('/users/{user}', [UserController::class, 'update'])
+        ->middleware('role:superadmin')
+        ->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])
+        ->middleware('role:superadmin')
+        ->name('users.destroy');
 
     // profile routes
     Route::prefix('profile')->name('profile.')->group(function () {
@@ -154,19 +164,19 @@ Route::middleware('auth')->group(function () {
     // group management
     Route::prefix('groups')->name('groups.')->group(function () {
         Route::get('/', [GroupController::class, 'index'])->name('index');
-        Route::post('/', [GroupController::class, 'store'])->name('store');
+        Route::post('/', [GroupController::class, 'store'])->middleware('role:admin,superadmin')->name('store');
         
         // Assign users routes (must come before {group} routes)
         Route::get('/assign/{group}', [AssignUserController::class, 'show'])->name('assign.show');
         Route::get('/assign/{group}/members', [AssignUserController::class, 'getMembers'])->name('assign.getMembers');
-        Route::get('/assign/{group}/users', [AssignUserController::class, 'getUsers'])->name('assign.getUsers');
-        Route::post('/assign/{group}', [AssignUserController::class, 'assignUsers'])->name('assign.users');
-        Route::delete('/assign/{group}', [AssignUserController::class, 'removeUsers'])->name('assign.removeUsers');
-        Route::post('/assign/bulk-assign', [AssignUserController::class, 'bulkAssign'])->name('assign.bulk');
+        Route::get('/assign/{group}/users', [AssignUserController::class, 'getUsers'])->middleware('role:admin,superadmin')->name('assign.getUsers');
+        Route::post('/assign/{group}', [AssignUserController::class, 'assignUsers'])->middleware('role:admin,superadmin')->name('assign.users');
+        Route::delete('/assign/{group}', [AssignUserController::class, 'removeUsers'])->middleware('role:admin,superadmin')->name('assign.removeUsers');
+        Route::post('/assign/bulk-assign', [AssignUserController::class, 'bulkAssign'])->middleware('role:admin,superadmin')->name('assign.bulk');
         
         // Generic group routes (must come after specific routes)
-        Route::put('/{group}', [GroupController::class, 'update'])->name('update');
-        Route::delete('/{group}', [GroupController::class, 'destroy'])->name('destroy');
+        Route::put('/{group}', [GroupController::class, 'update'])->middleware('role:admin,superadmin')->name('update');
+        Route::delete('/{group}', [GroupController::class, 'destroy'])->middleware('role:admin,superadmin')->name('destroy');
     });
 
     // document management

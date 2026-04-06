@@ -3,6 +3,9 @@
 @section('title', 'Assign Users to Group')
 
 @section('content')
+@php
+    $canManageAssignments = $canManageAssignments ?? false;
+@endphp
 <div class="container-xxl flex-grow-1 container-p-y">
     <!-- Page Header with Breadcrumb -->
     <div class="mb-4">
@@ -41,6 +44,7 @@
     @endphp
 
     <div class="row">
+        @if($canManageAssignments)
         <div class="col-lg-6 mb-4">
             <div class="card h-100">
                 <div class="card-header d-flex align-items-center justify-content-between">
@@ -104,8 +108,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-{{ $canManageAssignments ? '6' : '12' }} mb-4">
             <div class="card h-100">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">Assigned Users (<span id="memberCount">{{ $members->count() }}</span>)</h5>
@@ -127,9 +132,11 @@
                                     @endif
                                     <div class="text-muted small">{{ $member->user->email ?? '' }}</div>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger remove-member-btn" data-user-id="{{ encryptId($member->user_id) }}">
-                                    <i class="bx bx-x"></i> Remove
-                                </button>
+                                @if($canManageAssignments)
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-member-btn" data-user-id="{{ encryptId($member->user_id) }}">
+                                        <i class="bx bx-x"></i> Remove
+                                    </button>
+                                @endif
                             </li>
                         @endforeach
                     </ul>
@@ -147,6 +154,8 @@
 <!-- External JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@if($canManageAssignments)
 <script src="/assets/js/assign-users.js"></script>
+@endif
 </script>
 @endsection

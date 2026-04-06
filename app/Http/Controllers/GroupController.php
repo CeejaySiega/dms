@@ -14,7 +14,19 @@ class GroupController extends Controller
      */
     public function index()
     {
-        $groups = Group::withCount('members')->get();
+        $currentUser = auth()->user();
+        $currentRole = strtolower((string) optional($currentUser->employee)->role);
+
+        if ($currentRole === 'user') {
+            $groups = Group::withCount('members')
+                ->whereHas('members', function ($query) use ($currentUser) {
+                    $query->where('user_id', $currentUser->user_id);
+                })
+                ->get();
+        } else {
+            $groups = Group::withCount('members')->get();
+        }
+
         $users = User::all();
         return view('content.groups.groups-list', compact('groups', 'users'));
     }

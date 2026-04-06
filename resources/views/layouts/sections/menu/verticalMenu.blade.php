@@ -1,5 +1,7 @@
 @php
 use Illuminate\Support\Facades\Route;
+
+$currentRole = strtolower((string) optional(auth()->user()->employee)->role);
 @endphp
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
     <div class="app-brand demo">
@@ -25,6 +27,17 @@ use Illuminate\Support\Facades\Route;
                 @endif
             @else
                 @if (!isset($menu->visible) || $menu->visible)
+
+                    @php
+                        $shouldHideForRole = isset($menu->slug)
+                            && is_string($menu->slug)
+                            && $menu->slug === 'users.index'
+                            && $currentRole !== 'superadmin';
+                    @endphp
+
+                    @if($shouldHideForRole)
+                        @continue
+                    @endif
 
                     @php
                         $activeClass = null;

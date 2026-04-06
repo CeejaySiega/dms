@@ -9,11 +9,38 @@ use Illuminate\Http\Request;
 
 class AssignUserController extends Controller
 {
+    private function currentRole(): string
+    {
+        return strtolower((string) optional(auth()->user()->employee)->role);
+    }
+
+    private function canManageAssignments(): bool
+    {
+        return in_array($this->currentRole(), ['admin', 'superadmin'], true);
+    }
+
+    private function ensureCanViewGroup(Group $group): void
+    {
+        if ($this->canManageAssignments()) {
+            return;
+        }
+
+        $isMember = Group_user::where('group_id', $group->group_id)
+            ->where('user_id', auth()->user()->user_id)
+            ->exists();
+
+        if (!$isMember) {
+            abort(403, 'You are not allowed to view this group.');
+        }
+    }
+
     /**
      * Get available users for a group (for AJAX refresh)
      */
     public function getUsers(Group $group)
     {
+        abort_unless($this->canManageAssignments(), 403, 'You are not authorized to manage group members.');
+
         $users = User::with('employee')->get();
         $members = $group->members()->with('user')->get();
         // Load all group memberships for each user
@@ -35,6 +62,8 @@ class AssignUserController extends Controller
      */
     public function show(Group $group)
     {
+        $this->ensureCanViewGroup($group);
+
         $users = User::with('employee')->get();
         $members = $group->members()->with('user')->get();
         
@@ -48,7 +77,9 @@ class AssignUserController extends Controller
                 ->all();
         }
 
-        return view('content.groups.assign-users', compact('group', 'users', 'members'));
+        $canManageAssignments = $this->canManageAssignments();
+
+        return view('content.groups.assign-users', compact('group', 'users', 'members', 'canManageAssignments'));
     }
 
 
@@ -61,6 +92,8 @@ class AssignUserController extends Controller
      */
     public function getMembers(Group $group)
     {
+        $this->ensureCanViewGroup($group);
+
         $members = $group->members()->with('user')->get();
         $html = view('content.groups.partials.assigned-users-list', compact('members'))->render();
         return response()->json([
@@ -74,6 +107,8 @@ class AssignUserController extends Controller
      */
     public function assignUsers(Request $request, Group $group)
     {
+        abort_unless($this->canManageAssignments(), 403, 'You are not authorized to manage group members.');
+
         // Decrypt user_ids from request
         if ($request->has('user_ids')) {
             $decryptedUserIds = array_map(function($id) {
@@ -125,6 +160,8 @@ class AssignUserController extends Controller
      */
     public function removeUsers(Request $request, Group $group)
     {
+        abort_unless($this->canManageAssignments(), 403, 'You are not authorized to manage group members.');
+
         // Decrypt user_ids and user_id from request
         if ($request->has('user_ids')) {
             $decryptedUserIds = array_map(function($id) {
@@ -172,6 +209,8 @@ class AssignUserController extends Controller
      */
     public function bulkAssign(Request $request)
     {
+        abort_unless($this->canManageAssignments(), 403, 'You are not authorized to manage group members.');
+
         // Decrypt group_ids and user_ids from request
         if ($request->has('group_ids')) {
             $decryptedGroupIds = array_map(function($id) {
@@ -232,6 +271,8 @@ class AssignUserController extends Controller
      */
     public function removeFromAllGroups(Request $request, User $user)
     {
+        abort_unless($this->canManageAssignments(), 403, 'You are not authorized to manage group members.');
+
         $validated = $request->validate([
             'group_ids' => 'nullable|array',
             'group_ids.*' => 'exists:groups,group_id'
@@ -258,6 +299,8 @@ class AssignUserController extends Controller
      */
     public function getUserGroups(User $user)
     {
+        abort_unless($this->canManageAssignments(), 403, 'You are not authorized to manage group members.');
+
         $groups = $user->groups()->get();
 
         return response()->json([

@@ -35,6 +35,14 @@ class MenuServiceProvider extends ServiceProvider
 
     if (Auth::check()) {
       $userId = Auth::id();
+      $userRole = strtolower((string) optional(Auth::user()->employee)->role);
+
+      // Only superadmin can see user management in the sidebar.
+      if ($userRole !== 'superadmin') {
+        $verticalMenuData->menu = $this->removeMenuBySlug($verticalMenuData->menu, [
+          'users.index',
+        ]);
+      }
 
       // Incoming — your existing logic, untouched
       $inboxCount = Recipient::where('user_id', $userId)
@@ -77,6 +85,28 @@ class MenuServiceProvider extends ServiceProvider
     $this->app->make('view')->share('inboxCount',    $inboxCount);
     $this->app->make('view')->share('receivedCount', $receivedCount);
     $this->app->make('view')->share('sentCount',     $sentCount);
+  }
+
+  /**
+   * Remove menu items recursively by slug.
+   */
+  private function removeMenuBySlug(array $menuItems, array $blockedSlugs): array
+  {
+    $filtered = [];
+
+    foreach ($menuItems as $item) {
+      if (isset($item->slug) && is_string($item->slug) && in_array($item->slug, $blockedSlugs, true)) {
+        continue;
+      }
+
+      if (isset($item->submenu) && is_array($item->submenu)) {
+        $item->submenu = $this->removeMenuBySlug($item->submenu, $blockedSlugs);
+      }
+
+      $filtered[] = $item;
+    }
+
+    return $filtered;
   }
 
   /**
