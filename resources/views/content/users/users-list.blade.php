@@ -29,8 +29,8 @@
         </div>
         @if($canManageUsers)
             <div>
-                <button class="btn btn-sm btn-info me-2" data-bs-toggle="modal" data-bs-target="#addTestUserModal">
-                    <i class="bx bx-plus me-1"></i> Add User
+                <button class="btn btn-sm btn-info me-2" data-bs-toggle="modal" data-bs-target="#registerAccountModal">
+                    <i class="bx bx-plus me-1"></i> Register Account
                 </button>
             </div>
         @endif
@@ -146,22 +146,10 @@
                                     <a class="dropdown-item" href="javascript:void(0);" onclick="changeRole('{{ encryptId($user->user_id) }}', 'user')">
                                         <i class="icon-base bx bx-user me-2 text-secondary"></i> User
                                     </a>
-                                    @if(is_null($user->google_id))
-                                        <hr class="dropdown-divider">
-                                        <a class="dropdown-item edit-user" href="javascript:void(0);"
-                                           data-user-id="{{ encryptId($user->user_id) }}"
-                                           data-email="{{ $user->email }}"
-                                           data-firstname="{{ $user->employee->firstname ?? '' }}"
-                                           data-lastname="{{ $user->employee->lastname ?? '' }}"
-                                           data-campus="{{ $user->employee->campus ?? '' }}"
-                                           data-department-id="{{ $user->employee->department_id ?? '' }}"
->
-                                            <i class="icon-base bx bx-edit me-2"></i> Edit
-                                        </a>
-                                        <a class="dropdown-item delete-user" href="javascript:void(0);" data-user-id="{{ encryptId($user->user_id) }}">
-                                            <i class="icon-base bx bx-trash me-2 text-danger"></i> Delete
-                                        </a>
-                                    @endif
+                                    <hr class="dropdown-divider">
+                                    <a class="dropdown-item delete-user" href="javascript:void(0);" data-user-id="{{ encryptId($user->user_id) }}">
+                                        <i class="icon-base bx bx-trash me-2 text-danger"></i> Delete
+                                    </a>
                                 </div>
                             </div>
                         @else
@@ -187,79 +175,33 @@
 @endsection
 
 @if($canManageUsers)
-<!-- Add Test User Modal -->
-<div class="modal fade" id="addTestUserModal" tabindex="-1" aria-labelledby="addTestUserLabel" aria-hidden="true">
+<!-- Register Account Modal -->
+<div class="modal fade" id="registerAccountModal" tabindex="-1" aria-labelledby="registerAccountLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addTestUserLabel">Add New User</h5>
+                <h5 class="modal-title" id="registerAccountLabel">Register Account</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="addTestUserForm">
+            <form id="registerAccountForm">
                 <div class="modal-body">
                     @csrf
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">First Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="firstName" name="firstname" placeholder="John" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="lastName" name="lastname" placeholder="Doe" required>
-                        </div>
-                    </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Email Address <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="user@example.com" required>
+                        <label class="form-label">HRMIS Account (Email) <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="hrmisAccount" name="hrmis_account" placeholder="employee@southernleytestateu.edu.ph" required>
+                        <small class="text-muted">Use a valid HRMIS email account to register.</small>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Password <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter password (min 6 characters)" required minlength="6">
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Campus <span class="text-danger">*</span></label>
-                            <select class="form-select" id="campus" name="campus" required>
-                                <option value="">-- Select Campus --</option>
-                                @foreach(getCampuses() as $code => $campus)
-                                    <option value="{{ $code }}">{{ $campus['Campus'] }} ({{ $code }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Department <span class="text-danger">*</span></label>
-                            <select class="form-select" id="departmentId" name="department_id" required>
-                                <option value="">-- Select Department --</option>
-                                @foreach($departments as $department)
-                                    <option value="{{ $department->department_id }}">{{ $department->department_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Role <span class="text-danger">*</span></label>
-                        <select class="form-select" id="role" name="role" required>
-                            <option value="">-- Select Role --</option>
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                            <option value="superadmin">Super Admin</option>
-                        </select>
-                    </div>
-
-                    <div class="alert alert-info" role="alert">
+                    {{-- <div class="alert alert-info" role="alert">
                         <i class="bx bx-info-circle me-2"></i>
-                        <strong>Note:</strong> User information will be saved in both User and Employee models.
-                    </div>
+                        <strong>Note:</strong> Credentials are pulled from HRMIS and role defaults to User.
+                    </div> --}}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bx bx-plus me-1"></i> Create User
+                        <i class="bx bx-plus me-1"></i> Register Account
                     </button>
                 </div>
             </form>
@@ -267,80 +209,6 @@
     </div>
 </div>
 
-<!-- Edit User Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editUserLabel">Edit User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editUserForm">
-                <input type="hidden" id="editUserId">
-                <div class="modal-body">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">First Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="editFirstName" name="first_name" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="editLastName" name="last_name" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Email Address <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="editEmail" name="email" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Password (leave blank to keep) </label>
-                        <input type="password" class="form-control" id="editPassword" name="password" minlength="6">
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Campus <span class="text-danger">*</span></label>
-                            <select class="form-select" id="editCampus" name="campus" required>
-                                <option value="">-- Select Campus --</option>
-                                @foreach(getCampuses() as $code => $campus)
-                                    <option value="{{ $code }}">{{ $campus['Campus'] }} ({{ $code }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Department <span class="text-danger">*</span></label>
-                            <select class="form-select" id="editDepartmentId" name="department_id" required>
-                                <option value="">-- Select Department --</option>
-                                @foreach($departments as $department)
-                                    <option value="{{ $department->department_id }}">{{ $department->department_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Role <span class="text-danger">*</span></label>
-                        <select class="form-select" id="editRole" name="role" required>
-                            <option value="">-- Select Role --</option>
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                            <option value="superadmin">Super Admin</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endif
 
 @section('page-script')
@@ -393,27 +261,21 @@ $(document).ready(function() {
         return;
     }
 
-    $('#addTestUserForm').on('submit', function(e) {
+    $('#registerAccountForm').on('submit', function(e) {
         e.preventDefault();
 
         const formData = {
-            first_name: $('#firstName').val(),
-            last_name: $('#lastName').val(),
-            email: $('#email').val(),
-            password: $('#password').val(),
-            campus: $('#campus').val(),
-            department_id: $('#departmentId').val(),
-            role: $('#role').val(),
+            hrmis_account: $('#hrmisAccount').val(),
             _token: '{{ csrf_token() }}'
         };
 
         $.ajax({
-            url: '{{ route("users.create-test-user") }}',
+            url: '{{ route("users.register-account") }}',
             method: 'POST',
             data: formData,
             success: function(response) {
                 // Close the modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addTestUserModal'));
+                const modal = bootstrap.Modal.getInstance(document.getElementById('registerAccountModal'));
                 if (modal) {
                     modal.hide();
                 }
@@ -421,14 +283,14 @@ $(document).ready(function() {
                 Swal.fire({
                     icon: 'success',
                     title: 'Success!',
-                    text: 'User created successfully!',
+                    text: response.message || 'Account registered successfully!',
                     confirmButtonColor: '#3085d6'
                 }).then(() => {
                     location.reload();
                 });
             },
             error: function(xhr) {
-                const errorMessage = xhr.responseJSON?.message || 'Error creating user';
+                const errorMessage = xhr.responseJSON?.message || 'Error registering account';
                 Swal.fire({
                     icon: 'error',
                     title: 'Error!',
@@ -439,64 +301,8 @@ $(document).ready(function() {
         });
     });
 
-    $('.edit-user').on('click', function() {
-        $('#editUserId').val($(this).data('user-id'));
-        $('#editFirstName').val($(this).data('firstname'));
-        $('#editLastName').val($(this).data('lastname'));
-        $('#editEmail').val($(this).data('email'));
-        $('#editCampus').val($(this).data('campus'));
-        $('#editDepartmentId').val($(this).data('department-id'));
-        $('#editRole').val($(this).data('role'));
-        $('#editPassword').val('');
-
-        const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
-        editModal.show();
-    });
-
-    $('#editUserForm').on('submit', function(e) {
-        e.preventDefault();
-
-        const userId = $('#editUserId').val();
-        const formData = {
-            first_name: $('#editFirstName').val(),
-            last_name: $('#editLastName').val(),
-            email: $('#editEmail').val(),
-            password: $('#editPassword').val(),
-            campus: $('#editCampus').val(),
-            department_id: $('#editDepartmentId').val(),
-            role: $('#editRole').val(),
-            _token: '{{ csrf_token() }}'
-        };
-
-        $.ajax({
-            url: '/users/' + userId,
-            method: 'PUT',
-            data: formData,
-            success: function(response) {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
-                if (modal) {
-                    modal.hide();
-                }
-                
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: 'User updated successfully!',
-                    confirmButtonColor: '#3085d6'
-                }).then(() => {
-                    location.reload();
-                });
-            },
-            error: function(xhr) {
-                const errorMessage = xhr.responseJSON?.message || 'Error updating user';
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: errorMessage,
-                    confirmButtonColor: '#d33'
-                });
-            }
-        });
+    $('#registerAccountModal').on('hidden.bs.modal', function() {
+        $('#registerAccountForm')[0].reset();
     });
 
     $('.delete-user').on('click', function() {

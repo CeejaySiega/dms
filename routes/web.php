@@ -144,9 +144,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/users/{user}/change-role', [UserController::class, 'changeRole'])
         ->middleware('role:superadmin')
         ->name('users.changeRole');
-    Route::post('/users/create-test-user', [UserController::class, 'createTestUser'])
+    Route::post('/users/hrmis-credentials', [UserController::class, 'fetchHrmisCredentials'])
         ->middleware('role:superadmin')
-        ->name('users.create-test-user');
+        ->name('users.fetch-hrmis-credentials');
+    Route::post('/users/register-account', [UserController::class, 'registerAccount'])
+        ->middleware('role:superadmin')
+        ->name('users.register-account');
     Route::put('/users/{user}', [UserController::class, 'update'])
         ->middleware('role:superadmin')
         ->name('users.update');

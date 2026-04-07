@@ -6,6 +6,8 @@ use App\Models\Employee;
 use App\Models\Group_user;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -96,44 +98,134 @@ class UserController extends Controller
     }
 
     /**
-     * Create a user with credentials from Employee and User models
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * Fetch HRMIS credentials by account (email).
      */
-    public function createTestUser(Request $request)
+    public function fetchHrmisCredentials(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'first_name' => 'required|string|min:2|max:50',
-            'last_name' => 'required|string|min:2|max:50',
-            'campus' => 'required|string|max:50',
-            'department_id' => 'required|integer|exists:departments,department_id',
-            'role' => 'required|in:admin,superadmin,user'
+        $validated = $request->validate([
+            'hrmis_account' => 'required|email'
         ]);
 
-        // Create user with credentials from User model
+        $response = Http::withToken(config('services.hrmis_api.token'))
+            ->timeout(10)
+            ->post(config('services.hrmis_api.url'), [
+                'email' => $validated['hrmis_account'],
+            ]);
+
+        if (!$response->successful()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to fetch HRMIS credentials at this time.'
+            ], 422);
+        }
+
+        $hrmisData = $response->json('data');
+
+        if (empty($hrmisData) || !is_array($hrmisData)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'HRMIS account not found.'
+            ], 404);
+        }
+
+        $departmentId = data_get($hrmisData, 'department.id');
+        $departmentName = data_get($hrmisData, 'department.DepartmentName');
+
+        if (!empty($departmentId) && !empty($departmentName)) {
+            Department::updateOrCreate(
+                ['department_id' => $departmentId],
+                [
+                    'department_name' => $departmentName,
+                    'campus' => $hrmisData['Campus'] ?? null,
+                ]
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'first_name' => $hrmisData['FirstName'] ?? '',
+                'last_name' => $hrmisData['LastName'] ?? '',
+                'email' => $hrmisData['Email'] ?? $validated['hrmis_account'],
+                'campus' => $hrmisData['Campus'] ?? '',
+                'department_id' => $departmentId,
+                'department_name' => $departmentName,
+            ]
+        ]);
+    }
+
+    /**
+     * Register account from HRMIS credentials and assign a local role.
+     */
+    public function registerAccount(Request $request)
+    {
+        $validated = $request->validate([
+            'hrmis_account' => 'required|email',
+            'role' => 'nullable|in:admin,superadmin,user'
+        ]);
+
+        $response = Http::withToken(config('services.hrmis_api.token'))
+            ->timeout(10)
+            ->post(config('services.hrmis_api.url'), [
+                'email' => $validated['hrmis_account'],
+            ]);
+
+        if (!$response->successful()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to fetch HRMIS credentials at this time.'
+            ], 422);
+        }
+
+        $hrmisData = $response->json('data');
+
+        if (empty($hrmisData) || !is_array($hrmisData)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'HRMIS account not found.'
+            ], 404);
+        }
+
+        $email = $hrmisData['Email'] ?? $validated['hrmis_account'];
+
+        if (User::where('email', $email)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An account with this HRMIS email already exists.'
+            ], 422);
+        }
+
+        $departmentId = data_get($hrmisData, 'department.id');
+        $departmentName = data_get($hrmisData, 'department.DepartmentName');
+
+        if (!empty($departmentId) && !empty($departmentName)) {
+            Department::updateOrCreate(
+                ['department_id' => $departmentId],
+                [
+                    'department_name' => $departmentName,
+                    'campus' => $hrmisData['Campus'] ?? null,
+                ]
+            );
+        }
+
         $user = User::create([
-            'name' => $request->first_name . ' ' . $request->last_name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'email' => $email,
+            'password' => bcrypt(Str::random(16)),
             'google_id' => null
         ]);
 
-        // Create employee record with credentials from Employee model
         Employee::create([
             'user_id' => $user->user_id,
-            'firstname' => $request->first_name,
-            'lastname' => $request->last_name,
-            'campus' => $request->campus,
-            'department_id' => $request->department_id,
-            'role' => $request->role
+            'firstname' => $hrmisData['FirstName'] ?? '',
+            'lastname' => $hrmisData['LastName'] ?? '',
+            'campus' => $hrmisData['Campus'] ?? '',
+            'department_id' => $departmentId,
+            'role' => $validated['role'] ?? 'user'
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => "User '{$user->name}' created successfully!\n\nEmail: {$request->email}\nPassword: {$request->password}\n\nRole: {$request->role}\nCampus: {$request->campus}"
+            'message' => 'Account registered successfully from HRMIS credentials.'
         ]);
     }
 
@@ -194,13 +286,6 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        if (!is_null($user->google_id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Google-auth users cannot be deleted.'
-            ], 403);
-        }
-
         try {
             // Disable foreign key checks temporarily
             \DB::statement('SET FOREIGN_KEY_CHECKS=0;');

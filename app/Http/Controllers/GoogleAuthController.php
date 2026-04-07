@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Http;
 use App\Services\HRMISService;           // ← add this
@@ -48,7 +47,13 @@ class GoogleAuthController extends Controller
             ], 422);
         }
 
-        $user = $this->findOrCreateUserByGoogle($googleId, $email);
+        $user = $this->findRegisteredUserByGoogle($googleId, $email);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Access denied. Account is not registered by super admin.',
+            ], 403);
+        }
 
         $this->syncHrmisDataForUser($email, $user);
 
@@ -72,8 +77,14 @@ class GoogleAuthController extends Controller
         $googleUser = Socialite::driver('google')->user();
         $email = $googleUser->getEmail();
 
-        // ── Find or create local user ────────────────────────────────────
-        $user = $this->findOrCreateUserByGoogle($googleUser->getId(), $email);
+        // Only allow existing accounts registered by super admin
+        $user = $this->findRegisteredUserByGoogle($googleUser->getId(), $email);
+
+        if (!$user) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Access denied. Account is not registered by super admin.',
+            ]);
+        }
 
         $this->syncHrmisDataForUser($email, $user);
 
@@ -83,21 +94,24 @@ class GoogleAuthController extends Controller
         return redirect('/dashboard');
     }
 
-    private function findOrCreateUserByGoogle(string $googleId, string $email): User
+    private function findRegisteredUserByGoogle(string $googleId, string $email): ?User
     {
-        $user = User::where('google_id', $googleId)->first();
+        $user = User::where('email', $email)
+            ->whereHas('employee')
+            ->first();
 
-        if ($user) {
-            $user->update([
-                'email' => $email,
-            ]);
-        } else {
-            $user = User::create([
-                'email'     => $email,
-                'google_id' => $googleId,
-                'password'  => Hash::make(uniqid()),
-            ]);
+        if (!$user) {
+            return null;
         }
+
+        if (!empty($user->google_id) && $user->google_id !== $googleId) {
+            return null;
+        }
+
+        $user->update([
+            'email' => $email,
+            'google_id' => $googleId,
+        ]);
 
         return $user;
     }
