@@ -6,6 +6,7 @@
 @php
     $currentRole = strtolower((string) optional(auth()->user()->employee)->role);
     $canManageUsers = $currentRole === 'superadmin';
+    $canRegisterAccounts = in_array($currentRole, ['superadmin', 'admin']);
 @endphp
 <!-- Page Header with Breadcrumb -->
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -27,7 +28,7 @@
         <div class="d-flex align-items-center gap-2">
             <h5 class="m-0">Users List and Permissions</h5>
         </div>
-        @if($canManageUsers)
+        @if($canManageUsers || $canRegisterAccounts)
             <div>
                 <button class="btn btn-sm btn-info me-2" data-bs-toggle="modal" data-bs-target="#registerAccountModal">
                     <i class="bx bx-plus me-1"></i> Register Account
@@ -147,9 +148,15 @@
                                         <i class="icon-base bx bx-user me-2 text-secondary"></i> User
                                     </a>
                                     <hr class="dropdown-divider">
-                                    <a class="dropdown-item delete-user" href="javascript:void(0);" data-user-id="{{ encryptId($user->user_id) }}">
-                                        <i class="icon-base bx bx-trash me-2 text-danger"></i> Delete
-                                    </a>
+                                    @if($user->user_id === auth()->user()->user_id)
+                                        {{-- <span class="dropdown-item text-muted small">
+                                            <i class="icon-base bx bx-trash me-2 text-secondary"></i> Delete (Cannot)
+                                        </span> --}}
+                                    @else
+                                        <a class="dropdown-item delete-user" href="javascript:void(0);" data-user-id="{{ encryptId($user->user_id) }}">
+                                            <i class="icon-base bx bx-trash me-2 text-danger"></i> Delete
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                         @else
@@ -174,7 +181,7 @@
 </div>
 @endsection
 
-@if($canManageUsers)
+@if($canManageUsers || $canRegisterAccounts)
 <!-- Register Account Modal -->
 <div class="modal fade" id="registerAccountModal" tabindex="-1" aria-labelledby="registerAccountLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -217,6 +224,7 @@
 <script>
 $(document).ready(function() {
     const canManageUsers = @json($canManageUsers);
+    const canRegisterAccounts = @json($canRegisterAccounts);
 
     function filterTable() {
         var searchValue = $('#searchInput').val().toLowerCase();
@@ -257,12 +265,18 @@ $(document).ready(function() {
     $('#searchInput').on('keyup', filterTable);
     $('#campusFilter, #departmentFilter').on('change', filterTable);
 
-    if (!canManageUsers) {
-        return;
-    }
-
     $('#registerAccountForm').on('submit', function(e) {
         e.preventDefault();
+
+        if (!canRegisterAccounts) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Access Denied',
+                text: 'You do not have permission to register accounts.',
+                confirmButtonColor: '#d33'
+            });
+            return;
+        }
 
         const formData = {
             hrmis_account: $('#hrmisAccount').val(),

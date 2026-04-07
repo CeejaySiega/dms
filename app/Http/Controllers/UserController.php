@@ -286,6 +286,14 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        // Prevent users from deleting their own account
+        if (auth()->user()->user_id === $user->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot delete your own account.'
+            ], 403);
+        }
+
         try {
             // Disable foreign key checks temporarily
             \DB::statement('SET FOREIGN_KEY_CHECKS=0;');

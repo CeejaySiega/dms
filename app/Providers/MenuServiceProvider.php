@@ -37,8 +37,8 @@ class MenuServiceProvider extends ServiceProvider
       $userId = Auth::id();
       $userRole = strtolower((string) optional(Auth::user()->employee)->role);
 
-      // Only superadmin can see user management in the sidebar.
-      if ($userRole !== 'superadmin') {
+      // Admin and superadmin can see user management in the sidebar.
+      if (!in_array($userRole, ['admin', 'superadmin'], true)) {
         $verticalMenuData->menu = $this->removeMenuBySlug($verticalMenuData->menu, [
           'users.index',
         ]);

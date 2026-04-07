@@ -148,7 +148,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:superadmin')
         ->name('users.fetch-hrmis-credentials');
     Route::post('/users/register-account', [UserController::class, 'registerAccount'])
-        ->middleware('role:superadmin')
+        ->middleware('role:admin,superadmin')
         ->name('users.register-account');
     Route::put('/users/{user}', [UserController::class, 'update'])
         ->middleware('role:superadmin')

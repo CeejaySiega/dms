@@ -32,7 +32,7 @@ $currentRole = strtolower((string) optional(auth()->user()->employee)->role);
                         $shouldHideForRole = isset($menu->slug)
                             && is_string($menu->slug)
                             && $menu->slug === 'users.index'
-                            && $currentRole !== 'superadmin';
+                            && !in_array($currentRole, ['admin', 'superadmin']);
                     @endphp
 
                     @if($shouldHideForRole)
