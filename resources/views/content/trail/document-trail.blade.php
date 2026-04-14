@@ -53,6 +53,17 @@
                         </div>
                     </form>
 
+                    <div class="d-flex align-items-center gap-4 flex-wrap mb-3" style="font-size:.85rem;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="width:12px;height:12px;border-radius:50%;display:inline-block;background:#696cff;"></span>
+                            <span class="text-muted">Group Send</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="width:12px;height:12px;border-radius:50%;display:inline-block;background:#8592a3;"></span>
+                            <span class="text-muted">Individual Send</span>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-hover align-middle" id="trailTable">
                             <thead>
@@ -61,6 +72,7 @@
                                     <th>Document</th>
                                     <th>Type</th>
                                     <th>Sent By</th>
+                                    <th>Sent To</th>
                                     <th>Priority</th>
                                     <th>Status</th>
                                     <th>Date Sent</th>
@@ -70,7 +82,66 @@
                             <tbody>
                                 @forelse($documents ?? [] as $doc)
                                 @php
-                                    $isGroupSend = collect($doc->routes ?? [])->contains(fn ($route) => !is_null($route->group_id));
+                                    $routes = collect($doc->routes ?? []);
+                                    $isGroupSend = $routes->contains(fn ($route) => !is_null($route->group_id));
+                                    $routeIds = $routes->pluck('route_id')->filter()->values();
+
+                                    if ($isGroupSend) {
+                                        $groupIds = $routes->pluck('group_id')->filter()->unique()->values();
+                                        $sentToText = $groupIds->isNotEmpty()
+                                            ? \App\Models\Group::query()
+                                                ->whereIn('group_id', $groupIds)
+                                                ->pluck('position')
+                                                ->filter()
+                                                ->unique()
+                                                ->join(', ')
+                                            : 'Group';
+                                    } else {
+                                        $recipientNames = $routeIds->isNotEmpty()
+                                            ? \App\Models\Recipient::query()
+                                                ->with('user.employee')
+                                                ->whereIn('route_id', $routeIds)
+                                                ->whereNull('deleted_at')
+                                                ->get()
+                                                ->map(function ($recipient) {
+                                                    $employee = optional($recipient->user)->employee;
+
+                                                    if ($employee) {
+                                                        return trim(($employee->firstname ?? '') . ' ' . ($employee->lastname ?? ''));
+                                                    }
+
+                                                    return optional($recipient->user)->name;
+                                                })
+                                                ->filter()
+                                                ->unique()
+                                                ->values()
+                                            : collect();
+
+                                        if ($recipientNames->isEmpty()) {
+                                            $recipientNames = $routes
+                                                ->map(function ($route) {
+                                                    $receiver = optional($route)->receiverUser;
+                                                    $employee = optional($receiver)->employee;
+
+                                                    if ($employee) {
+                                                        return trim(($employee->firstname ?? '') . ' ' . ($employee->lastname ?? ''));
+                                                    }
+
+                                                    return optional($receiver)->name;
+                                                })
+                                                ->filter()
+                                                ->unique()
+                                                ->values();
+                                        }
+
+                                        $sentToText = $recipientNames->isNotEmpty()
+                                            ? $recipientNames->join(', ')
+                                            : 'Individual';
+                                    }
+
+                                    if ($sentToText === '') {
+                                        $sentToText = $isGroupSend ? 'Group' : 'Individual';
+                                    }
                                 @endphp
                                 <tr data-send-mode="{{ $isGroupSend ? 'group' : 'individual' }}">
                                     <td>
@@ -101,6 +172,13 @@
                                                 {{ optional($doc->user->employee)->lastname }}
                                             </div>
                                         </div>
+                                    </td>
+                                    <td>
+                                        @if($isGroupSend)
+                                            <span class="badge bg-label-primary" style="font-size:.72rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $sentToText }}">{{ $sentToText }}</span>
+                                        @else
+                                            <span class="badge bg-label-secondary" style="font-size:.72rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $sentToText }}">{{ $sentToText }}</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @php
@@ -172,7 +250,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted py-5">
+                                    <td colspan="9" class="text-center text-muted py-5">
                                         <i class="bx bx-transfer" style="font-size:2rem;display:block;
                                            margin-bottom:8px;color:#c4c6d0;"></i>
                                         No documents found.

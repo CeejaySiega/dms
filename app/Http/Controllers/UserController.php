@@ -37,6 +37,8 @@ class UserController extends Controller
             ->unique('group_id')
             ->values();
 
+        
+
         return view('content.profile.view-profile', compact('activityLogs', 'userGroups'));
     }
 
@@ -57,11 +59,16 @@ class UserController extends Controller
             ->filter()
             ->sort()
             ->values();
+            
 
         // Get all departments for the add user modal
         $departments = Department::all();
 
+        
+
+
         return view('content.users.users-list', compact('users', 'campuses', 'departments'));
+
     }
 
     /**
@@ -417,7 +424,9 @@ class UserController extends Controller
             $user->update([
                 'name' => $validated['firstname'] . ' ' . $validated['lastname']
             ]);
+            
         }
+        
 
         return redirect()->route('profile.view')->with('success', 'Profile updated successfully!');
     }

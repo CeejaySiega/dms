@@ -231,12 +231,12 @@
                                     @if($document->status !== 'archived' && $document->status !== 'pending' && $document->allGroupMembersReceived())
                                         <form action="{{ route('documents.archive', encryptId($document->document_id)) }}"
                                               method="POST"
-                                              class="d-inline archive-form">
+                                              class="d-inline-flex align-items-center m-0 archive-form">
                                             @csrf
                                             <button type="submit"
-                                                    class="btn btn-link btn-icon btn-sm p-0"
+                                                    class="btn btn-link btn-icon btn-sm p-0 d-flex align-items-center justify-content-center"
                                                     title="Archive"
-                                                    style="color: #6c757d;">
+                                                    style="color: #6c757d; line-height: 1;">
                                                 <i class="bx bx-archive"></i>
                                             </button>
                                         </form>
@@ -244,9 +244,9 @@
                                     
                                     <!-- Download button -->
                                     <a href="{{ route('documents.download', encryptId($document->document_id)) }}"
-                                       class="btn btn-link btn-icon btn-sm p-0"
+                                       class="btn btn-link btn-icon btn-sm p-0 d-flex align-items-center justify-content-center"
                                        title="Download"
-                                       style="color: #6c757d;">
+                                       style="color: #6c757d; line-height: 1;">
                                         <i class="bx bx-download"></i>
                                     </a>
                                 </div>

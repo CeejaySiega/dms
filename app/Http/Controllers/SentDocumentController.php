@@ -30,6 +30,10 @@ class SentDocumentController extends Controller
 
         $documents = Document::query()
             ->whereNull('unsend_at')
+            ->where(function ($query) {
+                $query->whereNull('status')
+                    ->orWhere('status', '!=', 'archived');
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($docQuery) use ($search) {
                     $docQuery->where('tracking_code', 'like', "%{$search}%")
@@ -74,7 +78,8 @@ class SentDocumentController extends Controller
                 'user.employee',
                 'routes' => function ($query) {
                     $query->whereNull('unsend_at')
-                        ->select(['route_id', 'document_id', 'group_id']);
+                        ->select(['route_id', 'document_id', 'group_id', 'receiver_id'])
+                        ->with(['receiverUser.employee']);
                 },
             ])
             ->orderByDesc('created_at')

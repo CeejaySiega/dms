@@ -304,13 +304,30 @@ $(document).ready(function() {
                 });
             },
             error: function(xhr) {
-                const errorMessage = xhr.responseJSON?.message || 'Error registering account';
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: errorMessage,
-                    confirmButtonColor: '#d33'
-                });
+                const isNotFound = xhr.status === 404;
+                const errorTitle = isNotFound ? 'Account Not Found' : 'Error!';
+                const errorMessage = isNotFound
+                    ? 'No HRMIS account was found for that email address.'
+                    : (xhr.responseJSON?.message || 'Error registering account');
+
+                const showErrorAlert = () => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: errorTitle,
+                        text: errorMessage,
+                        confirmButtonColor: '#d33'
+                    });
+                };
+
+                const modalElement = document.getElementById('registerAccountModal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+
+                if (modal && modalElement.classList.contains('show')) {
+                    modalElement.addEventListener('hidden.bs.modal', showErrorAlert, { once: true });
+                    modal.hide();
+                } else {
+                    showErrorAlert();
+                }
             }
         });
     });
