@@ -222,6 +222,30 @@
     color: #566a7f;
   }
 
+  .auth-btn-google.is-loading {
+    opacity: .75;
+    cursor: wait;
+  }
+
+  .auth-btn-google .btn-loader {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #d0d7de;
+    border-top-color: #696cff;
+    border-radius: 50%;
+    animation: auth-spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  .auth-btn-google.is-loading .btn-loader {
+    display: inline-block;
+  }
+
+  @keyframes auth-spin {
+    to { transform: rotate(360deg); }
+  }
+
   .invalid-feedback {
     font-size: .78rem;
     color: #ff3e1d;
@@ -270,14 +294,15 @@
           @csrf
 
         {{-- Google login --}}
-        <button type="button" id="googlePopupBtn" class="auth-btn-google">
+        <button type="button" id="googlePopupBtn" class="auth-btn-google" aria-live="polite">
           <svg viewBox="0 0 24 24" width="18" height="18" style="flex-shrink:0">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          Sign in with Google
+          <span id="googleBtnText">Sign in with Google</span>
+          <span class="btn-loader" id="googleBtnLoader" aria-hidden="true"></span>
         </button>
         <small id="googleAuthError" class="invalid-feedback" style="display:none;text-align:center;"></small>
 
@@ -303,10 +328,13 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     const button = document.getElementById('googlePopupBtn');
+    const buttonText = document.getElementById('googleBtnText');
     const errorBox = document.getElementById('googleAuthError');
     const clientId = @json(config('services.google.client_id'));
     const popupEndpoint = @json(route('auth.google.popup'));
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const defaultGoogleText = 'Sign in with Google';
+    const loadingGoogleText = 'Logging in...';
 
     if (!button) {
       return;
@@ -330,9 +358,17 @@
     let popupInProgress = false;
     let popupSafetyTimer;
 
+    const setGoogleButtonLoading = (isLoading) => {
+      button.disabled = isLoading;
+      button.classList.toggle('is-loading', isLoading);
+      if (buttonText) {
+        buttonText.textContent = isLoading ? loadingGoogleText : defaultGoogleText;
+      }
+    };
+
     const resetGoogleButton = () => {
       popupInProgress = false;
-      button.disabled = false;
+      setGoogleButtonLoading(false);
       if (popupSafetyTimer) {
         clearTimeout(popupSafetyTimer);
         popupSafetyTimer = null;
@@ -402,7 +438,7 @@
       }
 
       popupInProgress = true;
-      button.disabled = true;
+      setGoogleButtonLoading(true);
 
       const ready = tokenClient || initClient();
       if (!ready) {

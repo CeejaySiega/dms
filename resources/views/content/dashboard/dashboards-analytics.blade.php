@@ -10,22 +10,21 @@
 @vite('resources/assets/vendor/libs/apex-charts/apexcharts.js')
 @endsection
 
-@section('page-script')
-@vite('resources/assets/js/dashboards-analytics.js')
-@endsection
-
 @section('content')
 
 @php
     use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Facades\DB;
     use App\Models\Recipient;
     use App\Models\ReceivedDocument;
     use App\Models\Document;
+    use Carbon\Carbon;
 
     $uid       = Auth::id();
     $month     = now();
     $lastMonth = now()->subMonth();
 
+    // ── Current & previous month counts ──────────────────────────────────────
     $pendingNow = Recipient::where('user_id', $uid)
         ->where(function ($q) { $q->whereNull('action')->orWhere('action', 'pending'); })
         ->whereMonth('sent_at', $month->month)->whereYear('sent_at', $month->year)->count();
@@ -49,12 +48,6 @@
     $totalNow  = $pendingNow + $receivedNow + $sentNow;
     $totalLast = $pendingLast + $receivedLast + $sentLast;
 
-    $archivedNow = Document::where('user_id', $uid)->where('status', 'archived')
-        ->whereMonth('created_at', $month->month)->whereYear('created_at', $month->year)->count();
-
-    $archivedLast = Document::where('user_id', $uid)->where('status', 'archived')
-        ->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year)->count();
-
     $delta = fn($cur, $prev) => $prev == 0 ? ($cur > 0 ? 100.0 : 0.0) : round((($cur - $prev) / $prev) * 100, 1);
 
     date_default_timezone_set('Asia/Manila');
@@ -62,6 +55,57 @@
     $greeting = $hour < 12 ? 'Good Morning' : ($hour < 18 ? 'Good Afternoon' : 'Good Evening');
     $userName = Auth::user()->employee->firstname;
 
+    // ── 12-month rolling data ─────────────────────────────────────────────────
+    $monthlyLabels  = [];
+    $monthlySent    = [];
+    $monthlyReceived = [];
+    $monthlyPending = [];
+
+    for ($i = 11; $i >= 0; $i--) {
+        $d = now()->subMonths($i);
+        $monthlyLabels[] = $d->format('M Y');
+
+        $monthlySent[] = Document::where('user_id', $uid)
+            ->whereMonth('created_at', $d->month)
+            ->whereYear('created_at', $d->year)
+            ->count();
+
+        $monthlyReceived[] = ReceivedDocument::where('user_id', $uid)
+            ->whereMonth('receive_at', $d->month)
+            ->whereYear('receive_at', $d->year)
+            ->count();
+
+        $monthlyPending[] = Recipient::where('user_id', $uid)
+            ->where(function ($q) { $q->whereNull('action')->orWhere('action', 'pending'); })
+            ->whereMonth('sent_at', $d->month)
+            ->whereYear('sent_at', $d->year)
+            ->count();
+    }
+
+    // ── 8-week rolling data ───────────────────────────────────────────────────
+    $weeklyLabels    = [];
+    $weeklyProcessed = [];
+    $weeklyPending   = [];
+
+    for ($i = 7; $i >= 0; $i--) {
+        $start = now()->startOfWeek()->subWeeks($i);
+        $end   = (clone $start)->endOfWeek();
+        $weeklyLabels[] = 'Wk ' . $start->format('M d');
+
+        $weeklyProcessed[] = Document::where('user_id', $uid)
+            ->whereBetween('created_at', [$start, $end])
+            ->count()
+            + ReceivedDocument::where('user_id', $uid)
+            ->whereBetween('receive_at', [$start, $end])
+            ->count();
+
+        $weeklyPending[] = Recipient::where('user_id', $uid)
+            ->where(function ($q) { $q->whereNull('action')->orWhere('action', 'pending'); })
+            ->whereBetween('sent_at', [$start, $end])
+            ->count();
+    }
+
+    // ── Mini-stat cards ───────────────────────────────────────────────────────
     $miniStats = [
         [
             'count'  => $pendingNow,
@@ -112,6 +156,7 @@
 
 <div class="container-xxl flex-grow-1 container-p-y">
 
+{{-- ══ Greeting card ══════════════════════════════════════════════════════════ --}}
 <div class="row g-3 mb-4 align-items-stretch">
     <div class="col-12 order-0">
         <div class="card h-100">
@@ -123,7 +168,6 @@
                             <strong>{{ $sentNow }} documents</strong> processed this month.
                             <br /><br /><strong>Keep up the excellent workflow management!</strong>
                         </p>
-                        {{-- <a href="{{ route('documents.sent') }}" class="btn btn-sm btn-outline-primary">View Documents</a> --}}
                     </div>
                 </div>
                 <div class="col-sm-4 text-center text-sm-start">
@@ -136,14 +180,13 @@
     </div>
 </div>
 
+{{-- ══ Mini stat cards ════════════════════════════════════════════════════════ --}}
 <div class="row g-3 mb-4">
     @foreach($miniStats as $s)
     @php $up = $s['delta'] >= 0; @endphp
     <div class="col-12 col-sm-6 col-xl-3">
         <a href="{{ $s['route'] }}" class="text-decoration-none d-block h-100">
             <div class="dms-stat-card h-100">
-
-                {{-- Icon + Big Number (side by side, exactly like screenshot) --}}
                 <div class="dms-stat-top">
                     <div class="dms-stat-icon"
                          style="background:{{ $s['bg'] }}; border:1px solid {{ $s['border'] }};">
@@ -151,34 +194,8 @@
                     </div>
                     <span class="dms-stat-num">{{ number_format($s['count']) }}</span>
                 </div>
-
-                {{-- Label --}}
                 <div class="dms-stat-label">{{ $s['label'] }}</div>
-
-                {{-- Sub-label --}}
                 <div class="dms-stat-sub">{{ $s['sub'] }}</div>
-
-                {{-- % Change
-                <div class="dms-stat-delta">
-                    <span class="dms-delta-pct" style="color:{{ $up ? '#16a34a' : '#dc2626' }};">
-                        {{-- arrow svg --}}
-                        {{-- <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                            @if($up)
-                            <path d="M6 9.5V2.5M6 2.5L2.5 6M6 2.5L9.5 6"
-                                  stroke="#16a34a" stroke-width="1.8"
-                                  stroke-linecap="round" stroke-linejoin="round"/>  
-                            @else
-                            <path d="M6 2.5V9.5M6 9.5L2.5 6M6 9.5L9.5 6"
-                                  stroke="#dc2626" stroke-width="1.8"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                            @endif
-                        </svg>
-                        {{ $up ? '+' : '' }}{{ $s['delta'] }}%
-                    </span>
-                    <span class="dms-delta-text">than last month</span>
-                </div>  --}}
-
-                {{-- Coloured bottom bar --}}
                 <div class="dms-stat-bar" style="background:{{ $s['color'] }};"></div>
             </div>
         </a>
@@ -186,217 +203,109 @@
     @endforeach
 </div>
 
-{{-- ══════════════════════════════
-     GREETING CARD + small cards
-     ══════════════════════════════ --}}
-
-{{-- 
-    <div class="col-xxl-4 col-lg-12 col-md-4 order-1">
-        <div class="row">
-            <div class="col-lg-6 col-md-12 col-6 mb-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img src="{{ asset('assets/img/icons/unicons/chart-success.png') }}" alt="chart success" class="rounded" />
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                                    <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                                    <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="mb-1">Completed</p>
-                        <h4 class="card-title mb-3">{{ $receivedNow }}</h4>
-                        <small class="text-{{ $delta($receivedNow,$receivedLast) >= 0 ? 'success':'danger' }} fw-medium">
-                            <i class="icon-base bx bx-{{ $delta($receivedNow,$receivedLast) >= 0 ? 'up':'down' }}-arrow-alt"></i>
-                            {{ $delta($receivedNow,$receivedLast) }}%
-                        </small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-12 col-6 mb-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img src="{{ asset('assets/img/icons/unicons/wallet-info.png') }}" alt="wallet info" class="rounded" />
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn p-0" type="button" id="cardOpt6" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt6">
-                                    <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                                    <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="mb-1">Pending</p>
-                        <h4 class="card-title mb-3">{{ $pendingNow }}</h4>
-                        <small class="text-warning fw-medium">
-                            <i class="icon-base bx bx-up-arrow-alt"></i>
-                            {{ $delta($pendingNow,$pendingLast) }}%
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> --}}
-
-    {{-- <!-- Document Processing Overview -->
-    <div class="col-12 col-xxl-8 order-2 order-md-3 order-xxl-2 mb-6 total-revenue">
+{{-- ══ Monthly Report Chart ════════════════════════════════════════════════════ --}}
+<div class="row g-3 mb-4">
+    <div class="col-12">
         <div class="card">
-            <div class="row row-bordered g-0">
-                <div class="col-lg-8">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <div class="card-title mb-0">
-                            <h5 class="m-0 me-2">Document Processing Overview</h5>
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="card-title mb-1">Monthly Document Report</h5>
+                    <p class="card-subtitle mb-0">Documents processed over the last 12 months</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="dms-legend-dot" style="background:#6366f1;"></span>
+                        <small class="text-muted">Sent</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="dms-legend-dot" style="background:#22c55e;"></span>
+                        <small class="text-muted">Received</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="dms-legend-dot" style="background:#f59e0b;"></span>
+                        <small class="text-muted">Pending</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body pt-2">
+                <div id="monthlyBarChart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ══ Weekly Processing + Document Types + Recent Activity ══════════════════ --}}
+<div class="row g-3 align-items-stretch mb-4">
+
+    {{-- Weekly processing trend ------------------------------------------------ --}}
+    <div class="col-12 col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="card-title mb-1">Weekly Processing Trend</h5>
+                    <p class="card-subtitle mb-0">Documents processed &amp; pending — last 8 weeks</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="dms-legend-dot" style="background:#0ea5e9;"></span>
+                        <small class="text-muted">Processed</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="dms-legend-dot" style="background:#f59e0b;"></span>
+                        <small class="text-muted">Pending</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body pt-2">
+                <div id="weeklyLineChart"></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Month summary donut + stats -------------------------------------------- --}}
+    <div class="col-12 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-1">This Month Summary</h5>
+                <p class="card-subtitle mb-0">{{ now()->format('F Y') }}</p>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center">
+                <div id="summaryDonut"></div>
+
+                <div class="w-100 mt-3">
+                    @php
+                        $summaryRows = [
+                            ['label' => 'Sent',     'count' => $sentNow,     'color' => '#6366f1'],
+                            ['label' => 'Received', 'count' => $receivedNow, 'color' => '#22c55e'],
+                            ['label' => 'Pending',  'count' => $pendingNow,  'color' => '#f59e0b'],
+                        ];
+                    @endphp
+                    @foreach($summaryRows as $row)
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="dms-legend-dot" style="background:{{ $row['color'] }};"></span>
+                            <span class="text-body-secondary" style="font-size:.85rem;">{{ $row['label'] }}</span>
                         </div>
-                        <div class="dropdown">
-                            <button class="btn p-0" type="button" id="totalRevenue" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="icon-base bx bx-dots-vertical-rounded icon-lg text-body-secondary"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="totalRevenue">
-                                <a class="dropdown-item" href="javascript:void(0);">Select All</a>
-                                <a class="dropdown-item" href="javascript:void(0);">Refresh</a>
-                                <a class="dropdown-item" href="javascript:void(0);">Share</a>
-                            </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <strong style="font-size:.95rem;">{{ number_format($row['count']) }}</strong>
+                            @php $pct = $totalNow > 0 ? round(($row['count'] / $totalNow) * 100) : 0; @endphp
+                            <span class="badge" style="background:{{ $row['color'] }}20; color:{{ $row['color'] }}; font-size:.72rem;">{{ $pct }}%</span>
                         </div>
                     </div>
-                    <div id="totalRevenueChart" class="px-3"></div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="card-body px-xl-9 py-12 d-flex align-items-center flex-column">
-                        <div class="text-center mb-6">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-outline-primary">
-                                    <script>document.write(new Date().getFullYear());</script>
-                                </button>
-                                <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span class="visually-hidden">Toggle Dropdown</span>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="javascript:void(0);">2025</a></li>
-                                    <li><a class="dropdown-item" href="javascript:void(0);">2024</a></li>
-                                    <li><a class="dropdown-item" href="javascript:void(0);">2023</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div id="growthChart"></div>
-                        <div class="text-center fw-medium my-6">
-                            {{ $sentNow > 0 ? round(($receivedNow / $sentNow) * 100) : 0 }}% Processing Rate
-                        </div>
-                        <div class="d-flex gap-11 justify-content-between">
-                            <div class="d-flex">
-                                <div class="avatar me-2">
-                                    <span class="avatar-initial rounded-2 bg-label-primary"><i class="icon-base bx bx-file-blank icon-lg text-primary"></i></span>
-                                </div>
-                                <div class="d-flex flex-column">
-                                    <small>This Month</small>
-                                    <h6 class="mb-0">{{ $sentNow }}</h6>
-                                </div>
-                            </div>
-                            <div class="d-flex">
-                                <div class="avatar me-2">
-                                    <span class="avatar-initial rounded-2 bg-label-info"><i class="icon-base bx bx-check-circle icon-lg text-info"></i></span>
-                                </div>
-                                <div class="d-flex flex-column">
-                                    <small>Last Month</small>
-                                    <h6 class="mb-0">{{ $sentLast }}</h6>
-                                </div>
-                            </div>
-                        </div>
+                    @endforeach
+
+                    <hr class="my-3" />
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="text-body-secondary" style="font-size:.85rem;">Total</span>
+                        <strong style="font-size:1rem;">{{ number_format($totalNow) }}</strong>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-12 col-md-8 col-lg-12 col-xxl-4 order-3 order-md-2 profile-report">
-        <div class="row">
-            <div class="col-6 mb-6 payments">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img src="{{ asset('assets/img/icons/unicons/paypal.png') }}" alt="incoming" class="rounded" />
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn p-0" type="button" id="cardOpt4" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt4">
-                                    <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                                    <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="mb-1">Incoming Documents</p>
-                        <h4 class="card-title mb-3">{{ $pendingNow }}</h4>
-                        <small class="text-{{ $delta($pendingNow,$pendingLast) >= 0 ? 'success':'danger' }} fw-medium">
-                            <i class="icon-base bx bx-{{ $delta($pendingNow,$pendingLast) >= 0 ? 'up':'down' }}-arrow-alt"></i>
-                            {{ $delta($pendingNow,$pendingLast) }}%
-                        </small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 mb-6 transactions">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img src="{{ asset('assets/img/icons/unicons/cc-primary.png') }}" alt="Outgoing Documents" class="rounded" />
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn p-0" type="button" id="cardOpt1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
-                                </button>
-                                <div class="dropdown-menu" aria-labelledby="cardOpt1">
-                                    <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                                    <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="mb-1">Outgoing Documents</p>
-                        <h4 class="card-title mb-3">{{ $sentNow }}</h4>
-                        <small class="text-{{ $delta($sentNow,$sentLast) >= 0 ? 'success':'danger' }} fw-medium">
-                            <i class="icon-base bx bx-{{ $delta($sentNow,$sentLast) >= 0 ? 'up':'down' }}-arrow-alt"></i>
-                            {{ $delta($sentNow,$sentLast) }}%
-                        </small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 mb-6 profile-report">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center flex-sm-row flex-column gap-10 flex-wrap">
-                            <div class="d-flex flex-sm-column flex-row align-items-start justify-content-between">
-                                <div class="card-title mb-6">
-                                    <h5 class="text-nowrap mb-1">Routing Performance</h5>
-                                    <span class="badge bg-label-warning">PENDING</span>
-                                </div>
-                                <div class="mt-sm-auto">
-                                    <span class="text-success text-nowrap fw-medium">
-                                        <i class="icon-base bx bx-up-arrow-alt"></i>
-                                        {{ $sentNow > 0 ? round(($receivedNow / $sentNow) * 100) : 0 }}%
-                                    </span>
-                                    <h4 class="mb-0">On-Time Delivery</h4>
-                                </div>
-                            </div>
-                            <div id="profileReportChart"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> --}}
-
+{{-- ══ Bottom row: Document Types + Recent Activity ═══════════════════════════ --}}
 <div class="row g-3 align-items-stretch">
     <div class="col-md-6 col-lg-4 col-xl-4 order-0 mb-6">
         <div class="card h-100">
@@ -405,25 +314,8 @@
                     <h5 class="mb-1 me-2">Document Types</h5>
                     <p class="card-subtitle">{{ $sentNow }} Total Documents</p>
                 </div>
-                <div class="dropdown">
-                    <button class="btn text-body-secondary p-0" type="button" id="orederStatistics" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="icon-base bx bx-dots-vertical-rounded icon-lg"></i>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="orederStatistics">
-                        <a class="dropdown-item" href="javascript:void(0);">Select All</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Refresh</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Share</a>
-                    </div>
-                </div>
             </div>
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-6">
-                    <div class="d-flex flex-column align-items-center gap-1">
-                        <h3 class="mb-1">{{ $sentNow }}</h3>
-                        <small>Total Documents</small>
-                    </div>
-                    <div id="orderStatisticsChart"></div>
-                </div>
                 <ul class="p-0 m-0">
                     <li class="d-flex align-items-center mb-5">
                         <div class="avatar flex-shrink-0 me-3"><span class="avatar-initial rounded bg-label-primary"><i class="icon-base bx bx-file-blank"></i></span></div>
@@ -458,53 +350,10 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 order-1 mb-6">
-        <div class="card h-100">
-            <div class="card-header nav-align-top">
-                <ul class="nav nav-pills flex-wrap row-gap-2" role="tablist">
-                    <li class="nav-item"><button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#navs-tabs-line-card-income" aria-controls="navs-tabs-line-card-income" aria-selected="true">Active</button></li>
-                    <li class="nav-item"><button type="button" class="nav-link" role="tab">Archived</button></li>
-                    <li class="nav-item"><button type="button" class="nav-link" role="tab">Rejected</button></li>
-                </ul>
-            </div>
-            <div class="card-body">
-                <div class="tab-content p-0">
-                    <div class="tab-pane fade show active" id="navs-tabs-line-card-income" role="tabpanel">
-                        <div class="d-flex mb-6">
-                            <div class="avatar flex-shrink-0 me-3"><img src="{{ asset('assets/img/icons/unicons/wallet.png') }}" alt="Status" /></div>
-                            <div>
-                                <p class="mb-0">Active Documents</p>
-                                <div class="d-flex align-items-center">
-                                    <h6 class="mb-0 me-1">{{ $sentNow }}</h6>
-                                    <small class="text-success fw-medium"><i class="icon-base bx bx-chevron-up icon-lg"></i>{{ $delta($sentNow,$sentLast) }}%</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="incomeChart"></div>
-                        <div class="d-flex align-items-center justify-content-center mt-6 gap-3">
-                            <div class="flex-shrink-0"><div id="expensesOfWeek"></div></div>
-                            <div><h6 class="mb-0">This week processed</h6><small>+156 more than last week</small></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-lg-4 order-2 mb-6">
+    <div class="col-md-6 col-lg-8 order-1 mb-6">
         <div class="card h-100">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h5 class="card-title m-0 me-2">Recent Activity</h5>
-                <div class="dropdown">
-                    <button class="btn text-body-secondary p-0" type="button" id="transactionID" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="icon-base bx bx-dots-vertical-rounded icon-lg"></i>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="transactionID">
-                        <a class="dropdown-item" href="javascript:void(0);">Last 7 Days</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Last 30 Days</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Last 90 Days</a>
-                    </div>
-                </div>
             </div>
             <div class="card-body pt-4">
                 <ul class="p-0 m-0">
@@ -556,12 +405,13 @@
     </div>
 </div>
 
-{{-- ══ STAT CARD CSS ══ --}}
-<style>
-.card {
-    box-shadow: none !important;
-}
+</div>{{-- /container-xxl --}}
 
+{{-- ══ Styles ════════════════════════════════════════════════════════════════ --}}
+<style>
+.card { box-shadow: none !important; }
+
+/* ── stat cards ── */
 .dms-stat-card {
     background: #ffffff;
     border: 1px solid #eef0f6;
@@ -572,69 +422,207 @@
     transition: transform .18s ease;
     cursor: pointer;
 }
-.dms-stat-card:hover {
-    transform: translateY(-4px);
-}
-
-/* top: icon + number side-by-side, exactly matching screenshot */
-.dms-stat-top {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 10px;
-}
+.dms-stat-card:hover { transform: translateY(-4px); }
+.dms-stat-top { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
 .dms-stat-icon {
-    width: 46px; height: 46px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    width: 46px; height: 46px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .dms-stat-icon i { font-size: 1.45rem; }
+.dms-stat-num { font-size: 2rem; font-weight: 700; color: #1a1d3a; line-height: 1; letter-spacing: -0.5px; }
+.dms-stat-label { font-size: 0.875rem; color: #374151; font-weight: 500; margin-bottom: 2px; }
+.dms-stat-sub { font-size: 0.76rem; color: #9ca3af; margin-bottom: 10px; }
+.dms-stat-bar { height: 3px; margin: 0 -20px; opacity: 0.55; }
 
-.dms-stat-num {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1a1d3a;
-    line-height: 1;
-    letter-spacing: -0.5px;
-}
-
-.dms-stat-label {
-    font-size: 0.875rem;
-    color: #374151;
-    font-weight: 500;
-    margin-bottom: 2px;
-}
-
-.dms-stat-sub {
-    font-size: 0.76rem;
-    color: #9ca3af;
-    margin-bottom: 10px;
-}
-
-.dms-stat-delta {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.79rem;
-    padding-bottom: 14px;
-}
-.dms-delta-pct {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-weight: 700;
-}
-.dms-delta-text { color: #9ca3af; }
-
-/* thin coloured line at the bottom — like the screenshot's left border accent */
-.dms-stat-bar {
-    height: 3px;
-    margin: 0 -20px;
-    opacity: 0.55;
+/* ── legend dot ── */
+.dms-legend-dot {
+    width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex-shrink: 0;
 }
 </style>
 
-</div>
+{{-- ══ ApexCharts ════════════════════════════════════════════════════════════ --}}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Shared palette ────────────────────────────────────────────────────────
+    var SENT_COLOR     = '#6366f1';
+    var RECEIVED_COLOR = '#22c55e';
+    var PENDING_COLOR  = '#f59e0b';
+    var TOTAL_COLOR    = '#0ea5e9';
+
+    // ── PHP → JS data ─────────────────────────────────────────────────────────
+    var monthlyLabels   = @json($monthlyLabels);
+    var monthlySent     = @json($monthlySent);
+    var monthlyReceived = @json($monthlyReceived);
+    var monthlyPending  = @json($monthlyPending);
+
+    var weeklyLabels    = @json($weeklyLabels);
+    var weeklyProcessed = @json($weeklyProcessed);
+    var weeklyPending   = @json($weeklyPending);
+
+    var sentNow     = {{ $sentNow }};
+    var receivedNow = {{ $receivedNow }};
+    var pendingNow  = {{ $pendingNow }};
+    var totalNow    = {{ $totalNow }};
+
+    // ── 1. Monthly grouped bar chart ─────────────────────────────────────────
+    var monthlyBarOptions = {
+        series: [
+            { name: 'Sent',     data: monthlySent     },
+            { name: 'Received', data: monthlyReceived  },
+            { name: 'Pending',  data: monthlyPending   },
+        ],
+        chart: {
+            type: 'bar',
+            height: 320,
+            stacked: false,
+            toolbar: {
+                show: true,
+                tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false },
+            },
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                borderRadius: 5,
+                borderRadiusApplication: 'end',
+            },
+        },
+        dataLabels: { enabled: false },
+        colors: [SENT_COLOR, RECEIVED_COLOR, PENDING_COLOR],
+        xaxis: {
+            categories: monthlyLabels,
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            labels: {
+                style: { fontSize: '12px', colors: '#9ca3af' },
+                rotate: -30,
+            },
+        },
+        yaxis: {
+            labels: {
+                style: { fontSize: '12px', colors: '#9ca3af' },
+                formatter: function (val) { return Math.round(val); },
+            },
+        },
+        legend: { show: false },
+        grid: {
+            borderColor: '#f3f4f6',
+            strokeDashArray: 4,
+            yaxis: { lines: { show: true } },
+            xaxis: { lines: { show: false } },
+        },
+        tooltip: {
+            theme: 'light',
+            y: { formatter: function (val) { return val + ' docs'; } },
+        },
+        fill: { opacity: 1 },
+    };
+
+    var monthlyBarChart = new ApexCharts(document.getElementById('monthlyBarChart'), monthlyBarOptions);
+    monthlyBarChart.render();
+
+    // ── 2. Weekly line + area chart ──────────────────────────────────────────
+    var weeklyLineOptions = {
+        series: [
+            { name: 'Processed', data: weeklyProcessed },
+            { name: 'Pending',   data: weeklyPending   },
+        ],
+        chart: {
+            type: 'area',
+            height: 300,
+            toolbar: { show: false },
+            sparkline: { enabled: false },
+        },
+        stroke: {
+            curve: 'smooth',
+            width: [2.5, 2],
+            dashArray: [0, 4],
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.25,
+                opacityTo: 0.02,
+                stops: [0, 95, 100],
+            },
+        },
+        colors: [TOTAL_COLOR, PENDING_COLOR],
+        markers: { size: 4, strokeWidth: 0, hover: { size: 6 } },
+        xaxis: {
+            categories: weeklyLabels,
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            labels: { style: { fontSize: '12px', colors: '#9ca3af' } },
+        },
+        yaxis: {
+            labels: {
+                style: { fontSize: '12px', colors: '#9ca3af' },
+                formatter: function (val) { return Math.round(val); },
+            },
+        },
+        legend: { show: false },
+        grid: {
+            borderColor: '#f3f4f6',
+            strokeDashArray: 4,
+            yaxis: { lines: { show: true } },
+            xaxis: { lines: { show: false } },
+        },
+        dataLabels: { enabled: false },
+        tooltip: {
+            theme: 'light',
+            y: { formatter: function (val) { return val + ' docs'; } },
+        },
+    };
+
+    var weeklyLineChart = new ApexCharts(document.getElementById('weeklyLineChart'), weeklyLineOptions);
+    weeklyLineChart.render();
+
+    // ── 3. Monthly summary donut ─────────────────────────────────────────────
+    var donutOptions = {
+        series: [sentNow, receivedNow, pendingNow],
+        chart: {
+            type: 'donut',
+            height: 200,
+        },
+        labels: ['Sent', 'Received', 'Pending'],
+        colors: [SENT_COLOR, RECEIVED_COLOR, PENDING_COLOR],
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '72%',
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: 'Total',
+                            fontSize: '13px',
+                            color: '#6b7280',
+                            formatter: function () { return totalNow; },
+                        },
+                        value: {
+                            fontSize: '20px',
+                            fontWeight: 700,
+                            color: '#1a1d3a',
+                        },
+                    },
+                },
+            },
+        },
+        dataLabels: { enabled: false },
+        legend: { show: false },
+        stroke: { width: 0 },
+        tooltip: {
+            y: { formatter: function (val) { return val + ' docs'; } },
+        },
+    };
+
+    var summaryDonut = new ApexCharts(document.getElementById('summaryDonut'), donutOptions);
+    summaryDonut.render();
+
+});
+</script>
 
 @endsection
