@@ -359,7 +359,7 @@
                         </a>
                     </div>
                     <div class="d-flex gap-2">
-                        @if($document->status !== 'archived')
+                        @if($document->status !== 'archived' && $document->isLastReceiver((int) Auth::id()))
                             <form action="{{ route('documents.archive-receiver', encryptId($document->document_id)) }}"
                                   method="POST"
                                   class="archive-form">

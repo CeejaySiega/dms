@@ -153,6 +153,7 @@
                                                 </button>
                                             </form>
                                             @else
+                                                                                        @if($doc->isLastReceiver((int) Auth::id()))
                                             <form action="{{ route('documents.archive-receiver', encryptId($document->document_id)) }}"
                                                   method="POST"
                                                   class="d-inline archive-form"
@@ -164,6 +165,7 @@
                                                     <i class="bx bx-archive"></i>
                                                 </button>
                                             </form>
+                                            @endif
                                             @endif
                                             @endif
                                         </div>

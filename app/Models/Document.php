@@ -142,6 +142,26 @@ class Document extends Model
     }
 
     /**
+     * Check if the given user is the latest active receiver of this document.
+     */
+    public function isLastReceiver(int $userId): bool
+    {
+        $latestRoute = $this->routes()
+            ->whereNull('unsend_at')
+            ->orderByDesc('route_id')
+            ->first();
+
+        if (!$latestRoute || (int) $latestRoute->receiver_id !== (int) $userId) {
+            return false;
+        }
+
+        return Recipient::where('route_id', $latestRoute->route_id)
+            ->where('user_id', $userId)
+            ->whereNull('deleted_at')
+            ->exists();
+    }
+
+    /**
      * Generate tracking code if not exists
      */
     public static function generateTrackingCode()

@@ -163,6 +163,18 @@ class ArchiveDocumentController extends Controller
             abort(403, 'You are not a recipient of this document');
         }
 
+        if (!$document->isLastReceiver((int) $currentUserId)) {
+            if (request()->wantsJson()) {
+                logActivity(Auth::id(), 'archive_attempt', 'Attempted to archive document as non-last receiver');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only the last receiver can archive this document'
+                ], 403);
+            }
+
+            return redirect()->back()->with('error', 'Only the last receiver can archive this document');
+        }
+
         try {
             // Check if an active (non-restored) archive record already exists
             $existingArchive = Archive::where('document_id', $document->document_id)
@@ -384,14 +396,8 @@ class ArchiveDocumentController extends Controller
         if ($userId === $document->user_id) {
             return true;
         }
-        
-        // Allow if user is a recipient of this document (sent to them)
-        $isRecipient = \App\Models\Recipient::whereHas('route', function($query) use ($document) {
-            $query->where('document_id', $document->document_id);
-        })
-        ->where('user_id', $userId)
-        ->exists();
-        
-        return $isRecipient;
+
+        // Non-senders can archive only when they are the latest receiver.
+        return $document->isLastReceiver((int) $userId);
     }
 }
