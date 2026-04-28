@@ -15,6 +15,14 @@
 @endsection
 
 @section('content')
+
+@php
+    $userRole = Auth::user()->employee->role ?? 'user';
+    if ($userRole === 'user') {
+        abort(403, 'Unauthorized access');
+    }
+@endphp
+
 <div class="row">
     <div class="col-12">
         <div class="mb-4">

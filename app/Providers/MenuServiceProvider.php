@@ -37,12 +37,8 @@ class MenuServiceProvider extends ServiceProvider
       $userId = Auth::id();
       $userRole = strtolower((string) optional(Auth::user()->employee)->role);
 
-      // Admin and superadmin can see user management in the sidebar.
-      if (!in_array($userRole, ['admin', 'superadmin'], true)) {
-        $verticalMenuData->menu = $this->removeMenuBySlug($verticalMenuData->menu, [
-          'users.index',
-        ]);
-      }
+      // Filter menu items based on roles property
+      $verticalMenuData->menu = $this->filterMenuByRoles($verticalMenuData->menu, $userRole);
 
       // Incoming — your existing logic, untouched
       $inboxCount = Recipient::where('user_id', $userId)
@@ -85,6 +81,40 @@ class MenuServiceProvider extends ServiceProvider
     $this->app->make('view')->share('inboxCount',    $inboxCount);
     $this->app->make('view')->share('receivedCount', $receivedCount);
     $this->app->make('view')->share('sentCount',     $sentCount);
+  }
+
+  /**
+   * Filter menu items based on roles property.
+   * If a menu item has a 'roles' property, only show it if current role is in that array.
+   */
+  private function filterMenuByRoles(array $menuItems, string $currentRole): array
+  {
+    $filtered = [];
+
+    foreach ($menuItems as $item) {
+      // Skip menu headers
+      if (isset($item->menuHeader)) {
+        $filtered[] = $item;
+        continue;
+      }
+
+      // If item has roles property, check if current role is allowed
+      if (isset($item->roles) && is_array($item->roles) && count($item->roles) > 0) {
+        $allowedRoles = array_map('strtolower', $item->roles);
+        if (!in_array($currentRole, $allowedRoles, true)) {
+          continue; // Skip this item, user doesn't have permission
+        }
+      }
+
+      // Recursively filter submenu items
+      if (isset($item->submenu) && is_array($item->submenu)) {
+        $item->submenu = $this->filterMenuByRoles($item->submenu, $currentRole);
+      }
+
+      $filtered[] = $item;
+    }
+
+    return $filtered;
   }
 
   /**

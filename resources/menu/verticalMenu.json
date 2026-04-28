@@ -91,7 +91,11 @@
       "url": "/users",
       "name": "User List and Permissions",
       "icon": "menu-icon icon-base bx bx-user",
-      "slug": "users.index"
+      "slug": "users.index",
+      "roles": [
+        "admin",
+        "superadmin"
+      ]
     },
     {
       "url": "/groups",
@@ -106,7 +110,11 @@
       "url": "/user/activity-logs",
       "name": "User Activity Log",
       "icon": "menu-icon icon-base bx bx-history",
-      "slug": "user.activity-logs"
+      "slug": "user.activity-logs",
+      "roles": [
+        "admin",
+        "superadmin"
+      ]
     }
   ]
 }
