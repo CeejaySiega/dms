@@ -17,7 +17,7 @@
 @section('content')
 
 @php
-    $userRole = Auth::user()->employee->role ?? 'user';
+    $userRole = strtolower(trim((string) optional(Auth::user()->employee)->role));
     if ($userRole === 'user') {
         abort(403, 'Unauthorized access');
     }

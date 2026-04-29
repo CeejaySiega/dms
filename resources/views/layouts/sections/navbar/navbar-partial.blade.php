@@ -42,7 +42,7 @@ use Illuminate\Support\Facades\Route;
                     <i class="bx bx-search" id="searchBoxIcon"></i>
                     <input type="text"
                            id="navbarSearchInput"
-                           placeholder="Search documents…"
+                           placeholder="Enter tracking code, document title or type…"
                            autocomplete="off"
                            aria-label="Search documents" />
                     <button id="searchCloseBtn" title="Close">&times;</button>

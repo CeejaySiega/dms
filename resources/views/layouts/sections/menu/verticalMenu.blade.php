@@ -1,7 +1,7 @@
 @php
 use Illuminate\Support\Facades\Route;
 
-$currentRole = strtolower((string) optional(auth()->user()->employee)->role);
+$currentRole = strtolower(trim((string) optional(auth()->user()->employee)->role));
 @endphp
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
     <div class="app-brand demo">
@@ -20,6 +20,15 @@ $currentRole = strtolower((string) optional(auth()->user()->employee)->role);
         @foreach ($menuData[0]->menu as $menu)
 
             @if (isset($menu->menuHeader))
+                @php
+                    $shouldHideHeaderForRole = $menu->menuHeader === 'LOGS'
+                        && !in_array($currentRole, ['admin', 'superadmin']);
+                @endphp
+
+                @if($shouldHideHeaderForRole)
+                    @continue
+                @endif
+
                 @if (!isset($menu->visible) || $menu->visible)
                     <li class="menu-header small text-uppercase">
                         <span class="menu-header-text">{{ __($menu->menuHeader) }}</span>
@@ -29,9 +38,10 @@ $currentRole = strtolower((string) optional(auth()->user()->employee)->role);
                 @if (!isset($menu->visible) || $menu->visible)
 
                     @php
+                        $blockedSlugsForUser = ['users.index', 'user.activity-logs'];
                         $shouldHideForRole = isset($menu->slug)
                             && is_string($menu->slug)
-                            && $menu->slug === 'users.index'
+                            && in_array($menu->slug, $blockedSlugsForUser, true)
                                 && !in_array($currentRole, ['admin', 'superadmin']);
                     @endphp
 

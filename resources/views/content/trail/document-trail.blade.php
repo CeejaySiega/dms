@@ -234,8 +234,7 @@
                                         </span>
                                     </td>
                                     <td style="font-size:.8rem;color:var(--bs-secondary-color);">
-                                        {{ \Carbon\Carbon::parse($doc->created_at)->format('M j, Y') }}<br>
-                                        <small>{{ \Carbon\Carbon::parse($doc->created_at)->format('h:i A') }}</small>
+                                        {{ \Carbon\Carbon::parse($doc->created_at)->format('M j, Y') }} · {{ \Carbon\Carbon::parse($doc->created_at)->format('h:i A') }}
                                     </td>
                                     <td class="text-center">
                                         <button class="btn btn-sm btn-icon btn-outline-primary view-trail-btn"
@@ -420,6 +419,50 @@
 }
 .trail-remark     { margin-top:6px;padding:5px 10px;background:var(--bs-gray-100);border-left:2px solid #BA7517;border-radius:0 6px 6px 0;font-size:.78rem;color:var(--bs-secondary-color);font-style:italic; }
 .view-trail-btn:hover { background:#696cff!important;border-color:#696cff!important;color:#fff!important; }
+
+/* Table header left, cells centered; prevent stacking */
+#trailTable th {
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    vertical-align: middle !important;
+}
+
+#trailTable th.text-center {
+    text-align: center !important;
+}
+
+/* Slightly left-align cell text with small left padding */
+#trailTable td {
+    text-align: left !important;
+    padding-left: 10px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    vertical-align: middle !important;
+}
+
+/* Ensure inner elements behave inline and center properly inside cells */
+#trailTable td code,
+#trailTable td .fw-semibold,
+#trailTable td .badge,
+#trailTable td small {
+    display: inline-block;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Center flex groups like sender avatar + name inside cells */
+#trailTable td .d-flex.align-items-center {
+    justify-content: flex-start;
+}
+
+/* Keep the Trail column centered */
+#trailTable td.text-center {
+    text-align: center !important;
+    padding-left: 0 !important;
+}
 </style>
 
 <script>

@@ -35,7 +35,7 @@ class MenuServiceProvider extends ServiceProvider
 
     if (Auth::check()) {
       $userId = Auth::id();
-      $userRole = strtolower((string) optional(Auth::user()->employee)->role);
+      $userRole = strtolower(trim((string) optional(Auth::user()->employee)->role));
 
       // Filter menu items based on roles property
       $verticalMenuData->menu = $this->filterMenuByRoles($verticalMenuData->menu, $userRole);
@@ -90,17 +90,21 @@ class MenuServiceProvider extends ServiceProvider
   private function filterMenuByRoles(array $menuItems, string $currentRole): array
   {
     $filtered = [];
+    $pendingHeader = null;
 
     foreach ($menuItems as $item) {
-      // Skip menu headers
+      // Queue headers and only render them if an allowed item follows.
       if (isset($item->menuHeader)) {
-        $filtered[] = $item;
+        $pendingHeader = $item;
         continue;
       }
 
       // If item has roles property, check if current role is allowed
       if (isset($item->roles) && is_array($item->roles) && count($item->roles) > 0) {
-        $allowedRoles = array_map('strtolower', $item->roles);
+        $allowedRoles = array_map(
+          static fn ($role) => strtolower(trim((string) $role)),
+          $item->roles
+        );
         if (!in_array($currentRole, $allowedRoles, true)) {
           continue; // Skip this item, user doesn't have permission
         }
@@ -109,6 +113,11 @@ class MenuServiceProvider extends ServiceProvider
       // Recursively filter submenu items
       if (isset($item->submenu) && is_array($item->submenu)) {
         $item->submenu = $this->filterMenuByRoles($item->submenu, $currentRole);
+      }
+
+      if ($pendingHeader !== null) {
+        $filtered[] = $pendingHeader;
+        $pendingHeader = null;
       }
 
       $filtered[] = $item;

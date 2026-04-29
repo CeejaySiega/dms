@@ -89,7 +89,7 @@
     },
     {
       "url": "/users",
-      "name": "User List and Permissions",
+      "name": "User List and Roles",
       "icon": "menu-icon icon-base bx bx-user",
       "slug": "users.index",
       "roles": [
@@ -108,7 +108,7 @@
     },
     {
       "url": "/user/activity-logs",
-      "name": "User Activity Log",
+      "name": "All Activity Logs",
       "icon": "menu-icon icon-base bx bx-history",
       "slug": "user.activity-logs",
       "roles": [

@@ -137,7 +137,7 @@
                                     <i class="icon-base bx bx-dots-vertical-rounded"></i>
                                 </button>
                                 <div class="dropdown-menu">
-                                    <h6 class="dropdown-header">Change Permissions</h6>
+                                    <h6 class="dropdown-header">Change Role</h6>
                                     <a class="dropdown-item" href="javascript:void(0);" onclick="changeRole('{{ encryptId($user->user_id) }}', 'admin')">
                                         <i class="icon-base bx bx-shield me-2 text-danger"></i> Admin
                                     </a>
