@@ -20,10 +20,7 @@
 
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div>
-                       
-                    </div>
-                    {{-- <span class="badge bg-label-primary">Workflow</span> --}}
+                    <div></div>
                 </div>
 
                 <div class="card-body">
@@ -105,11 +102,9 @@
                                                 ->get()
                                                 ->map(function ($recipient) {
                                                     $employee = optional($recipient->user)->employee;
-
                                                     if ($employee) {
                                                         return trim(($employee->firstname ?? '') . ' ' . ($employee->lastname ?? ''));
                                                     }
-
                                                     return optional($recipient->user)->name;
                                                 })
                                                 ->filter()
@@ -122,11 +117,9 @@
                                                 ->map(function ($route) {
                                                     $receiver = optional($route)->receiverUser;
                                                     $employee = optional($receiver)->employee;
-
                                                     if ($employee) {
                                                         return trim(($employee->firstname ?? '') . ' ' . ($employee->lastname ?? ''));
                                                     }
-
                                                     return optional($receiver)->name;
                                                 })
                                                 ->filter()
@@ -145,13 +138,10 @@
                                 @endphp
                                 <tr data-send-mode="{{ $isGroupSend ? 'group' : 'individual' }}">
                                     <td>
-                                        <code class="text-primary" style="font-size:.8rem;">
-                                            {{ $doc->tracking_code }}
-                                        </code>
+                                        <code class="text-primary" style="font-size:.8rem;">{{ $doc->tracking_code }}</code>
                                     </td>
                                     <td>
-                                        <div style="font-size:.875rem;font-weight:500;max-width:180px;
-                                                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                        <div style="font-size:.875rem;font-weight:500;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                                             {{ $doc->purpose }}
                                         </div>
                                     </td>
@@ -162,8 +152,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
-                                            <div class="avatar-initial rounded-circle bg-label-primary
-                                                        d-flex align-items-center justify-content-center fw-semibold"
+                                            <div class="avatar-initial rounded-circle bg-label-primary d-flex align-items-center justify-content-center fw-semibold"
                                                  style="width:30px;height:30px;font-size:.72rem;flex-shrink:0;">
                                                 {{ strtoupper(substr(optional($doc->user->employee)->firstname ?? 'U', 0, 1)) }}{{ strtoupper(substr(optional($doc->user->employee)->lastname ?? '', 0, 1)) }}
                                             </div>
@@ -222,11 +211,11 @@
                                             }
 
                                             $sColor = match($displayStatus) {
-                                                'pending'  => 'warning',
-                                                'forwarded'=> 'primary',
-                                                'received' => 'success',
-                                                'archived' => 'secondary',
-                                                default    => 'info',
+                                                'pending'   => 'warning',
+                                                'forwarded' => 'primary',
+                                                'received'  => 'success',
+                                                'archived'  => 'secondary',
+                                                default     => 'info',
                                             };
                                         @endphp
                                         <span class="badge bg-label-{{ $sColor }}" style="font-size:.72rem;">
@@ -250,8 +239,7 @@
                                 @empty
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-5">
-                                        <i class="bx bx-transfer" style="font-size:2rem;display:block;
-                                           margin-bottom:8px;color:#c4c6d0;"></i>
+                                        <i class="bx bx-transfer" style="font-size:2rem;display:block;margin-bottom:8px;color:#c4c6d0;"></i>
                                         No documents found.
                                     </td>
                                 </tr>
@@ -301,7 +289,7 @@
                 {{-- Content --}}
                 <div id="trailContent" class="d-none">
 
-                    {{-- Send mode --}}
+                    {{-- Send mode banner --}}
                     <div id="trailSendModeBanner" class="d-none rounded-3 p-3 mb-3"
                          style="background:#F8FAFC;border:1px solid #E2E8F0;">
                         <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
@@ -318,7 +306,7 @@
                     <div class="row g-2 mb-3" id="trailStats"></div>
 
                     {{-- Progress --}}
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <div class="d-flex justify-content-between mb-1">
                             <small class="text-muted">Progress</small>
                             <small class="text-muted" id="trailProgressPct"></small>
@@ -345,21 +333,13 @@
                         </div>
                     </div>
 
-                    {{-- Visual trail --}}
-                    <div class="text-muted mb-2"
+                    {{-- Trail log label --}}
+                    <div class="text-muted mb-3"
                          style="font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;">
-                        Routing path
+                        Trail log
                     </div>
-                    <div class="overflow-auto pb-2 mb-4" style="white-space:nowrap;">
-                        <div id="nodeTrail" class="d-inline-flex align-items-flex-start gap-0"></div>
-                    </div>
-                    <div id="trailGroupMembersPanel" class="d-none mb-4"></div>
 
-                    {{-- Detail log --}}
-                    <div class="text-muted mb-2"
-                         style="font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;">
-                        Detailed trail log
-                    </div>
+                    {{-- Detail log (group members render inline here) --}}
                     <div id="detailLog"></div>
 
                     {{-- Legend --}}
@@ -369,8 +349,8 @@
                             ['#7F77DD','Sender'],
                             ['#1D9E75','Received'],
                             ['#BA7517','Forwarded'],
-                            ['#3B82F6','Currently with'],
-                            ['#3B82F6','Pending'],
+                            ['#696cff','Group'],
+                            ['#3B82F6','Currently with / Pending'],
                         ] as $l)
                         <div class="d-flex align-items-center gap-1">
                             <div style="width:8px;height:8px;border-radius:50%;background:{{ $l[0] }};"></div>
@@ -388,25 +368,47 @@
 <style>
 @keyframes pulseBlue {
     0%,100% { box-shadow:0 0 0 3px rgba(59,130,246,.2); }
-    50%     { box-shadow:0 0 0 6px rgba(59,130,246,.05); }
-}
-@keyframes ring {
-    0%  { transform:scale(1);opacity:.6; }
-    100%{ transform:scale(1.35);opacity:0; }
+    50%      { box-shadow:0 0 0 6px rgba(59,130,246,.05); }
 }
 @keyframes pingPending {
     0%   { transform:scale(1); opacity:.55; }
     100% { transform:scale(1.9); opacity:0; }
 }
-.trail-node-wrap  { display:inline-flex;flex-direction:column;align-items:center;flex-shrink:0;width:88px;vertical-align:top; }
-.trail-conn       { display:inline-flex;align-items:center;margin-top:22px;position:relative;flex-shrink:0; }
-.trail-conn-lbl   { position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;padding:1px 5px;border-radius:999px;font-weight:500; }
-.trail-detail-row { display:flex;gap:12px;position:relative;padding-bottom:14px; }
-.trail-detail-row:not(:last-child)::before {
-    content:'';position:absolute;left:10px;top:22px;bottom:0;
-    width:1.5px;background:var(--bs-border-color);z-index:0;
+
+/* ── Trail log timeline ─────────────────────────── */
+.trail-detail-row {
+    display:flex;
+    gap:12px;
+    position:relative;
+    padding-bottom:14px;
 }
-.trail-detail-dot { width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid;flex-shrink:0;margin-top:2px;z-index:1;background:#fff; }
+.trail-detail-row:not(:last-child)::before {
+    content:'';
+    position:absolute;
+    left:10px;
+    top:24px;
+    bottom:0;
+    width:1.5px;
+    background:var(--bs-border-color);
+    z-index:0;
+}
+/* Group node row — extend the line through the nested card */
+.trail-detail-row.is-group:not(:last-child)::before {
+    top:24px;
+}
+.trail-detail-dot {
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:2px solid;
+    flex-shrink:0;
+    margin-top:2px;
+    z-index:1;
+    background:#fff;
+}
 .trail-detail-dot-ping::after {
     content:'';
     position:absolute;
@@ -417,68 +419,105 @@
     animation:pingPending 1.4s infinite;
     z-index:-1;
 }
-.trail-remark     { margin-top:6px;padding:5px 10px;background:var(--bs-gray-100);border-left:2px solid #BA7517;border-radius:0 6px 6px 0;font-size:.78rem;color:var(--bs-secondary-color);font-style:italic; }
-.view-trail-btn:hover { background:#696cff!important;border-color:#696cff!important;color:#fff!important; }
+.trail-remark {
+    margin-top:6px;
+    padding:5px 10px;
+    background:var(--bs-gray-100);
+    border-left:2px solid #BA7517;
+    border-radius:0 6px 6px 0;
+    font-size:.78rem;
+    color:var(--bs-secondary-color);
+    font-style:italic;
+}
 
-/* Table header left, cells centered; prevent stacking */
+/* ── Group members nested card ──────────────────── */
+.group-members-card {
+    margin-top:10px;
+    border:1px solid #E2E8F0;
+    border-radius:10px;
+    overflow:hidden;
+    background:#fff;
+}
+.group-members-card-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 12px;
+    background:#F8FAFC;
+    border-bottom:1px solid #E2E8F0;
+    cursor:pointer;
+    user-select:none;
+}
+.group-members-card-header:hover { background:#EEF2F6; }
+.group-members-card-body { padding:0; }
+.group-member-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:9px 12px;
+    gap:8px;
+}
+.group-member-row:not(:last-child) { border-bottom:1px solid #F1F5F9; }
+.group-member-avatar {
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:10px;
+    font-weight:600;
+    flex-shrink:0;
+}
+.group-members-chevron {
+    transition:transform .25s;
+    font-size:14px;
+    color:#94a3b8;
+}
+.group-members-chevron.open { transform:rotate(180deg); }
+
+/* ── Table fixes ─────────────────────────────────── */
 #trailTable th {
-    text-align: left !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    vertical-align: middle !important;
+    text-align:left !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    vertical-align:middle !important;
 }
-
-#trailTable th.text-center {
-    text-align: center !important;
-}
-
-/* Slightly left-align cell text with small left padding */
+#trailTable th.text-center { text-align:center !important; }
 #trailTable td {
-    text-align: left !important;
-    padding-left: 10px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    vertical-align: middle !important;
+    text-align:left !important;
+    padding-left:10px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    vertical-align:middle !important;
 }
-
-/* Ensure inner elements behave inline and center properly inside cells */
 #trailTable td code,
 #trailTable td .fw-semibold,
 #trailTable td .badge,
-#trailTable td small {
-    display: inline-block;
-    white-space: nowrap;
-    vertical-align: middle;
-}
-
-/* Center flex groups like sender avatar + name inside cells */
-#trailTable td .d-flex.align-items-center {
-    justify-content: flex-start;
-}
-
-/* Keep the Trail column centered */
-#trailTable td.text-center {
-    text-align: center !important;
-    padding-left: 0 !important;
-}
+#trailTable td small { display:inline-block; white-space:nowrap; vertical-align:middle; }
+#trailTable td .d-flex.align-items-center { justify-content:flex-start; }
+#trailTable td.text-center { text-align:center !important; padding-left:0 !important; }
+.view-trail-btn:hover { background:#696cff!important;border-color:#696cff!important;color:#fff!important; }
 </style>
 
 <script>
 const C = {
-    sent:      {bg:'#EEEDFE',bd:'#7F77DD',tx:'#3C3489',dt:'#7F77DD'},
-    received:  {bg:'#E1F5EE',bd:'#1D9E75',tx:'#085041',dt:'#1D9E75'},
-    forwarded: {bg:'#FAEEDA',bd:'#BA7517',tx:'#633806',dt:'#BA7517'},
-    active:    {bg:'#EFF6FF',bd:'#3B82F6',tx:'#1e40af',dt:'#3B82F6'},
-    pending:   {bg:'#EFF6FF',bd:'#3B82F6',tx:'#1e40af',dt:'#3B82F6'},
+    sent:      { bg:'#EEEDFE', bd:'#7F77DD', tx:'#3C3489', dt:'#7F77DD' },
+    received:  { bg:'#E1F5EE', bd:'#1D9E75', tx:'#085041', dt:'#1D9E75' },
+    forwarded: { bg:'#FAEEDA', bd:'#BA7517', tx:'#633806', dt:'#BA7517' },
+    group:     { bg:'#EDEDFF', bd:'#696cff', tx:'#3730a3', dt:'#696cff' },
+    active:    { bg:'#EFF6FF', bd:'#3B82F6', tx:'#1e40af', dt:'#3B82F6' },
+    pending:   { bg:'#EFF6FF', bd:'#3B82F6', tx:'#1e40af', dt:'#3B82F6' },
 };
 
-const ini  = n => { if(!n)return'?'; const p=n.trim().split(' '); return (p[0][0]+(p[1]?p[1][0]:'')).toUpperCase(); };
-const fmtD = ts => { if(!ts)return'—'; const d=new Date(ts); return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' · '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); };
-const ago  = ts => { if(!ts)return'—'; const s=Math.floor((Date.now()-new Date(ts))/1000); if(s<60)return'Just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; if(s<172800)return'Yesterday'; return Math.floor(s/86400)+'d ago'; };
-const tlbl = t => ({sent:'Sender',received:'Received',forwarded:'Forwarded',active:'Currently holding',pending:'Currently holding'}[t]||t);
+const ini  = n => { if (!n) return '?'; const p = n.trim().split(' '); return (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase(); };
+const fmtD = ts => { if (!ts) return '—'; const d = new Date(ts); return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) + ' · ' + d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); };
+const ago  = ts => { if (!ts) return '—'; const s = Math.floor((Date.now() - new Date(ts)) / 1000); if (s < 60) return 'Just now'; if (s < 3600) return Math.floor(s/60) + 'm ago'; if (s < 86400) return Math.floor(s/3600) + 'h ago'; if (s < 172800) return 'Yesterday'; return Math.floor(s/86400) + 'd ago'; };
+const tlbl = t => ({ sent:'Sender', received:'Received', forwarded:'Forwarded', group:'Group', active:'Currently holding', pending:'Currently holding' }[t] || t);
 
+/* ── Collect unique group members from trail ──── */
 function groupMembersFromTrail(trail) {
     const map = new Map();
     trail.forEach(s => {
@@ -489,263 +528,272 @@ function groupMembersFromTrail(trail) {
         const currTime = s.action_at ? new Date(s.action_at).getTime() : 0;
         if (!prev || currTime >= prevTime) {
             map.set(key, {
-                user_id: s.user_id,
+                user_id:    s.user_id,
                 actor_name: s.actor_name || 'Unknown User',
                 department: s.department || 'N/A',
-                campus: s.campus || 'N/A',
-                type: s.type,
-                action_at: s.action_at,
+                campus:     s.campus || 'N/A',
+                type:       s.type,
+                action_at:  s.action_at,
             });
         }
     });
     return Array.from(map.values());
 }
 
-function renderGroupMembersPanel(trail, meta) {
-    const panel = document.getElementById('trailGroupMembersPanel');
-    if (!panel) return;
+/* ── Inline group members card ──────────────────── */
+function buildGroupMembersCard(members, groupName) {
+    const count = members.length;
 
-    if (!meta?.is_group_send) {
-        panel.classList.add('d-none');
-        panel.innerHTML = '';
-        return;
-    }
-
-    const members = groupMembersFromTrail(trail);
-    panel.classList.add('d-none');
-    panel.innerHTML = `
-        <div class="rounded-3 p-3" style="background:#F8FAFC;border:1px solid #E2E8F0;">
-            <div class="text-muted mb-2" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;">Group members</div>
-            ${members.length === 0
-                ? '<div class="text-muted" style="font-size:.82rem;">No members found.</div>'
-                : members.map(m => `
-                    <div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid #eef2f7;">
-                        <div>
-                            <div style="font-size:.86rem;font-weight:600;">${m.actor_name}</div>
-                            <div style="font-size:.75rem;color:var(--bs-secondary-color);">${m.department} · ${m.campus}</div>
-                        </div>
-                        <span class="badge rounded-pill" style="font-size:.68rem;background:${(C[m.type]||C.pending).bg};color:${(C[m.type]||C.pending).tx};">${tlbl(m.type)}</span>
+    const rows = members.map(m => {
+        const c = C[m.type] || C.pending;
+        const initials = ini(m.actor_name);
+        return `
+            <div class="group-member-row">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="group-member-avatar" style="background:${c.bg};color:${c.tx};border:1.5px solid ${c.bd};">
+                        ${initials}
                     </div>
-                `).join('')}
+                    <div>
+                        <div style="font-size:.83rem;font-weight:500;line-height:1.3;">${m.actor_name}</div>
+                        <div style="font-size:.72rem;color:var(--bs-secondary-color);">${m.department} · ${m.campus}</div>
+                    </div>
+                </div>
+                <span class="badge rounded-pill" style="font-size:.68rem;background:${c.bg};color:${c.tx};border:1px solid ${c.bd};">
+                    ${tlbl(m.type)}
+                </span>
+            </div>`;
+    }).join('');
+
+    const empty = `<div class="px-3 py-3 text-muted" style="font-size:.82rem;">No members found.</div>`;
+    const cardId = 'gmc-' + Math.random().toString(36).slice(2);
+
+    return `
+        <div class="group-members-card">
+            <div class="group-members-card-header" onclick="toggleGroupCard('${cardId}')">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bx bx-group" style="font-size:14px;color:#696cff;"></i>
+                    <span style="font-size:.78rem;font-weight:600;color:#3730a3;">${groupName}</span>
+                    <span class="badge rounded-pill" style="font-size:.65rem;background:#EDEDFF;color:#3730a3;border:1px solid #696cff;">${count} member${count === 1 ? '' : 's'}</span>
+                </div>
+                <i class="bx bx-chevron-down group-members-chevron open" id="chev-${cardId}"></i>
+            </div>
+            <div class="group-members-card-body" id="${cardId}">
+                ${count > 0 ? rows : empty}
+            </div>
         </div>`;
 }
 
-function toggleGroupMembersPanel() {
-    const panel = document.getElementById('trailGroupMembersPanel');
-    if (!panel) return;
-    panel.classList.toggle('d-none');
+function toggleGroupCard(id) {
+    const body = document.getElementById(id);
+    const chev = document.getElementById('chev-' + id);
+    if (!body || !chev) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : '';
+    chev.classList.toggle('open', !isOpen);
 }
 
-function buildNodes(trail, meta = {}) {
-    const ct = document.getElementById('nodeTrail');
-    ct.innerHTML = '';
-
-    if (meta.is_group_send) {
-        const sender = trail.find(s => s.type === 'sent') || trail[0] || {};
-        const members = groupMembersFromTrail(trail);
-        const count = Number(meta.recipient_count || members.length || 0);
-        const groupName = Array.isArray(meta.group_names) && meta.group_names.length
-            ? meta.group_names.join(', ')
-            : 'Group';
-
-        const sNode = document.createElement('div');
-        sNode.className = 'trail-node-wrap';
-        sNode.innerHTML = `
-            <div style="position:relative;">
-                <div style="width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:2px solid #7F77DD;background:#EEEDFE;color:#3C3489;position:relative;">${ini(sender.actor_name || '')}
-                    <div style="position:absolute;width:14px;height:14px;border-radius:50%;top:-2px;right:-2px;border:2px solid #fff;background:#7F77DD;display:flex;align-items:center;justify-content:center;">
-                        <svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                </div>
-            </div>
-            <div style="text-align:center;margin-top:8px;width:92px;">
-                <div style="font-size:11px;font-weight:600;line-height:1.3;word-break:break-word;">${(sender.actor_name || 'Sender').split(' ')[0]}</div>
-                <div style="font-size:10px;color:var(--bs-secondary-color);margin-top:1px;">${sender.action_at ? new Date(sender.action_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' · '+new Date(sender.action_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false}) : '—'}</div>
-            </div>`;
-        ct.appendChild(sNode);
-
-        const cn = document.createElement('div');
-        cn.className = 'trail-conn';
-        cn.innerHTML = `<div style="height:2px;width:16px;background:#84cc16;"></div><div style="height:2px;width:16px;background:#84cc16;"></div><div style="width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:7px solid #84cc16;"></div>`;
-        ct.appendChild(cn);
-
-        const gNode = document.createElement('div');
-        gNode.className = 'trail-node-wrap';
-        gNode.style.width = '120px';
-        gNode.innerHTML = `
-            <div style="position:relative;">
-                <div style="width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:2px solid #d1d5db;background:#f8fafc;color:#6b7280;position:relative;">
-                    <i class="bx bx-group" style="font-size:18px;color:#4b5563;"></i>
-                </div>
-                <div style="position:absolute;top:-4px;right:-8px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#3B82F6;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;">${count}</div>
-            </div>
-            <div style="text-align:center;margin-top:8px;width:112px;">
-                <div style="font-size:11px;font-weight:600;line-height:1.3;word-break:break-word;">${groupName}</div>
-                <div style="font-size:10px;color:var(--bs-secondary-color);margin-top:1px;">Group Send</div>
-                <button type="button" onclick="toggleGroupMembersPanel()" class="btn btn-sm btn-outline-secondary" style="margin-top:6px;font-size:.66rem;padding:3px 8px;border-radius:8px;">View ${count} member${count===1?'':'s'}</button>
-            </div>`;
-        ct.appendChild(gNode);
-        return;
-    }
-
-    trail.forEach((s, i) => {
-        const c = C[s.type]||C.pending;
-        const w = document.createElement('div');
-        w.className = 'trail-node-wrap';
-        const cw = document.createElement('div');
-        cw.style.position = 'relative';
-        if (s.type==='active') {
-            const r = document.createElement('div');
-            r.style.cssText = 'position:absolute;inset:-6px;border-radius:50%;border:2px solid #3B82F6;animation:ring 1.8s infinite;opacity:0;';
-            cw.appendChild(r);
-        }
-        const ci = document.createElement('div');
-        ci.style.cssText = `width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;border:2px solid;position:relative;background:${c.bg};border-color:${c.bd};color:${c.tx};`;
-        ci.textContent = ini(s.actor_name);
-        const bk = document.createElement('div');
-        bk.style.cssText = `position:absolute;width:14px;height:14px;border-radius:50%;top:-2px;right:-2px;border:2px solid #fff;background:${c.dt};display:flex;align-items:center;justify-content:center;`;
-        const icons = {
-            sent:     `<svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-            received: `<svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-            forwarded:`<svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1 4h6M4.5 2L7 4l-2.5 2" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-            active:   `<div style="width:5px;height:5px;background:#fff;border-radius:50%;"></div>`,
-        };
-        bk.innerHTML = icons[s.type]||'';
-        ci.appendChild(bk); cw.appendChild(ci); w.appendChild(cw);
-        const time = s.action_at ? new Date(s.action_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' · '+new Date(s.action_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false}) : '—';
-        const lb = document.createElement('div');
-        lb.style.cssText = 'text-align:center;margin-top:8px;width:80px;';
-        lb.innerHTML = `<div style="font-size:11px;font-weight:500;line-height:1.3;word-break:break-word;">${s.actor_name.split(' ')[0]}</div><div style="font-size:10px;color:var(--bs-secondary-color);margin-top:1px;">${(s.department||'').substring(0,13)}</div><div style="font-size:10px;color:var(--bs-secondary-color);">${time}</div>`;
-        w.appendChild(lb); ct.appendChild(w);
-        if (i < trail.length - 1) {
-            const cn = document.createElement('div');
-            cn.className = 'trail-conn';
-            const isFwd  = s.type==='forwarded';
-            const isPend = s.type==='pending'||s.type==='active';
-            const lc     = isFwd?'#BA7517':isPend?'#3B82F6':'#1D9E75';
-            if (isFwd||s.type==='sent') {
-                const lb2 = document.createElement('span');
-                lb2.className = 'trail-conn-lbl';
-                lb2.style.cssText = isFwd?'background:#FAEEDA;color:#633806;':'background:#E1F5EE;color:#085041;';
-                lb2.textContent = isFwd?'fwd':'sent';
-                cn.appendChild(lb2);
-            }
-            cn.innerHTML += `<div style="height:2px;width:16px;background:${lc};"></div><div style="height:2px;width:16px;background:${lc};"></div><div style="width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:7px solid ${lc};"></div>`;
-            ct.appendChild(cn);
-        }
-    });
-}
-
+/* ── Build detail log ───────────────────────────── */
 function buildLog(trail, meta = {}) {
     const lg = document.getElementById('detailLog');
     lg.innerHTML = '';
-    const lastIndex = trail.length - 1;
-    trail.forEach((s, i) => {
-        const c = C[s.type]||C.pending;
-        const row = document.createElement('div');
-        row.className = 'trail-detail-row';
-        const dot = document.createElement('div');
-        dot.className = 'trail-detail-dot';
-        dot.style.cssText = `background:${c.bg};border-color:${c.bd};`;
-        const shouldPing = !!meta.is_group_send && s.type === 'pending' && i === lastIndex;
-        if (shouldPing) {
-            dot.classList.add('trail-detail-dot-ping');
-            dot.style.position = 'relative';
-        }
-        const di = {
-            sent:     `<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 4.5l2.5 2.5L8 2" stroke="${c.dt}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-            received: `<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 4.5l2.5 2.5L8 2" stroke="${c.dt}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-            forwarded:`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 4.5h7M5 2l2.5 2.5L5 7" stroke="${c.dt}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-            active:   `<div style="width:6px;height:6px;background:${c.dt};border-radius:50%;"></div>`,
-            pending:  `<div style="width:6px;height:6px;background:${c.dt};border-radius:50%;"></div>`,
-        };
-        dot.innerHTML = di[s.type]||'';
-        const actMap = { sent:'sent the document', received:'received the document', forwarded:`forwarded to <strong>${s.forwarded_to||'—'}</strong>`, active:'currently holding', pending:'currently holding' };
-        const con = document.createElement('div');
-        con.style.cssText = 'flex:1;min-width:0;';
-        con.innerHTML = `
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                <div>
-                    <span style="font-size:.875rem;font-weight:500;">${s.actor_name}</span>
-                    <span style="font-size:.8rem;color:var(--bs-secondary-color);margin-left:4px;">${actMap[s.type]||s.type}</span>
-                    <div style="font-size:.75rem;color:var(--bs-secondary-color);">${s.department} · ${s.campus}</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                    <span class="badge rounded-pill" style="font-size:.7rem;background:${c.bg};color:${c.tx};">${tlbl(s.type)}</span>
-                    <small style="color:var(--bs-secondary-color);">${fmtD(s.action_at)}</small>
-                </div>
+
+    const isGroup = !!meta.is_group_send;
+    const groupName = Array.isArray(meta.group_names) && meta.group_names.length
+        ? meta.group_names.join(', ')
+        : 'Group';
+
+    if (isGroup) {
+        /* Group send: show sender → group node (with inline members) */
+        const sender = trail.find(s => s.type === 'sent') || {};
+        const members = groupMembersFromTrail(trail);
+        const lastIndex = trail.length - 1;
+
+        // ── Sender row ──
+        const sC = C.sent;
+        const sRow = document.createElement('div');
+        sRow.className = 'trail-detail-row';
+        sRow.innerHTML = `
+            <div class="trail-detail-dot" style="background:${sC.bg};border-color:${sC.bd};">
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                    <path d="M1 4.5l2.5 2.5L8 2" stroke="${sC.dt}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
             </div>
-            ${s.remarks ? `<div class="trail-remark">"${s.remarks}"</div>` : ''}`;
-        row.appendChild(dot); row.appendChild(con); lg.appendChild(row);
-    });
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                    <div>
+                        <span style="font-size:.875rem;font-weight:500;">${sender.actor_name || '—'}</span>
+                        <span style="font-size:.8rem;color:var(--bs-secondary-color);margin-left:4px;">sent the document to <strong>${groupName}</strong> group</span>
+                        <div style="font-size:.75rem;color:var(--bs-secondary-color);">${sender.department || ''} · ${sender.campus || ''}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                        <span class="badge rounded-pill" style="font-size:.7rem;background:${sC.bg};color:${sC.tx};">Sender</span>
+                        <small style="color:var(--bs-secondary-color);">${fmtD(sender.action_at)}</small>
+                    </div>
+                </div>
+            </div>`;
+        lg.appendChild(sRow);
+
+        // ── Group node row (with inline members card) ──
+        const gC = C.group;
+        const gRow = document.createElement('div');
+        gRow.className = 'trail-detail-row is-group';
+        gRow.innerHTML = `
+            <div class="trail-detail-dot" style="background:${gC.bg};border-color:${gC.bd};">
+                <i class="bx bx-group" style="font-size:11px;color:${gC.dt};"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                    <div>
+                        <span style="font-size:.875rem;font-weight:500;">${groupName}</span>
+                        <span style="font-size:.8rem;color:var(--bs-secondary-color);margin-left:4px;">document distributed to group</span>
+                        <div style="font-size:.75rem;color:var(--bs-secondary-color);">${fmtD(sender.action_at)}</div>
+                    </div>
+                    <span class="badge rounded-pill" style="font-size:.7rem;background:${gC.bg};color:${gC.tx};border:1px solid ${gC.bd};">Group</span>
+                </div>
+                ${buildGroupMembersCard(members, groupName)}
+            </div>`;
+        lg.appendChild(gRow);
+
+    } else {
+        /* Individual send: render each trail step normally */
+        const lastIndex = trail.length - 1;
+        trail.forEach((s, i) => {
+            const c = C[s.type] || C.pending;
+            const row = document.createElement('div');
+            row.className = 'trail-detail-row';
+
+            const dot = document.createElement('div');
+            dot.className = 'trail-detail-dot';
+            dot.style.cssText = `background:${c.bg};border-color:${c.bd};`;
+
+            const shouldPing = s.type === 'pending' && i === lastIndex;
+            if (shouldPing) {
+                dot.classList.add('trail-detail-dot-ping');
+                dot.style.position = 'relative';
+            }
+
+            const icons = {
+                sent:     `<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 4.5l2.5 2.5L8 2" stroke="${c.dt}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+                received: `<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 4.5l2.5 2.5L8 2" stroke="${c.dt}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+                forwarded:`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 4.5h7M5 2l2.5 2.5L5 7" stroke="${c.dt}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+                active:   `<div style="width:6px;height:6px;background:${c.dt};border-radius:50%;"></div>`,
+                pending:  `<div style="width:6px;height:6px;background:${c.dt};border-radius:50%;"></div>`,
+            };
+            dot.innerHTML = icons[s.type] || '';
+
+            const actMap = {
+                sent:     'sent the document',
+                received: 'received the document',
+                forwarded:`forwarded to <strong>${s.forwarded_to || '—'}</strong>`,
+                active:   'currently holding',
+                pending:  'currently holding',
+            };
+
+            const con = document.createElement('div');
+            con.style.cssText = 'flex:1;min-width:0;';
+            con.innerHTML = `
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                    <div>
+                        <span style="font-size:.875rem;font-weight:500;">${s.actor_name}</span>
+                        <span style="font-size:.8rem;color:var(--bs-secondary-color);margin-left:4px;">${actMap[s.type] || s.type}</span>
+                        <div style="font-size:.75rem;color:var(--bs-secondary-color);">${s.department} · ${s.campus}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                        <span class="badge rounded-pill" style="font-size:.7rem;background:${c.bg};color:${c.tx};">${tlbl(s.type)}</span>
+                        <small style="color:var(--bs-secondary-color);">${fmtD(s.action_at)}</small>
+                    </div>
+                </div>
+                ${s.remarks ? `<div class="trail-remark">"${s.remarks}"</div>` : ''}`;
+
+            row.appendChild(dot);
+            row.appendChild(con);
+            lg.appendChild(row);
+        });
+    }
 }
 
+/* ── Render everything ──────────────────────────── */
 function renderTrail(data) {
-    const trail = data.trail||[];
-    const meta = data.meta||{};
+    const trail = data.trail || [];
+    const meta  = data.meta  || {};
 
-    const sendModeBanner = document.getElementById('trailSendModeBanner');
-    const sendModeText = document.getElementById('trailSendModeText');
-    const groupName = document.getElementById('trailGroupName');
-    const recipientCount = document.getElementById('trailRecipientCount');
+    // Send mode banner
     const isGroup = !!meta.is_group_send;
-    const count = Number(meta.recipient_count || 0);
-
+    const count   = Number(meta.recipient_count || 0);
+    const sendModeBanner = document.getElementById('trailSendModeBanner');
     sendModeBanner.classList.remove('d-none');
-    sendModeText.textContent = isGroup ? 'Group Send' : 'Individual Send';
-    groupName.textContent = isGroup ? (meta.group_names?.join(', ') || 'Target group') : 'Direct recipients';
-    recipientCount.textContent = `${count} Recipient${count === 1 ? '' : 's'}`;
+    document.getElementById('trailSendModeText').textContent   = isGroup ? 'Group Send' : 'Individual Send';
+    document.getElementById('trailGroupName').textContent      = isGroup ? (meta.group_names?.join(', ') || 'Target group') : 'Direct recipients';
+    document.getElementById('trailRecipientCount').textContent = `${count} Recipient${count === 1 ? '' : 's'}`;
 
     // Stats
-    const statsHtml = [
-        {l:'Hops',ic:'bx-transfer-alt',cl:'primary',v:trail.length},
-        {l:'Received',ic:'bx-check-circle',cl:'success',v:trail.filter(s=>s.type==='received').length},
-        {l:'Forwarded',ic:'bx-share',cl:'warning',v:trail.filter(s=>s.type==='forwarded').length},
-        {l:'Pending',ic:'bx-time-five',cl:'info',v:trail.filter(s=>s.type==='active'||s.type==='pending').length},
-    ].map(s=>`<div class="col-6 col-sm-3"><div class="d-flex align-items-center gap-2 p-2 rounded" style="background:var(--bs-gray-100);"><i class="bx ${s.ic} text-${s.cl}" style="font-size:1.1rem;"></i><div><div class="fw-semibold" style="font-size:1rem;line-height:1;">${s.v}</div><div class="text-muted" style="font-size:.7rem;">${s.l}</div></div></div></div>`).join('');
-    document.getElementById('trailStats').innerHTML = statsHtml;
+    document.getElementById('trailStats').innerHTML = [
+        { l:'Hops',      ic:'bx-transfer-alt', cl:'primary', v: trail.length },
+        { l:'Received',  ic:'bx-check-circle', cl:'success', v: trail.filter(s => s.type === 'received').length },
+        { l:'Forwarded', ic:'bx-share',        cl:'warning', v: trail.filter(s => s.type === 'forwarded').length },
+        { l:'Pending',   ic:'bx-time-five',    cl:'info',    v: trail.filter(s => s.type === 'active' || s.type === 'pending').length },
+    ].map(s => `
+        <div class="col-6 col-sm-3">
+            <div class="d-flex align-items-center gap-2 p-2 rounded" style="background:var(--bs-gray-100);">
+                <i class="bx ${s.ic} text-${s.cl}" style="font-size:1.1rem;"></i>
+                <div>
+                    <div class="fw-semibold" style="font-size:1rem;line-height:1;">${s.v}</div>
+                    <div class="text-muted" style="font-size:.7rem;">${s.l}</div>
+                </div>
+            </div>
+        </div>`).join('');
+
     // Progress
-    const done = trail.filter(s=>['sent','received','forwarded'].includes(s.type)).length;
-    const pct  = trail.length > 0 ? Math.round((done/trail.length)*100) : 0;
-    document.getElementById('trailProgressBar').style.width = pct+'%';
-    document.getElementById('trailProgressPct').textContent = pct+'%';
+    const done = trail.filter(s => ['sent','received','forwarded'].includes(s.type)).length;
+    const pct  = trail.length > 0 ? Math.round((done / trail.length) * 100) : 0;
+    document.getElementById('trailProgressBar').style.width = pct + '%';
+    document.getElementById('trailProgressPct').textContent  = pct + '%';
+
     // Currently with
-    const active = trail.filter(s=>s.type==='active'||s.type==='pending').pop();
+    const active = trail.filter(s => s.type === 'active' || s.type === 'pending').pop();
     if (active) {
         const b = document.getElementById('trailCurrentBanner');
-        b.classList.remove('d-none'); b.classList.add('d-flex');
+        b.classList.remove('d-none');
+        b.classList.add('d-flex');
         document.getElementById('trailCurrentName').textContent  = active.actor_name;
-        document.getElementById('trailCurrentDept').textContent  = active.department+' · '+active.campus;
+        document.getElementById('trailCurrentDept').textContent  = active.department + ' · ' + active.campus;
         document.getElementById('trailCurrentSince').textContent = ago(active.action_at);
     }
-    buildNodes(trail, meta);
-    renderGroupMembersPanel(trail, meta);
+
     buildLog(trail, meta);
+
     document.getElementById('trailLoading').classList.add('d-none');
     document.getElementById('trailContent').classList.remove('d-none');
 }
 
+/* ── Load trail from API ───────────────────────── */
 function loadTrail(id) {
-    ['trailLoading','trailError','trailContent'].forEach(x=>{
+    ['trailLoading','trailError','trailContent'].forEach(x => {
         document.getElementById(x).classList.add('d-none');
     });
     document.getElementById('trailSendModeBanner').classList.add('d-none');
     document.getElementById('trailLoading').classList.remove('d-none');
-    document.getElementById('trailCurrentBanner').classList.add('d-none');
-    document.getElementById('trailCurrentBanner').classList.remove('d-flex');
+
+    const cb = document.getElementById('trailCurrentBanner');
+    cb.classList.add('d-none');
+    cb.classList.remove('d-flex');
 
     fetch(`/documents/${id}/trail/data`, {
-        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json',
-                 'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]')?.content||''}
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        }
     })
-    .then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(renderTrail)
-    .catch(()=>{
+    .catch(() => {
         document.getElementById('trailLoading').classList.add('d-none');
         document.getElementById('trailError').classList.remove('d-none');
     });
 }
 
+/* ── Bootstrap modal wiring ─────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
     const modal = new bootstrap.Modal(document.getElementById('trailModal'));
 
