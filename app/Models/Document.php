@@ -95,7 +95,15 @@ class Document extends Model
      */
     public function scopeSent($query)
     {
-        return $query->where('status', 'sent');
+        return $query->whereIn('status', ['sent', 'forward']);
+    }
+
+    /**
+     * Scope to get forwarded documents
+     */
+    public function scopeForwarded($query)
+    {
+        return $query->where('status', 'forward');
     }
 
     /**

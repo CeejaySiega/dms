@@ -109,7 +109,7 @@
                     $statusValue = $receivedDocument->action ?? (optional($receivedDocument->receive_at) ? 'received' : 'pending');
                     $statusValue = strtolower((string) $statusValue);
                     $statusClass = match($statusValue) {
-                        'pending'            => 'bg-warning', 'forwarded' => 'bg-primary',
+                        'pending'            => 'bg-warning', 'forward' => 'bg-primary',
                         'rejected'           => 'bg-danger',
                         'receive', 'received'=> 'bg-info',    default     => 'bg-secondary',
                     };

@@ -146,17 +146,21 @@
                                 $hasReceive = $actions->contains('receive')
                                     || $actions->contains('received')
                                     || $recipients->whereNotNull('receive_at')->isNotEmpty();
-                                $isForwarded = !is_null($route?->forward_at);
 
-                                if ($hasPending && $isForwarded) {
-                                    $statusValue = 'forwarded';
+                                // If document is marked as forwarded, always show forward status
+                                if ($document->status === 'forward') {
+                                    $statusValue = 'forward';
+                                } elseif ($hasPending) {
+                                    $statusValue = 'pending';
+                                } elseif ($hasReceive) {
+                                    $statusValue = 'receive';
                                 } else {
-                                    $statusValue = $hasPending ? 'pending' : ($hasReceive ? 'receive' : 'pending');
+                                    $statusValue = 'pending';
                                 }
                             }
                             $statusClass = match($statusValue) {
                                 'pending'            => 'bg-warning',
-                                'forwarded'          => 'bg-primary',
+                                'forward'            => 'bg-primary',
                                 'receive','received' => 'bg-info',
                                 'archived'           => 'bg-secondary',
                                 'restored'           => 'bg-success',

@@ -8,7 +8,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const recipientList = document.getElementById('recipientList');
     const recipientInputs = document.getElementById('recipientInputs');
     const forwardForm = document.getElementById('forwardDocumentForm');
+    const priority = document.getElementById('priority');
+    const dueDateWrap = document.getElementById('dueDateWrap');
+    const dueDate = document.getElementById('dueDate');
     const selectedRecipients = [];
+
+    function syncDueDateVisibility() {
+        const urgent = priority && priority.value === 'urgent';
+        dueDateWrap.classList.toggle('d-none', !urgent);
+        dueDate.required = urgent;
+
+        if (!urgent) {
+            dueDate.value = '';
+        }
+    }
+
+    if (priority && dueDateWrap && dueDate) {
+        priority.addEventListener('change', syncDueDateVisibility);
+        syncDueDateVisibility();
+    }
 
     function renderRecipients() {
         recipientList.innerHTML = '';
@@ -84,7 +102,35 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!selectedRecipients.length) {
             event.preventDefault();
             Swal.fire({ icon: 'warning', title: 'No recipients', text: 'Please add at least one recipient.' });
+            return;
         }
+
+        if (!forwardForm.checkValidity()) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (forwardForm.dataset.submitting === '1') {
+            return;
+        }
+
+        forwardForm.dataset.submitting = '1';
+        Swal.fire({
+            title: 'Forwarding Document...',
+            html: '<p class="text-muted mb-0">Please wait while the document is being forwarded.</p>',
+            icon: 'info',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: function () {
+                Swal.showLoading();
+            }
+        });
+
+        setTimeout(function () {
+            forwardForm.submit();
+        }, 50);
     });
 });
 </script>

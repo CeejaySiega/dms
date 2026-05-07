@@ -93,17 +93,23 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Priority <span class="text-danger">*</span></label>
                             <select class="form-select" name="priority" id="priority" required>
-                                <option value="low">Low</option>
+                                
                                 <option value="normal" selected>Normal</option>
-                                <option value="high">High</option>
                                 <option value="urgent">Urgent</option>
                             </select>
                         </div>
 
+                        <div class="mb-3 d-none" id="dueDateWrap">
+                            <label class="form-label fw-semibold">Due Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="due_date" id="dueDate" min="{{ now()->toDateString() }}" value="{{ old('due_date') }}">
+                            <small class="text-muted">Due date is required for urgent forwards.</small>
+                        </div>
+
+{{-- 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Notes</label>
                             <textarea class="form-control" name="notes" rows="2" maxlength="500" placeholder="Optional forwarding notes"></textarea>
-                        </div>
+                        </div> --}}
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">

@@ -48,7 +48,7 @@
                 <select name="status" class="form-select form-select-sm" style="max-width: 130px;" onchange="this.form.submit()">
                     <option value="">Status</option>
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="forwarded" {{ request('status') === 'forwarded' ? 'selected' : '' }}>Forwarded</option>
+                    <option value="forward" {{ request('status') === 'forward' ? 'selected' : '' }}>Forward</option>
                     <option value="receive" {{ request('status') === 'receive' ? 'selected' : '' }}>Received</option>
                     <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
                 </select>
@@ -123,20 +123,21 @@
                 };
 
                 $statusValue = $document->status;
-                if ($recipients->isNotEmpty()) {
+                // If document is marked as forwarded, always show forward status
+                if ($document->status === 'forward') {
+                    $statusValue = 'forward';
+                } elseif ($recipients->isNotEmpty()) {
                     $actions     = $recipients->pluck('action')->filter()->map(fn($a) => strtolower(trim((string)$a)))->unique();
                     $hasPending  = $recipients->contains(fn($r) => is_null($r->action)) || $actions->contains('pending');
                     $hasReceive  = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
-                    $isForwarded = !is_null($route?->forward_at);
-                    if ($isGroupSend && $hasPending)        $statusValue = 'pending';
-                    elseif ($hasPending && $isForwarded)    $statusValue = 'forwarded';
-                    elseif ($hasPending)                    $statusValue = 'pending';
-                    elseif ($hasReceive)                    $statusValue = 'receive';
+                    if ($isGroupSend && $hasPending)    $statusValue = 'pending';
+                    elseif ($hasPending)                $statusValue = 'pending';
+                    elseif ($hasReceive)                $statusValue = 'receive';
                     elseif ($actions->contains('rejected')) $statusValue = 'rejected';
-                    else                                    $statusValue = 'pending';
+                    else                                $statusValue = 'pending';
                 }
                 $statusClass = match($statusValue) {
-                    'pending'            => 'bg-warning', 'forwarded' => 'bg-primary',
+                    'pending'            => 'bg-warning', 'forward' => 'bg-primary',
                     'rejected'           => 'bg-danger',
                     'receive','received' => 'bg-info',    default     => 'bg-secondary',
                 };
@@ -305,15 +306,20 @@
             $actions     = $recipients->pluck('action')->filter()->map(fn($a) => strtolower(trim((string)$a)))->unique();
             $hasPending  = $recipients->contains(fn($r) => is_null($r->action) || $r->action === 'pending');
             $hasReceive  = $actions->contains('receive') || $actions->contains('received') || $recipients->whereNotNull('receive_at')->isNotEmpty();
-            $isForwarded = !is_null($route?->forward_at);
-            if ($hasPending && $isForwarded)        $statusVal = 'forwarded';
-            elseif ($hasPending)                    $statusVal = 'pending';
-            elseif ($hasReceive)                    $statusVal = 'receive';
-            elseif ($actions->contains('rejected')) $statusVal = 'rejected';
-            else                                    $statusVal = 'pending';
+            // If document is marked as forwarded, always show forward status
+            if ($document->status === 'forward')
+                $statusVal = 'forward';
+            elseif ($hasPending)
+                $statusVal = 'pending';
+            elseif ($hasReceive)
+                $statusVal = 'receive';
+            elseif ($actions->contains('rejected'))
+                $statusVal = 'rejected';
+            else
+                $statusVal = 'pending';
         }
         $statusBadge = match($statusVal) {
-            'pending'            => 'bg-warning', 'forwarded' => 'bg-primary',
+            'pending'            => 'bg-warning', 'forward' => 'bg-primary',
             'rejected'           => 'bg-danger',
             'receive','received' => 'bg-info',    default     => 'bg-secondary',
         };

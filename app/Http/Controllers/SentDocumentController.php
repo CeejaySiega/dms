@@ -558,7 +558,10 @@ class SentDocumentController extends Controller
                     $route->update(['unsend_at' => now()]);
                 }
 
-                $document->update(['unsend_at' => now()]);
+                $document->update([
+                    'unsend_at' => now(),
+                    'due_date' => null,
+                ]);
 
                 return response()->json([
                     'success' => true,
@@ -567,7 +570,13 @@ class SentDocumentController extends Controller
             }
 
             // Still has other recipients — recalculate status
-            $document->update(['status' => $this->getStatusFromRecipients($document)]);
+            $newStatus = $this->getStatusFromRecipients($document);
+            $updateData = [
+                'status' => $newStatus,
+                'due_date' => null,
+            ];
+
+            $document->update($updateData);
 
             return response()->json([
                 'success' => true,
@@ -673,7 +682,10 @@ class SentDocumentController extends Controller
                     $route->update(['unsend_at' => now()]);
                 }
 
-                $document->update(['unsend_at' => now()]);
+                $document->update([
+                    'unsend_at' => now(),
+                    'due_date' => null,
+                ]);
 
                 return response()->json([
                     'success' => true,
@@ -682,7 +694,13 @@ class SentDocumentController extends Controller
             }
 
             // Update document status based on remaining recipients
-            $document->update(['status' => $this->getStatusFromRecipients($document)]);
+            $newStatus = $this->getStatusFromRecipients($document);
+            $updateData = [
+                'status' => $newStatus,
+                'due_date' => null,
+            ];
+
+            $document->update($updateData);
 
             return response()->json([
                 'success' => true,
@@ -721,9 +739,9 @@ class SentDocumentController extends Controller
                 ->whereNotNull('receive_at')
                 ->exists();
 
+        if ($hasForwarded)                  return 'forward';
         if ($hasReceive)                    return 'receive';
         if ($actions->contains('rejected')) return 'rejected';
-        if ($hasForwarded)                  return 'forwarded';
 
         return 'pending';
     }

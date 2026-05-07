@@ -475,11 +475,20 @@ class DocumentController extends Controller
             'user_ids' => 'required|array|min:1|max:5',
             'user_ids.*' => 'required|integer|exists:users,user_id|different:' . Auth::id(),
             'priority' => 'required|in:low,normal,high,urgent',
+            'due_date' => 'nullable|date|after_or_equal:today|required_if:priority,urgent',
             'base_route_id' => 'nullable|integer|exists:document_routes,route_id',
             'notes' => 'nullable|string|max:500',
         ]);
 
         DB::transaction(function () use ($document, $validated) {
+            $documentUpdates = ['status' => 'forward'];
+
+            if (($validated['priority'] ?? null) === 'urgent' && !empty($validated['due_date'])) {
+                $documentUpdates['due_date'] = $validated['due_date'];
+            }
+
+            $document->update($documentUpdates);
+
             // Create route for each individual recipient
             foreach ($validated['user_ids'] as $userId) {
                 $route = DocumentRoute::create([
